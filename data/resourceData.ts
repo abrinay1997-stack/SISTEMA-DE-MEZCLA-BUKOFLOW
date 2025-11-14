@@ -1,0 +1,70 @@
+import type { Resource } from '../types';
+
+export const resourceCategories = {
+  'introduccion': 'Introducción',
+  'comunidad': 'Comunidad y Materiales',
+  'preguntas': 'Preguntas Frecuentes',
+} as const;
+
+export const resourceData: Resource[] = [
+  {
+    id: 'res-intro',
+    title: 'Introducción: La Filosofía de la Ruta del Viajero',
+    description: 'Comprende la mentalidad detrás de la "Ruta del Viajero" para tomar mejores decisiones y potenciar la emoción en tus mezclas.',
+    type: 'video',
+    url: 'https://vimeo.com/365078627',
+    category: 'introduccion',
+    tags: ['filosofía', 'introducción', 'concepto', 'emoción'],
+    relatedSteps: [1, 2],
+  },
+  {
+    id: 'res-community',
+    title: 'Únete a la Comunidad de WhatsApp',
+    description: 'Conecta con otros productores, comparte tu trabajo y resuelve dudas en nuestra comunidad exclusiva.',
+    type: 'community',
+    url: 'https://chat.whatsapp.com/DnLZTG3tSnL7GHJFDQcc2o',
+    category: 'comunidad',
+    tags: ['comunidad', 'whatsapp', 'networking', 'feedback'],
+    relatedSteps: [],
+  },
+  {
+    id: 'res-materials',
+    title: 'Descargar Materiales de Apoyo',
+    description: 'Accede a checklists, plantillas y otros recursos exclusivos para acelerar tu flujo de trabajo.',
+    type: 'download',
+    url: 'https://bukoflow.aweb.page/p/52775fa2-e70c-4240-b6d1-bd4936c26f11',
+    category: 'comunidad',
+    tags: ['descargas', 'plantillas', 'checklist', 'recursos'],
+    relatedSteps: [],
+  },
+  {
+    id: 'res-faq-1',
+    title: '¿Cómo preparar una sesión para la mezcla?',
+    description: 'Aprende los pasos cruciales de organización, limpieza y gain staging antes de empezar a mezclar.',
+    type: 'video',
+    url: 'https://vimeo.com/365078627',
+    category: 'preguntas',
+    tags: ['preparación', 'sesión', 'limpieza', 'gain staging', 'organización'],
+    relatedSteps: [3, 4],
+  },
+  {
+    id: 'res-faq-2',
+    title: '¿Qué son los LUFS y por qué son importantes?',
+    description: 'Entiende la sonoridad percibida y cómo medirla para que tus mezclas compitan en plataformas de streaming.',
+    type: 'video',
+    url: 'https://vimeo.com/365078627',
+    category: 'preguntas',
+    tags: ['lufs', 'mastering', 'volumen', 'streaming', 'medición'],
+    relatedSteps: [12, 14],
+  },
+  {
+    id: 'res-faq-3',
+    title: 'Mi mezcla suena bien en monitores pero mal en otros sitios, ¿por qué?',
+    description: 'Descubre la importancia de las referencias, la monitorización y la compatibilidad mono para lograr una mezcla que se traduzca bien.',
+    type: 'video',
+    url: 'https://vimeo.com/365078627',
+    category: 'preguntas',
+    tags: ['referencias', 'monitores', 'traducción', 'mono', 'control de calidad'],
+    relatedSteps: [5, 13],
+  },
+];
