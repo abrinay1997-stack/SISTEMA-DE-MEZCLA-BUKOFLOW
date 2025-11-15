@@ -30,9 +30,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <LogoIcon className="w-20 h-20 text-theme-accent-secondary" />
             </div>
             <h1 className="text-3xl font-bold text-theme-accent-secondary tracking-widest uppercase">
-                Ruta del Viajero
+                FLOW ACADEMY
             </h1>
-            <p className="text-lg text-theme-accent">Asistente de Mezcla Profesional</p>
+            <p className="text-lg text-theme-accent">Eleva tu sonido, desatado al infinito.</p>
         </header>
         
         <form 
