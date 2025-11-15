@@ -2,7 +2,8 @@ import type { Resource } from '../types';
 
 export const resourceCategories = {
   'introduccion': 'Introducción',
-  'comunidad': 'Comunidad y Materiales',
+  'comunidad': 'Comunidad',
+  'recursos': 'Recursos y Materiales',
   'preguntas': 'Preguntas Frecuentes',
 } as const;
 
@@ -27,16 +28,49 @@ export const resourceData: Resource[] = [
     tags: ['comunidad', 'whatsapp', 'networking', 'feedback'],
     relatedSteps: [],
   },
+   // --- Recursos --- 
   {
-    id: 'res-materials',
-    title: 'Descargar Materiales de Apoyo',
-    description: 'Accede a checklists, plantillas y otros recursos exclusivos para acelerar tu flujo de trabajo.',
+    id: 'res-plantillas',
+    title: 'Descargar Plantillas',
+    description: 'Accede a plantillas para acelerar tu flujo de trabajo.',
     type: 'download',
     url: 'https://bukoflow.aweb.page/p/52775fa2-e70c-4240-b6d1-bd4936c26f11',
-    category: 'comunidad',
+    category: 'recursos',
     tags: ['descargas', 'plantillas', 'checklist', 'recursos'],
     relatedSteps: [],
   },
+  {
+    id: 'res-librerias',
+    title: 'Descargar Librerias',
+    description: 'Accede a Samples y librerias de alta calidad.',
+    type: 'download',
+    url: 'https://bukoflow.aweb.page/p/52775fa2-e70c-4240-b6d1-bd4936c26f11',
+    category: 'recursos',
+    tags: ['descargas', 'plantillas', 'checklist', 'recursos'],
+    relatedSteps: [],
+  },
+  {
+    id: 'res-plugins',
+    title: 'Descargar Plugins',
+    description: 'Accede a Plugins y herramientas de trabajo.',
+    type: 'download',
+    url: 'https://bukoflow.aweb.page/p/52775fa2-e70c-4240-b6d1-bd4936c26f11',
+    category: 'recursos',
+    tags: ['descargas', 'plantillas', 'checklist', 'recursos'],
+    relatedSteps: [],
+  },
+    {
+    id: 'res-contratos',
+    title: 'Descargar Contratos',
+    description: 'Accede a contratos y herramientas del negocio musical.',
+    type: 'download',
+    url: 'https://bukoflow.aweb.page/p/52775fa2-e70c-4240-b6d1-bd4936c26f11',
+    category: 'recursos',
+    tags: ['descargas', 'plantillas', 'checklist', 'recursos'],
+    relatedSteps: [],
+  },
+  // --- New FAQs con videos ---
+
   {
     id: 'res-faq-1',
     title: '¿Cómo preparar una sesión para la mezcla?',

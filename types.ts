@@ -215,7 +215,7 @@ export interface Resource {
   description: string;
   type: 'video' | 'download' | 'community' | 'faq';
   url: string;
-  category: 'introduccion' | 'comunidad' | 'preguntas';
+  category: 'introduccion' | 'comunidad' | 'recursos' | 'preguntas';
   tags: string[];
   relatedSteps?: number[];
 }
