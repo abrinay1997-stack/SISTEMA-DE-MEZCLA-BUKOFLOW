@@ -152,8 +152,10 @@ const App: React.FC = () => {
       favorites={favorites}
       onToggleFavorite={handleToggleFavorite}
       onOpenSearch={() => setIsSearchOpen(true)}
-// FIX: Pass the setActiveProjectId function to the ProjectHub component to handle project selection.
       onSelectProject={setActiveProjectId}
+      setProjects={setProjects}
+      setThemeName={setThemeName}
+      setFavorites={setFavorites}
       {...guideHandlers}
     />;
 

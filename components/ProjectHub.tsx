@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import type { Project, Resource } from '../types';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import type { Project, Resource, SubStepFeedback } from '../types';
 import { resourceData, resourceCategories } from '../data/resourceData';
 import { themes, ThemeName } from '../themes';
 import { 
     LogoIcon, StarIcon, StarFilledIcon, TrashIcon, PlusIcon, DotsVerticalIcon, XIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, CheckBadgeIcon, PencilIcon,
     WaveformIcon, UserVoiceIcon, GuitarPickIcon, PianoIcon, DrumIcon, HeadphonesIcon, WaveSineIcon,
-    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon
+    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon
 } from './icons';
 import ProgressBar from './ProgressBar';
 import { MIXING_STEPS } from '../constants';
@@ -288,9 +288,79 @@ interface SettingsModalProps {
   onReset: () => void;
   themeName: ThemeName;
   onSetThemeName: (themeName: ThemeName) => void;
+  projects: Project[];
+  favorites: Set<string>;
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
+  setThemeName: React.Dispatch<React.SetStateAction<ThemeName>>;
+  setFavorites: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onLogout, onReset, themeName, onSetThemeName }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ 
+    isOpen, onClose, onLogout, onReset, themeName, onSetThemeName, 
+    projects, favorites, setProjects, setThemeName, setFavorites
+}) => {
+    const importInputRef = useRef<HTMLInputElement>(null);
+
+    const handleExport = () => {
+        const backupData = {
+            mixingProjects: projects.map(p => ({
+                ...p,
+                subStepFeedback: Array.from(p.subStepFeedback.entries()),
+            })),
+            appTheme: themeName,
+            resourceFavorites: Array.from(favorites),
+        };
+        const jsonString = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const date = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `rutadelviajero_backup_${date}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleImportClick = () => {
+        importInputRef.current?.click();
+    };
+
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const text = e.target?.result;
+                if (typeof text !== 'string') throw new Error('File could not be read');
+                const data = JSON.parse(text);
+
+                if (data.mixingProjects && data.appTheme && data.resourceFavorites) {
+                    const importedProjects: Project[] = data.mixingProjects.map((p: any) => ({
+                        ...p,
+                        subStepFeedback: new Map<string, SubStepFeedback>(p.subStepFeedback),
+                    }));
+                    setProjects(importedProjects);
+                    setThemeName(data.appTheme);
+                    setFavorites(new Set<string>(data.resourceFavorites));
+                    alert('¡Progreso importado con éxito!');
+                    onClose();
+                } else {
+                    throw new Error('El archivo de respaldo tiene un formato inválido.');
+                }
+            } catch (error) {
+                console.error("Error importing data:", error);
+                alert(`Error al importar: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = ''; // Reset input
+    };
+
+
     if (!isOpen) return null;
 
     return (
@@ -323,7 +393,30 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onLogout
                             ))}
                         </div>
                     </div>
+
                     <div className="border-t border-theme-border pt-6 space-y-4">
+                        <h3 className="text-md font-semibold text-theme-text text-center">Gestión de Datos</h3>
+                         <div className="grid grid-cols-2 gap-4">
+                            <button 
+                                onClick={handleExport}
+                                className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-md font-semibold transition-all duration-300 bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-500/30"
+                            >
+                                <DownloadIcon className="w-5 h-5" />
+                                Exportar
+                            </button>
+                            <button 
+                                onClick={handleImportClick}
+                                className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-md font-semibold transition-all duration-300 bg-green-500/20 text-green-300 hover:bg-green-500/30 border border-green-500/30"
+                            >
+                                <ArrowUpTrayIcon className="w-5 h-5" />
+                                Importar
+                            </button>
+                             <input type="file" accept=".json" ref={importInputRef} onChange={handleFileImport} className="hidden" />
+                        </div>
+                    </div>
+
+                    <div className="border-t border-theme-border pt-6 space-y-4">
+                         <h3 className="text-md font-semibold text-theme-text text-center">Acciones de la Cuenta</h3>
                         <button 
                             onClick={onReset}
                             className="w-full py-3 px-4 rounded-md font-semibold transition-all duration-300 bg-theme-danger/20 text-theme-danger hover:bg-theme-danger/30 border border-theme-danger/30"
@@ -363,6 +456,9 @@ interface ProjectHubProps {
   onToggleFavorite: (id: string) => void;
   onOpenSearch: () => void;
   onSelectProject: (id: string) => void;
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
+  setThemeName: React.Dispatch<React.SetStateAction<ThemeName>>;
+  setFavorites: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 const ProjectHub: React.FC<ProjectHubProps> = ({ 
@@ -382,7 +478,10 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     favorites,
     onToggleFavorite,
     onOpenSearch,
-    onSelectProject
+    onSelectProject,
+    setProjects,
+    setThemeName,
+    setFavorites
 }) => {
   const [newProjectName, setNewProjectName] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -531,7 +630,6 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                            key={project.id} 
                            className={`group flex items-center gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border rounded-lg hover:bg-theme-accent-secondary/10 transition-all duration-300 transform hover:-translate-y-1 ${isCompleted ? 'border-theme-success/40' : 'border-theme-border/20'}`}
                         >
-{/* FIX: Replaced the incorrect onClick handler with a call to the new `onSelectProject` prop to correctly handle project selection. */}
                            <div className="flex-grow cursor-pointer flex items-center gap-4" onClick={() => onSelectProject(project.id)}>
                                <ProjectIcon icon={project.icon} className="w-8 h-8 text-theme-accent-secondary flex-shrink-0" />
                                <div className="flex-grow">
@@ -589,6 +687,11 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
         onReset={onResetAllProjects}
         themeName={themeName}
         onSetThemeName={onSetThemeName}
+        projects={projects}
+        favorites={favorites}
+        setProjects={setProjects}
+        setThemeName={setThemeName}
+        setFavorites={setFavorites}
     />
     <EditProjectModal 
         isOpen={!!editingProject}
