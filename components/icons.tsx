@@ -4,7 +4,7 @@ export const LogoIcon = ({ className }: { className?: string }) => (
   <img 
     src="https://hostedimages-cdn.aweber-static.com/MjM0MTQ0NQ==/thumbnail/188302f5ca5241bd9111d44862883f63.png" 
     alt="Logo de la aplicación" 
-    className={className} 
+    className={`${className} filter drop-shadow-[0_0_3px_var(--theme-accent)]`} 
   />
 );
 
