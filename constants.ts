@@ -12,7 +12,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-1-2', text: 'Identificar los 2-3 instrumentos o voces que son el corazón de esa emoción. Este es tu "Foco".', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-1-3', text: 'Crear una jerarquía inicial de mayor a menor importancia con relación al "Foco".', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Actúa como un ingeniero de mezcla de audio galardonado. Dame 5 consejos profesionales y prácticos para "potenciar la emoción" en una mezcla. Enfócate en la etapa conceptual: cómo identificar el foco emocional y qué elementos priorizar. Sé claro y conciso.'
   },
   // Step 2
   {
@@ -25,7 +24,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-2-1', text: 'Escoge tu método: "Bottom-Up (-18DBFS)" o "Top-Down (ZERO TO HERO)"', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
     note: 'Tu DAW trabaja a 32-bit float, dándote un headroom interno casi infinito. El Gain Staging es para el CARÁCTER de tus plugins, no para la TÉCNICA de tu DAW.',
-    geminiPrompt: 'Actúa como un ingeniero de mezcla veterano. Explica brevemente los dos métodos de mezcla: "Bottom-Up" y "Top-Down", y cuándo usar cada uno.'
   },
   // Step 3
   {
@@ -42,7 +40,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-3-6', text: 'Limpia respiraciones y sibilancias "el Santo grial de una mezcla profesional".', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-3-7', text: 'Ajustar el "Clip Gain" y "Gain Staging".', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Dame una lista de 5 errores comunes de edición que arruinan una mezcla y cómo evitarlos. Enfócate en la limpieza de pistas y la gestión de la fase.'
   },
   // Step 4
   {
@@ -55,7 +52,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-4-2', text: 'Construir el balance de volumen alrededor del "Foco", pista por pista.', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
     note: 'Coloca el "Foco" (ej. Piano) y los elementos que aportan a su emoción (Violines, Guitarras, Sintes) Sin que afecten su inteligibilidad y emoción. Recuerda que siempre dependerá del estilo y género, Ej. el foco de un dubstep puede ser un "Kick/Bass" y el de un Jazz un "Saxofón"',
-    geminiPrompt: 'Explica la técnica de "mezcla en mono" y por qué es crucial para lograr un balance de volumen y paneo que se traslade bien a diferentes sistemas de sonido.'
   },
 
   // Step 5
@@ -72,7 +68,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-5-3', text: 'Evita el "fake mono" (sonido amplio que se cancela en mono).', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-5-4', text: 'Prueba de Fuego (Chequeo en Mono): Al finalizar, comprueba la mezcla en mono. Asegúrate de que ningún elemento crucial desaparezca o pierda demasiada energía.', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Explica la técnica de "mezcla en mono" y por qué es crucial para lograr un balance de volumen y paneo que se traslade bien a diferentes sistemas de sonido.'
   },
   // Step 6
   {
@@ -87,7 +82,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-6-2', text: 'Buscar y atenuar resonancias molestas con un Q estrecho (especialmente en voces, cajas y platillos).', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-6-3', text: 'Resolver conflictos de enmascaramiento entre Kick y Bajo, y entre Voces y Guitarras/Teclados.', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Dame 3 técnicas avanzadas de ecualización correctiva, como el "barrido de frecuencias" para encontrar resonancias y el uso de EQ dinámico para problemas específicos.'
   },
   // Step 7
   {
@@ -106,7 +100,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-7-6', text: 'Limitación: Simple y Multibanda', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
     note: 'El ataque y el release son cruciales. Un ataque rápido controla transientes, uno lento los deja pasar. Un release rápido crea bombeo, uno lento es más transparente. Ajusta siempre al ritmo de la canción.',
-    geminiPrompt: 'Explica la diferencia entre usar un compresor con ataque rápido vs. lento en una caja (snare). ¿Cómo afecta cada uno al "punch" y al "cuerpo" del sonido?'
   },
   // Step 8
   {
@@ -121,7 +114,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-8-2', text: 'EQ Match', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-8-3', text: 'Ecualiza "Pasiva"', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Describe 3 tipos de ecualizadores "de color" (ej. Pultec, Neve, API) y en qué instrumentos brillan más para ecualización aditiva.'
   },
   // Step 9
   {
@@ -136,7 +128,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-9-3', text: 'Aplicar saturación para añadir calidez y armónicos (en pistas o en paralelo).', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-9-4', text: 'Experimentar con modulación (Chorus, Flanger, Phaser) para añadir movimiento.', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Explica una técnica profesional para crear profundidad en una mezcla usando diferentes tipos de reverb y pre-delay.'
   },
   // Step 10
   {
@@ -151,7 +142,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-10-3', text: 'Automatiza los efectos modulares.', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-10-4', text: 'Automatiza filtros (HPF/LPF) para crear transiciones y efectos de "barrido".', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Dame 3 ideas creativas de automatización que vayan más allá del volumen y el paneo para hacer una mezcla más interesante.'
   },
   // Step 11
   {
@@ -171,7 +161,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-11-8', text: 'Supresores de Resonancias para peinar frecuencias acumuladas', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-11-9', text: 'Compresión y limitación multibanda Mid-Side de picos y RMS', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Explica el concepto de "compresión de bus" o "glue compression". ¿Qué tipo de compresor (VCA, Vari-Mu) es mejor para esta tarea y por qué?'
   },
   // Step 12
   {
@@ -185,7 +174,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-12-2', text: 'EQ Sustractiva y aditiva sutilmente.', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-12-3', text: 'Usar compresión multibanda, Clippers y limitadores en serie para aumentar el volumen final de la mezcla a un nivel competitivo (-14 a -6 LUFS, dependiendo del estilo).', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Describe una cadena de plugins básica y efectiva para el master bus. Incluye EQ, Compresor y Limitador, y explica el propósito de cada uno en la cadena.'
   },
   // Step 13
   {
@@ -197,7 +185,6 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-13-1', text: 'Escuchar la mezcla en diferentes sistemas: monitores de estudio, auriculares, altavoces de portátil, coche. (Realphones)', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-13-2', text: 'Comparar referencia comerciales Mid-Side Multibanda de Peak y RMS', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: 'Explica la importancia de usar pistas de referencia durante la mezcla. ¿Cómo se debe hacer correctamente para no terminar simplemente copiando el sonido de otra canción?'
   },
   // Step 14
   {
@@ -211,6 +198,5 @@ export const MIXING_STEPS: Step[] = [
       { id: 'step-14-3', text: 'Exportar (instrumental, a capella y Stems).', tutorialUrl: 'https://vimeo.com/365078627' },
       { id: 'step-14-4', text: 'Nombrar y organizar los archivos de forma clara y profesional antes de enviarlos.', tutorialUrl: 'https://vimeo.com/365078627' },
     ],
-    geminiPrompt: '¿Cuál es la diferencia entre LUFS, RMS y True Peak? Explica qué métrica es la más importante para la entrega de música a plataformas de streaming como Spotify y por qué.'
   }
 ];

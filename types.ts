@@ -20,7 +20,6 @@ export interface Step {
   method?: string;
   note?: string;
   subSteps: SubStep[];
-  geminiPrompt: string;
 }
 
 export interface Project {
