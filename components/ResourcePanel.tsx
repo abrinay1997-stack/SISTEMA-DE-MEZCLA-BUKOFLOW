@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { resourceData } from '../data/resourceData';
 import type { Resource, Step } from '../types';
 import { 
-    XIcon, StarIcon, StarFilledIcon, PlayIcon, DownloadIcon, ChatBubbleIcon
+    XIcon, StarIcon, StarFilledIcon, PlayIcon, DownloadIcon, ChatBubbleIcon, QuestionMarkCircleIcon
 } from './icons';
 
 // --- Resource Card Sub-component --- //
@@ -19,23 +19,25 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onTog
             case 'video': return <PlayIcon className="w-5 h-5 text-theme-accent-secondary" />;
             case 'community': return <ChatBubbleIcon className="w-5 h-5 text-green-400" />;
             case 'download': return <DownloadIcon className="w-5 h-5 text-theme-accent" />;
+            case 'faq': return <QuestionMarkCircleIcon className="w-5 h-5 text-indigo-400" />;
             default: return null;
         }
     };
 
-    const actionText = resource.type === 'video' ? 'Ver' : resource.type === 'community' ? 'Unirse' : 'Abrir';
-
     const handleAction = () => {
         if (resource.type === 'video') {
             onOpenTutorial(resource.url, resource.title);
-        } else {
+        } else if (resource.type !== 'faq') { // Prevent click for faq
             window.open(resource.url, '_blank', 'noopener,noreferrer');
         }
     };
 
     return (
         <div className="group flex justify-between items-start gap-3 p-3 rounded-lg bg-black/30 border border-theme-border hover:bg-white/5 transition-colors">
-            <div className="flex items-start gap-3 flex-grow cursor-pointer" onClick={handleAction}>
+            <div 
+                className={`flex items-start gap-3 flex-grow ${resource.type !== 'faq' ? 'cursor-pointer' : ''}`}
+                onClick={handleAction}
+            >
                 <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 mt-1">{renderIcon()}</div>
                 <div className="flex-grow">
                     <h4 className="font-semibold text-sm text-theme-text">{resource.title}</h4>

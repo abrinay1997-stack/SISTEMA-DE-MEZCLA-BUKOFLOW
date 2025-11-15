@@ -5,7 +5,7 @@ import { themes, ThemeName } from '../themes';
 import { 
     LogoIcon, StarIcon, StarFilledIcon, TrashIcon, PlusIcon, DotsVerticalIcon, XIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, CheckBadgeIcon, PencilIcon,
     WaveformIcon, UserVoiceIcon, GuitarPickIcon, PianoIcon, DrumIcon, HeadphonesIcon, WaveSineIcon,
-    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon
+    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon
 } from './icons';
 import ProgressBar from './ProgressBar';
 import { MIXING_STEPS } from '../constants';
@@ -27,6 +27,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onTog
             case 'video': return <PlayIcon className="w-5 h-5 text-theme-accent-secondary" />;
             case 'community': return <ChatBubbleIcon className="w-5 h-5 text-green-400" />;
             case 'download': return <DownloadIcon className="w-5 h-5 text-theme-accent" />;
+            case 'faq': return <QuestionMarkCircleIcon className="w-5 h-5 text-indigo-400" />;
             default: return null;
         }
     };
@@ -40,6 +41,8 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onTog
                 return <a href={resource.url} target="_blank" rel="noopener noreferrer" className={`${commonClasses} bg-green-500/10 text-green-300 border-green-500/20 hover:bg-green-500/20`}><ChatBubbleIcon className="w-4 h-4" /> Unirse</a>;
             case 'download':
                 return <a href={resource.url} target="_blank" rel="noopener noreferrer" className={`${commonClasses} bg-theme-accent-secondary/10 text-theme-accent-secondary border-theme-accent-secondary/20 hover:bg-theme-accent-secondary/20`}><DownloadIcon className="w-4 h-4" /> Abrir</a>;
+            case 'faq':
+                return null;
             default: return null;
         }
     }

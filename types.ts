@@ -208,7 +208,7 @@ export interface Resource {
   id: string;
   title: string;
   description: string;
-  type: 'video' | 'download' | 'community';
+  type: 'video' | 'download' | 'community' | 'faq';
   url: string;
   category: 'introduccion' | 'comunidad' | 'preguntas';
   tags: string[];
