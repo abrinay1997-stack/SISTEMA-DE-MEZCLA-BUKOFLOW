@@ -38,7 +38,7 @@ const SubStepItem: React.FC<SubStepItemProps> = ({ subStep, feedback, onUpdate, 
     };
 
     return (
-        <li className="group flex flex-col gap-2 bg-black/20 p-3 rounded-md border border-theme-border/50">
+        <li className="group flex flex-col gap-2 bg-black/20 p-3 rounded-md border border-theme-border">
             <div className="flex justify-between items-start gap-4">
                 <div className="flex items-start space-x-4 cursor-pointer flex-grow" onClick={handleToggleCompleted}>
                     <div
