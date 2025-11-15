@@ -12,7 +12,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // FIX: The comma operator was used incorrectly. Changed to a logical OR to check for multiple valid passwords.
-    if (password === '1997' || password === 'bukoflow') {
+    if (password === '1997' || password === 'avalon') {
       onLoginSuccess();
     } else {
       setError('Clave de acceso incorrecta.');
