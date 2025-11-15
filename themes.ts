@@ -5,7 +5,8 @@ export type ThemeName =
   | 'dark'
   | 'vintage'
   | 'neonwave'
-  | 'forest';
+  | 'forest'
+  | 'bukoflow-dark-orange';
 
 export interface Theme {
   name: ThemeName;
@@ -29,7 +30,6 @@ export interface Theme {
     '--theme-shadow-danger': string;
   };
 }
-
 export const themes: Record<ThemeName, Theme> = {
   cyberpunk: {
     name: 'cyberpunk',
@@ -51,7 +51,7 @@ export const themes: Record<ThemeName, Theme> = {
       '--theme-shadow-secondary': 'rgba(6, 182, 212, 0.2)',
       '--theme-shadow-success': 'rgba(74, 222, 128, 0.3)',
       '--theme-shadow-danger': 'rgba(255, 70, 70, 0.3)',
-    },
+    },   
   },
 
   analog: {
@@ -191,6 +191,29 @@ export const themes: Record<ThemeName, Theme> = {
       '--theme-priority': '#fcd34d',
       '--theme-shadow-accent': 'rgba(52, 211, 153, 0.2)',
       '--theme-shadow-secondary': 'rgba(5, 150, 105, 0.2)',
+      '--theme-shadow-success': 'rgba(74, 222, 128, 0.3)',
+      '--theme-shadow-danger': 'rgba(239, 68, 68, 0.3)',
+    },
+  },
+
+  'bukoflow-dark-orange': {
+    name: 'bukoflow-dark-orange',
+    label: 'BUKOFLOW Dark Orange',
+    colors: {
+      '--theme-bg': '#000000',
+      '--theme-bg-secondary': 'rgba(20, 20, 20, 0.9)',
+      '--theme-text': '#FFFFFF',
+      '--theme-text-secondary': '#d4d4d8',
+      '--theme-accent': '#FF3D00',
+      '--theme-accent-secondary': '#F57C00',
+      '--theme-border': 'rgba(255, 61, 0, 0.2)',
+      '--theme-border-secondary': 'rgba(245, 124, 0, 0.2)',
+      '--theme-success': '#22c55e',
+      '--theme-success-text': '#bbf7d0',
+      '--theme-danger': '#ef4444',
+      '--theme-priority': '#facc15',
+      '--theme-shadow-accent': 'rgba(255, 61, 0, 0.3)',
+      '--theme-shadow-secondary': 'rgba(245, 124, 0, 0.3)',
       '--theme-shadow-success': 'rgba(74, 222, 128, 0.3)',
       '--theme-shadow-danger': 'rgba(239, 68, 68, 0.3)',
     },

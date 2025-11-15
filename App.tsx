@@ -16,7 +16,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useLocalStorage('isAuthenticated', false);
   const [projects, setProjects] = useLocalStorage<Project[]>('mixingProjects', []);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-  const [themeName, setThemeName] = useLocalStorage<ThemeName>('app-theme', 'cyberpunk');
+  const [themeName, setThemeName] = useLocalStorage<ThemeName>('app-theme', 'bukoflow-dark-orange');
   const [favorites, setFavorites] = useLocalStorage<Set<string>>('resourceFavorites', new Set());
   
   const [initialStepIndex, setInitialStepIndex] = useState<number | null>(null);
