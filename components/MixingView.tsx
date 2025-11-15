@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { MIXING_STEPS } from '../constants';
-import type { Project } from '../types';
+import type { Project, SubStepFeedback } from '../types';
 import StepView from './StepCard';
 import ProgressBar from './ProgressBar';
 import Sidebar from './Sidebar';
@@ -20,6 +20,8 @@ interface MixingViewProps {
     onOpenSaturationGuide: () => void;
     favorites: Set<string>;
     onToggleFavorite: (id: string) => void;
+    initialStepIndex: number | null;
+    onClearInitialStep: () => void;
 }
 
 const MixingView: React.FC<MixingViewProps> = ({ 
@@ -31,17 +33,23 @@ const MixingView: React.FC<MixingViewProps> = ({
     onOpenReverbGuide,
     onOpenSaturationGuide,
     favorites,
-    onToggleFavorite
+    onToggleFavorite,
+    initialStepIndex,
+    onClearInitialStep
 }) => {
-  const [currentStepIndex, setCurrentStepIndex] = useState(project.lastStepIndex || 0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(initialStepIndex ?? project.lastStepIndex ?? 0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isResourcePanelOpen, setIsResourcePanelOpen] = useState(false);
   const [toast, setToast] = useState<{ title: string; message: string } | null>(null);
   const [tutorialModalState, setTutorialModalState] = useState<{ isOpen: boolean; url: string; title: string }>({ isOpen: false, url: '', title: '' });
 
   useEffect(() => {
-    // To prevent unnecessary updates, only call onUpdateProject if the index has actually changed
-    // and differs from what's stored in the project object.
+    if (initialStepIndex !== null) {
+        onClearInitialStep();
+    }
+  }, [initialStepIndex, onClearInitialStep]);
+
+  useEffect(() => {
     if (project.lastStepIndex !== currentStepIndex) {
       onUpdateProject({ ...project, lastStepIndex: currentStepIndex });
     }
@@ -52,37 +60,43 @@ const MixingView: React.FC<MixingViewProps> = ({
     []
   );
 
-  const progress = useMemo(
-    () => (totalSubSteps > 0 ? (project.completedSubSteps.size / totalSubSteps) * 100 : 0),
-    [project.completedSubSteps.size, totalSubSteps]
-  );
+  const { progress, isCompleted } = useMemo(() => {
+    // FIX: Re-create a properly typed map to ensure type safety, fixing the error on this line.
+    const typedFeedbackMap = new Map<string, SubStepFeedback>(project.subStepFeedback.entries() as any);
+    const completedCount = Array.from(typedFeedbackMap.values()).filter(f => f.completed).length;
+    const progress = totalSubSteps > 0 ? (completedCount / totalSubSteps) * 100 : 0;
+    const isCompleted = totalSubSteps > 0 && completedCount === totalSubSteps;
+    return { progress, isCompleted };
+  }, [project.subStepFeedback, totalSubSteps]);
+  
+  const handleUpdateSubStep = useCallback((subStepId: string, feedbackUpdate: Partial<SubStepFeedback>) => {
+    // Create a new, correctly typed Map from the potentially untyped project data.
+    const newFeedbackMap = new Map<string, SubStepFeedback>(project.subStepFeedback.entries() as any);
+    const currentFeedback = newFeedbackMap.get(subStepId);
 
-  const isCompleted = useMemo(
-    () => totalSubSteps > 0 && project.completedSubSteps.size === totalSubSteps,
-    [project.completedSubSteps.size, totalSubSteps]
-  );
-
-  const toggleSubStepCompletion = useCallback((subStepId: string) => {
-    const oldCompletedSet = project.completedSubSteps;
-    const newSet = new Set(oldCompletedSet);
-    if (newSet.has(subStepId)) {
-      newSet.delete(subStepId);
-    } else {
-      newSet.add(subStepId);
-    }
-
-    const stepOfToggledSubstep = MIXING_STEPS.find(s => s.subSteps.some(ss => ss.id === subStepId));
+    // Create a well-defined SubStepFeedback object to ensure type consistency.
+    const updatedFeedback: SubStepFeedback = {
+      completed: currentFeedback?.completed ?? false,
+      userNotes: currentFeedback?.userNotes,
+      difficulty: currentFeedback?.difficulty,
+      ...feedbackUpdate,
+    };
     
-    if (stepOfToggledSubstep) {
+    const stepOfToggledSubstep = MIXING_STEPS.find(s => s.subSteps.some(ss => ss.id === subStepId));
+
+    // Check if 'completed' was part of the update to trigger toast logic
+    if (stepOfToggledSubstep && 'completed' in feedbackUpdate) {
         const category = stepOfToggledSubstep.category;
+        const allSubstepIdsInCategory = MIXING_STEPS.filter(s => s.category === category).flatMap(s => s.subSteps.map(ss => ss.id));
         
-        const allSubstepIdsInCategory = MIXING_STEPS
-            .filter(s => s.category === category)
-            .flatMap(s => s.subSteps.map(ss => ss.id));
-            
-        const wasCategoryAlreadyComplete = allSubstepIdsInCategory.every(id => oldCompletedSet.has(id));
+        // Check the category completion status BEFORE applying the new update.
+        const wasCategoryAlreadyComplete = allSubstepIdsInCategory.every(id => newFeedbackMap.get(id)?.completed);
+
+        // Apply the update to the map.
+        newFeedbackMap.set(subStepId, updatedFeedback);
         
-        const isCategoryCompleteNow = allSubstepIdsInCategory.every(id => newSet.has(id));
+        // Check the category completion status AFTER the update.
+        const isCategoryCompleteNow = allSubstepIdsInCategory.every(id => newFeedbackMap.get(id)?.completed);
 
         if (!wasCategoryAlreadyComplete && isCategoryCompleteNow) {
             const categoryMessages: Record<string, string> = {
@@ -96,21 +110,19 @@ const MixingView: React.FC<MixingViewProps> = ({
                 'Entrega': '¡Listo para el mundo! Has preparado tu mezcla para la entrega final.'
             };
             const message = categoryMessages[category] || `¡Has completado todos los pasos de la categoría "${category}"!`;
-            
             setToast({ title: '¡Hito Alcanzado!', message });
         }
+    } else {
+      // If no completion status changed, just set the updated feedback.
+      newFeedbackMap.set(subStepId, updatedFeedback);
     }
 
-    onUpdateProject({ ...project, completedSubSteps: newSet });
+    onUpdateProject({ ...project, subStepFeedback: newFeedbackMap });
   }, [project, onUpdateProject]);
 
-  const goToNextStep = () => {
-    setCurrentStepIndex(prev => Math.min(prev + 1, MIXING_STEPS.length - 1));
-  };
 
-  const goToPrevStep = () => {
-    setCurrentStepIndex(prev => Math.max(prev - 1, 0));
-  };
+  const goToNextStep = () => setCurrentStepIndex(prev => Math.min(prev + 1, MIXING_STEPS.length - 1));
+  const goToPrevStep = () => setCurrentStepIndex(prev => Math.max(prev - 1, 0));
   
   const handleOpenTutorial = useCallback((url: string, title: string) => {
     setTutorialModalState({ isOpen: true, url, title });
@@ -198,8 +210,8 @@ const MixingView: React.FC<MixingViewProps> = ({
                         <div className="w-full max-w-4xl animate-fade-in-step" key={currentStepData.id}>
                             <StepView
                                 step={currentStepData}
-                                completedSubSteps={project.completedSubSteps}
-                                onToggleSubStep={toggleSubStepCompletion}
+                                subStepFeedback={project.subStepFeedback}
+                                onUpdateSubStep={handleUpdateSubStep}
                                 onOpenEQGuide={onOpenEQGuide}
                                 onOpenCompressionGuide={onOpenCompressionGuide}
                                 onOpenReverbGuide={onOpenReverbGuide}

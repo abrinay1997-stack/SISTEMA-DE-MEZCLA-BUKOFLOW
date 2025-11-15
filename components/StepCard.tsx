@@ -1,11 +1,114 @@
 import React from 'react';
-import type { Step } from '../types';
-import { CheckCircleIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, PlayIcon } from './icons';
+import type { Step, SubStepFeedback, SubStep } from '../types';
+import { BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, PlayIcon, StarIcon, StarFilledIcon, ChevronDownIcon } from './icons';
 
+// --- SubStepItem Component --- //
+interface SubStepItemProps {
+  subStep: SubStep;
+  feedback: SubStepFeedback | undefined;
+  onUpdate: (id: string, feedback: Partial<SubStepFeedback>) => void;
+  onOpenTutorial: (url: string, title: string) => void;
+}
+
+const SubStepItem: React.FC<SubStepItemProps> = ({ subStep, feedback, onUpdate, onOpenTutorial }) => {
+    const [isExpanded, setIsExpanded] = React.useState(false);
+    const [notes, setNotes] = React.useState(feedback?.userNotes || '');
+
+    const isCompleted = feedback?.completed || false;
+    const difficulty = feedback?.difficulty || 0;
+
+    const notesTimeoutRef = React.useRef<number | null>(null);
+
+    const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setNotes(e.target.value);
+        if (notesTimeoutRef.current) {
+            clearTimeout(notesTimeoutRef.current);
+        }
+        notesTimeoutRef.current = window.setTimeout(() => {
+            onUpdate(subStep.id, { userNotes: e.target.value });
+        }, 500);
+    };
+    
+    const handleToggleCompleted = () => {
+        onUpdate(subStep.id, { completed: !isCompleted });
+    };
+    
+    const handleDifficultyChange = (newDifficulty: number) => {
+        onUpdate(subStep.id, { difficulty: newDifficulty as SubStepFeedback['difficulty'] });
+    };
+
+    return (
+        <li className="group flex flex-col gap-2 bg-black/20 p-3 rounded-md border border-theme-border/50">
+            <div className="flex justify-between items-start gap-4">
+                <div className="flex items-start space-x-4 cursor-pointer flex-grow" onClick={handleToggleCompleted}>
+                    <div
+                        className={`flex-shrink-0 w-6 h-6 mt-1 rounded border-2 bg-black/30 flex items-center justify-center transition-all duration-200
+                            ${isCompleted ? 'border-theme-success bg-theme-success/30' : 'border-theme-border hover:bg-theme-accent-secondary/20'}`}
+                        aria-checked={isCompleted}
+                        role="checkbox"
+                    >
+                        {isCompleted && <span className="w-3 h-3 rounded-sm bg-theme-success animate-pop-in" />}
+                    </div>
+                    <div className="flex-1">
+                      <span className={`text-sm md:text-base transition-all duration-300 ${isCompleted ? 'text-theme-text-secondary line-through' : 'text-theme-text'}`}>
+                        {subStep.text}
+                      </span>
+                    </div>
+                </div>
+                <div className="flex items-center flex-shrink-0">
+                  {subStep.tutorialUrl && (
+                      <button 
+                          onClick={() => onOpenTutorial(subStep.tutorialUrl!, subStep.text)}
+                          className="flex items-center gap-1 text-xs font-semibold py-1 px-2 rounded-md bg-theme-accent/10 text-theme-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 border border-theme-accent/20 hover:bg-theme-accent/20"
+                      >
+                          <PlayIcon className="w-3 h-3" />
+                          Ver
+                      </button>
+                  )}
+                   <button 
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="p-1.5 rounded-full hover:bg-white/10 text-theme-text-secondary"
+                        aria-label="Expandir detalles"
+                    >
+                        <ChevronDownIcon className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+                </div>
+            </div>
+             {isExpanded && (
+                <div className="pl-10 pr-4 pt-2 border-t border-theme-border/50 animate-fade-in-step space-y-3">
+                    <div>
+                        <label className="text-xs font-semibold text-theme-text-secondary block mb-1">Mis Anotaciones</label>
+                        <textarea
+                            value={notes}
+                            onChange={handleNotesChange}
+                            placeholder="Añade tus notas personales aquí..."
+                            className="w-full h-24 p-2 bg-theme-bg/80 border border-theme-border rounded-md text-sm text-theme-text focus:ring-1 focus:ring-theme-accent-secondary focus:outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs font-semibold text-theme-text-secondary block mb-1">Dificultad de la Tarea</label>
+                        <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map(star => (
+                                <button key={star} onClick={() => handleDifficultyChange(star)}>
+                                    {difficulty >= star ? 
+                                        <StarFilledIcon className="w-5 h-5 text-theme-priority" /> : 
+                                        <StarIcon className="w-5 h-5 text-theme-text-secondary hover:text-theme-priority" />
+                                    }
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </li>
+    );
+};
+
+// --- StepView Component --- //
 interface StepViewProps {
   step: Step;
-  completedSubSteps: Set<string>;
-  onToggleSubStep: (id: string) => void;
+  subStepFeedback: Map<string, SubStepFeedback>;
+  onUpdateSubStep: (id: string, feedback: Partial<SubStepFeedback>) => void;
   onOpenEQGuide: () => void;
   onOpenCompressionGuide: () => void;
   onOpenReverbGuide: () => void;
@@ -15,8 +118,8 @@ interface StepViewProps {
 
 const StepView: React.FC<StepViewProps> = ({ 
   step, 
-  completedSubSteps, 
-  onToggleSubStep, 
+  subStepFeedback, 
+  onUpdateSubStep, 
   onOpenEQGuide, 
   onOpenCompressionGuide,
   onOpenReverbGuide,
@@ -56,47 +159,16 @@ const StepView: React.FC<StepViewProps> = ({
         
         <div>
             <h4 className="text-md font-semibold text-theme-text mb-4 border-b-2 border-theme-border-secondary pb-2 uppercase tracking-wider">Lista de Tareas:</h4>
-            <ul className="space-y-4">
-            {step.subSteps.map((subStep) => {
-                const isCompleted = completedSubSteps.has(subStep.id);
-                return (
-                <li key={subStep.id} className="group flex justify-between items-start gap-4">
-                    <div className="flex items-start space-x-4 cursor-pointer flex-grow" onClick={() => onToggleSubStep(subStep.id)}>
-                        <div
-                        className={`flex-shrink-0 w-6 h-6 mt-1 rounded border-2 bg-black/30 flex items-center justify-center transition-all duration-200
-                            ${isCompleted ? 'border-theme-success bg-theme-success/30' : 'border-theme-border hover:bg-theme-accent-secondary/20'}`}
-                        aria-checked={isCompleted}
-                        role="checkbox"
-                        >
-                        {isCompleted && <CheckCircleIcon className="w-5 h-5 text-theme-success animate-pop-in" />}
-                        </div>
-                        <div className="flex-1">
-                          <span className={`text-sm md:text-base transition-all duration-300 ${isCompleted ? 'text-theme-text-secondary line-through' : 'text-theme-text'}`}>
-                          {subStep.text}
-                          </span>
-                           {subStep.subItems && (
-                              <ul className="pl-5 mt-2 space-y-1">
-                                  {subStep.subItems.map((item, index) => (
-                                      <li key={index} className={`text-xs md:text-sm list-disc list-outside ml-4 transition-colors duration-300 ${isCompleted ? 'text-gray-600 line-through' : 'text-theme-accent-secondary/80'}`}>
-                                          {item}
-                                      </li>
-                                  ))}
-                              </ul>
-                          )}
-                        </div>
-                    </div>
-                    {subStep.tutorialUrl && (
-                        <button 
-                            onClick={() => onOpenTutorial(subStep.tutorialUrl!, subStep.text)}
-                            className="flex-shrink-0 flex items-center gap-2 text-xs font-semibold py-1 px-2 rounded-md bg-theme-accent/10 text-theme-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 border border-theme-accent/20 hover:bg-theme-accent/20"
-                        >
-                            <PlayIcon className="w-4 h-4" />
-                            Tutorial
-                        </button>
-                    )}
-                </li>
-                );
-            })}
+            <ul className="space-y-3">
+              {step.subSteps.map((subStep) => (
+                  <SubStepItem
+                      key={subStep.id}
+                      subStep={subStep}
+                      feedback={subStepFeedback.get(subStep.id)}
+                      onUpdate={onUpdateSubStep}
+                      onOpenTutorial={onOpenTutorial}
+                  />
+              ))}
             </ul>
         </div>
 

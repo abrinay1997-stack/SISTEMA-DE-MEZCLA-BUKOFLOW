@@ -27,7 +27,6 @@ export interface Theme {
     '--theme-shadow-secondary': string;
     '--theme-shadow-success': string;
     '--theme-shadow-danger': string;
-    '--theme-bg-grid': string;
   };
 }
 
@@ -52,7 +51,6 @@ export const themes: Record<ThemeName, Theme> = {
       '--theme-shadow-secondary': 'rgba(6, 182, 212, 0.2)',
       '--theme-shadow-success': 'rgba(74, 222, 128, 0.3)',
       '--theme-shadow-danger': 'rgba(255, 70, 70, 0.3)',
-      '--theme-bg-grid': 'rgba(6, 182, 212, 0.2)',
     },
   },
 
@@ -76,7 +74,6 @@ export const themes: Record<ThemeName, Theme> = {
       '--theme-shadow-secondary': 'rgba(217, 119, 6, 0.2)',
       '--theme-shadow-success': 'rgba(132, 204, 22, 0.3)',
       '--theme-shadow-danger': 'rgba(220, 38, 38, 0.3)',
-      '--theme-bg-grid': 'rgba(217, 119, 6, 0.06)',
     },
   },
 
@@ -100,7 +97,6 @@ export const themes: Record<ThemeName, Theme> = {
       '--theme-shadow-secondary': 'rgba(14, 165, 233, 0.2)',
       '--theme-shadow-success': 'rgba(22, 163, 74, 0.3)',
       '--theme-shadow-danger': 'rgba(220, 38, 38, 0.3)',
-      '--theme-bg-grid': 'rgba(124, 58, 237, 0.04)',
     },
   },
 
@@ -128,7 +124,6 @@ export const themes: Record<ThemeName, Theme> = {
       '--theme-shadow-secondary': 'rgba(29, 78, 216, 0.25)',
       '--theme-shadow-success': 'rgba(34, 197, 94, 0.3)',
       '--theme-shadow-danger': 'rgba(239, 68, 68, 0.3)',
-      '--theme-bg-grid': 'rgba(59, 130, 246, 0.06)',
     },
   },
 
@@ -152,7 +147,6 @@ export const themes: Record<ThemeName, Theme> = {
       '--theme-shadow-secondary': 'rgba(101, 163, 13, 0.2)',
       '--theme-shadow-success': 'rgba(74, 222, 128, 0.3)',
       '--theme-shadow-danger': 'rgba(236, 72, 153, 0.3)',
-      '--theme-bg-grid': 'rgba(163, 230, 53, 0.08)',
     },
   },
 
@@ -176,7 +170,6 @@ export const themes: Record<ThemeName, Theme> = {
       '--theme-shadow-secondary': 'rgba(0, 229, 255, 0.2)',
       '--theme-shadow-success': 'rgba(74, 222, 128, 0.3)',
       '--theme-shadow-danger': 'rgba(251, 113, 133, 0.3)',
-      '--theme-bg-grid': 'rgba(0, 229, 255, 0.06)',
     },
   },
 
@@ -200,7 +193,6 @@ export const themes: Record<ThemeName, Theme> = {
       '--theme-shadow-secondary': 'rgba(5, 150, 105, 0.2)',
       '--theme-shadow-success': 'rgba(74, 222, 128, 0.3)',
       '--theme-shadow-danger': 'rgba(239, 68, 68, 0.3)',
-      '--theme-bg-grid': 'rgba(52, 211, 153, 0.06)',
     },
   },
 };

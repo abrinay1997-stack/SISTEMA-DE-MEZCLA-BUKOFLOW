@@ -5,6 +5,12 @@ export interface SubStep {
   tutorialUrl?: string;
 }
 
+export interface SubStepFeedback {
+  completed: boolean;
+  userNotes?: string;
+  difficulty?: 1 | 2 | 3 | 4 | 5;
+}
+
 export interface Step {
   id: number;
   title: string;
@@ -20,7 +26,7 @@ export interface Step {
 export interface Project {
   id: string;
   name: string;
-  completedSubSteps: Set<string>;
+  subStepFeedback: Map<string, SubStepFeedback>;
   isPriority: boolean;
   createdAt: number;
   icon: string;
@@ -213,4 +219,11 @@ export interface Resource {
   category: 'introduccion' | 'comunidad' | 'preguntas';
   tags: string[];
   relatedSteps?: number[];
+}
+
+//--- Search Service Types ---//
+export interface SearchResult {
+    steps: Step[];
+    guides: { guide: 'eq' | 'compression' | 'reverb' | 'saturation'; term: string }[];
+    faqs: Resource[];
 }

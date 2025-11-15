@@ -5,7 +5,7 @@ import { themes, ThemeName } from '../themes';
 import { 
     LogoIcon, StarIcon, StarFilledIcon, TrashIcon, PlusIcon, DotsVerticalIcon, XIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, CheckBadgeIcon, PencilIcon,
     WaveformIcon, UserVoiceIcon, GuitarPickIcon, PianoIcon, DrumIcon, HeadphonesIcon, WaveSineIcon,
-    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon
+    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon
 } from './icons';
 import ProgressBar from './ProgressBar';
 import { MIXING_STEPS } from '../constants';
@@ -350,7 +350,6 @@ interface ProjectHubProps {
   onAddProject: (name: string) => void;
   onDeleteProject: (id: string) => void;
   onTogglePriority: (id: string) => void;
-  onSelectProject: (id: string) => void;
   onUpdateProject: (project: Project) => void;
   onLogout: () => void;
   onResetAllProjects: () => void;
@@ -362,6 +361,8 @@ interface ProjectHubProps {
   onSetThemeName: (themeName: ThemeName) => void;
   favorites: Set<string>;
   onToggleFavorite: (id: string) => void;
+  onOpenSearch: () => void;
+  onSelectProject: (id: string) => void;
 }
 
 const ProjectHub: React.FC<ProjectHubProps> = ({ 
@@ -369,7 +370,6 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     onAddProject, 
     onDeleteProject, 
     onTogglePriority, 
-    onSelectProject, 
     onUpdateProject,
     onLogout, 
     onResetAllProjects,
@@ -380,7 +380,9 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     themeName,
     onSetThemeName,
     favorites,
-    onToggleFavorite
+    onToggleFavorite,
+    onOpenSearch,
+    onSelectProject
 }) => {
   const [newProjectName, setNewProjectName] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -423,6 +425,11 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     setEditingProject(null);
   };
 
+  const calculateProgress = (project: Project) => {
+    const completedCount = Array.from(project.subStepFeedback.values()).filter(f => f.completed).length;
+    return totalSubSteps > 0 ? (completedCount / totalSubSteps) * 100 : 0;
+  };
+
   return (
     <>
     <div 
@@ -440,6 +447,13 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button 
+                onClick={onOpenSearch}
+                className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
+                aria-label="Búsqueda Global"
+            >
+                <SearchIcon className="w-7 h-7" />
+            </button>
             <button 
                 onClick={() => setIsResourceCenterOpen(true)}
                 className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
@@ -510,13 +524,14 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
         <main className="max-w-3xl mx-auto grid grid-cols-1 gap-4">
             {sortedProjects.length > 0 ? (
                 sortedProjects.map(project => {
-                    const progress = totalSubSteps > 0 ? (project.completedSubSteps.size / totalSubSteps) * 100 : 0;
-                    const isCompleted = totalSubSteps > 0 && project.completedSubSteps.size === totalSubSteps;
+                    const progress = calculateProgress(project);
+                    const isCompleted = progress >= 100;
                     return (
                         <div 
                            key={project.id} 
                            className={`group flex items-center gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border rounded-lg hover:bg-theme-accent-secondary/10 transition-all duration-300 transform hover:-translate-y-1 ${isCompleted ? 'border-theme-success/40' : 'border-theme-border/20'}`}
                         >
+{/* FIX: Replaced the incorrect onClick handler with a call to the new `onSelectProject` prop to correctly handle project selection. */}
                            <div className="flex-grow cursor-pointer flex items-center gap-4" onClick={() => onSelectProject(project.id)}>
                                <ProjectIcon icon={project.icon} className="w-8 h-8 text-theme-accent-secondary flex-shrink-0" />
                                <div className="flex-grow">

@@ -30,7 +30,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStepIndex, onSelectStep, proje
             <ul className="space-y-1">
               {stepsInCategory.map((step) => {
                 const isActive = currentStepIndex === (step.id - 1);
-                const isCompleted = step.subSteps.every(subStep => project.completedSubSteps.has(subStep.id));
+                const isCompleted = step.subSteps.every(subStep => project.subStepFeedback.get(subStep.id)?.completed);
                 return (
                   <li key={step.id}>
                     <button

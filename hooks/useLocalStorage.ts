@@ -1,40 +1,55 @@
 import { useState, useEffect, Dispatch, SetStateAction } from 'react';
-import type { Project } from '../types';
+import type { Project, SubStepFeedback } from '../types';
 
-// FIX: Imported Dispatch and SetStateAction from 'react' to resolve missing namespace error.
 function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
   
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
       if (item) {
+        const parsed = JSON.parse(item);
+
         if (key === 'resourceFavorites') {
-          return new Set(JSON.parse(item)) as T;
+          return new Set(parsed) as T;
         }
         
-        // Special hydration for Sets within Project objects
         if (key === 'mixingProjects') {
-          const parsedProjects = JSON.parse(item) as any[];
-          
-          // Robust sanitization and hydration
-          const sanitizedProjects = parsedProjects
-            .filter(p => p && typeof p === 'object' && typeof p.id === 'string') // Ensure p is a valid object with an id
-            .map(p => {
-              const subSteps = Array.isArray(p.completedSubSteps) ? p.completedSubSteps : [];
-              return {
-                id: p.id,
-                name: p.name || 'Proyecto Sin Nombre',
-                completedSubSteps: new Set(subSteps),
-                isPriority: !!p.isPriority,
-                createdAt: typeof p.createdAt === 'number' ? p.createdAt : Date.now(),
-                icon: p.icon || 'default',
-                lastStepIndex: typeof p.lastStepIndex === 'number' ? p.lastStepIndex : 0,
-              };
-            });
+          const projects = parsed as any[];
 
-          return sanitizedProjects as T;
+          return projects.map(p => {
+            let feedbackMap: Map<string, SubStepFeedback>;
+
+            // Migration from old format (Set saved as an array)
+            if (p.completedSubSteps && !p.subStepFeedback) {
+              feedbackMap = new Map();
+              if (Array.isArray(p.completedSubSteps)) {
+                p.completedSubSteps.forEach((id: string) => {
+                  feedbackMap.set(id, { completed: true });
+                });
+              }
+            } 
+            // Hydration from new format (Map saved as an array of [key, value] pairs)
+            else if (p.subStepFeedback && Array.isArray(p.subStepFeedback)) {
+              feedbackMap = new Map(p.subStepFeedback);
+            } 
+            // Default for new or malformed projects
+            else {
+              feedbackMap = new Map();
+            }
+
+            return {
+              id: p.id || crypto.randomUUID(),
+              name: p.name || 'Proyecto Sin Nombre',
+              subStepFeedback: feedbackMap,
+              isPriority: !!p.isPriority,
+              createdAt: typeof p.createdAt === 'number' ? p.createdAt : Date.now(),
+              icon: p.icon || 'default',
+              lastStepIndex: typeof p.lastStepIndex === 'number' ? p.lastStepIndex : 0,
+            };
+          }) as T;
         }
-        return JSON.parse(item);
+
+        return parsed;
       }
       return initialValue;
     } catch (error) {
@@ -45,18 +60,19 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetState
 
   useEffect(() => {
     try {
+      let valueToStore = storedValue;
+
       if (key === 'resourceFavorites' && storedValue instanceof Set) {
-        window.localStorage.setItem(key, JSON.stringify(Array.from(storedValue)));
+        valueToStore = Array.from(storedValue) as any;
       } else if (key === 'mixingProjects' && Array.isArray(storedValue)) {
-        const valueToStore = storedValue.map((p: any) => ({
+        valueToStore = storedValue.map((p: any) => ({
           ...p,
-          completedSubSteps: Array.from(p.completedSubSteps || []),
-          icon: p.icon || 'default'
-        }));
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      } else {
-        window.localStorage.setItem(key, JSON.stringify(storedValue));
+          // Convert Map to array of [key, value] pairs for JSON serialization
+          subStepFeedback: Array.from((p.subStepFeedback as Map<string, SubStepFeedback>).entries()),
+        })) as any;
       }
+
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (error) {
       console.error("Error writing to localStorage:", error);
     }
