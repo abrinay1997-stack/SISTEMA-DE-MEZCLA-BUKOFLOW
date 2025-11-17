@@ -1,5 +1,7 @@
 import { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import type { Project, SubStepFeedback } from '../types';
+import { RELEASE_STEPS } from '../constants';
+
 
 function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
   
@@ -13,13 +15,12 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetState
           return new Set(parsed) as T;
         }
         
-        if (key === 'mixingProjects') {
+        if (key === 'releaseProjects') {
           const projects = parsed as any[];
 
           return projects.map(p => {
             let feedbackMap: Map<string, SubStepFeedback>;
 
-            // Migration from old format (Set saved as an array)
             if (p.completedSubSteps && !p.subStepFeedback) {
               feedbackMap = new Map();
               if (Array.isArray(p.completedSubSteps)) {
@@ -28,14 +29,23 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetState
                 });
               }
             } 
-            // Hydration from new format (Map saved as an array of [key, value] pairs)
             else if (p.subStepFeedback && Array.isArray(p.subStepFeedback)) {
               feedbackMap = new Map(p.subStepFeedback);
             } 
-            // Default for new or malformed projects
             else {
               feedbackMap = new Map();
             }
+
+            // Hydrate new fields for backward compatibility
+            const steps = p.steps && p.steps.length > 0 
+                ? p.steps 
+                : JSON.parse(JSON.stringify(RELEASE_STEPS));
+            const budget = p.budget || [];
+            const income = p.income || [];
+            const activityLog = p.activityLog || [];
+            const performanceSummary = p.performanceSummary || { spotifyStreams: 12450, instagramFollowersGained: 250, presaveCost: 0.25, tiktokViews: 250000 };
+            const advances = p.advances || 0;
+            const royaltySplits = p.royaltySplits || '';
 
             return {
               id: p.id || crypto.randomUUID(),
@@ -45,6 +55,14 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetState
               createdAt: typeof p.createdAt === 'number' ? p.createdAt : Date.now(),
               icon: p.icon || 'default',
               lastStepIndex: typeof p.lastStepIndex === 'number' ? p.lastStepIndex : 0,
+              releaseDate: p.releaseDate,
+              steps: steps,
+              budget: budget,
+              income: income,
+              advances: advances,
+              royaltySplits: royaltySplits,
+              activityLog: activityLog,
+              performanceSummary: performanceSummary
             };
           }) as T;
         }
@@ -64,10 +82,9 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetState
 
       if (key === 'resourceFavorites' && storedValue instanceof Set) {
         valueToStore = Array.from(storedValue) as any;
-      } else if (key === 'mixingProjects' && Array.isArray(storedValue)) {
+      } else if (key === 'releaseProjects' && Array.isArray(storedValue)) {
         valueToStore = storedValue.map((p: any) => ({
           ...p,
-          // Convert Map to array of [key, value] pairs for JSON serialization
           subStepFeedback: Array.from((p.subStepFeedback as Map<string, SubStepFeedback>).entries()),
         })) as any;
       }

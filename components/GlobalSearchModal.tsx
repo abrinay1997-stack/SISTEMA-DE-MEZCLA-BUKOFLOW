@@ -1,17 +1,15 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { performSearch } from '../services/searchService';
-import type { Project, Step, Resource, SearchResult } from '../types';
-import { XIcon, SearchIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, QuestionMarkCircleIcon } from './icons';
+import type { Project, Step, SearchResult } from '../types';
+import { XIcon, SearchIcon, MarketingIcon, BrandingIcon, QuestionMarkCircleIcon } from './icons';
 
 interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   projects: Project[];
   onSelectProjectAndStep: (projectId: string, stepIndex: number) => void;
-  onOpenEQGuide: () => void;
-  onOpenCompressionGuide: () => void;
-  onOpenReverbGuide: () => void;
-  onOpenSaturationGuide: () => void;
+  onOpenMarketingGuide: () => void;
+  onOpenBrandingGuide: () => void;
 }
 
 const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ 
@@ -19,10 +17,8 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
     onClose,
     projects,
     onSelectProjectAndStep,
-    onOpenEQGuide,
-    onOpenCompressionGuide,
-    onOpenReverbGuide,
-    onOpenSaturationGuide
+    onOpenMarketingGuide,
+    onOpenBrandingGuide,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<SearchResult | null>(null);
@@ -51,13 +47,11 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
     return () => clearTimeout(handler);
   }, [searchTerm]);
   
-  const handleGuideClick = (guide: 'eq' | 'compression' | 'reverb' | 'saturation') => {
+  const handleGuideClick = (guide: 'marketing' | 'branding') => {
     onClose();
     switch (guide) {
-        case 'eq': onOpenEQGuide(); break;
-        case 'compression': onOpenCompressionGuide(); break;
-        case 'reverb': onOpenReverbGuide(); break;
-        case 'saturation': onOpenSaturationGuide(); break;
+        case 'marketing': onOpenMarketingGuide(); break;
+        case 'branding': onOpenBrandingGuide(); break;
     }
   };
 
@@ -78,7 +72,7 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar 'sidechain', 'resonancia', etc."
+                placeholder="Buscar 'pre-save', 'branding', 'pitching', etc."
                 autoFocus
                 className="w-full pl-10 pr-4 py-2 text-lg bg-theme-bg border-2 border-theme-border rounded-full text-theme-text placeholder-theme-text-secondary focus:outline-none focus:ring-2 focus:ring-theme-accent"
             />
@@ -97,7 +91,7 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
             {results && results.steps.length > 0 && (
                 <div className="mb-6">
-                    <h3 className="font-bold text-theme-accent-secondary mb-2">Pasos de Mezcla</h3>
+                    <h3 className="font-bold text-theme-accent-secondary mb-2">Pasos del Lanzamiento</h3>
                     <ul className="space-y-2">
                         {results.steps.map(step => (
                             <li key={step.id}>
@@ -117,10 +111,8 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     <div className="grid grid-cols-2 gap-2">
                         {results.guides.map(guide => (
                              <button key={guide.guide} onClick={() => handleGuideClick(guide.guide)} className="w-full text-left p-3 rounded-md bg-black/20 hover:bg-theme-accent-secondary/10 transition-colors flex items-center gap-3">
-                                {guide.guide === 'eq' && <BookOpenIcon className="w-5 h-5 text-fuchsia-400" />}
-                                {guide.guide === 'compression' && <SlidersIcon className="w-5 h-5 text-sky-400" />}
-                                {guide.guide === 'reverb' && <ReverbIcon className="w-5 h-5 text-purple-400" />}
-                                {guide.guide === 'saturation' && <SaturationIcon className="w-5 h-5 text-amber-400" />}
+                                {guide.guide === 'marketing' && <MarketingIcon className="w-5 h-5 text-theme-accent" />}
+                                {guide.guide === 'branding' && <BrandingIcon className="w-5 h-5 text-theme-accent-secondary" />}
                                 <span className="font-semibold text-theme-text">Guía de {guide.term}</span>
                             </button>
                         ))}

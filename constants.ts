@@ -1,202 +1,115 @@
 import { Step } from './types';
 
-export const MIXING_STEPS: Step[] = [
-  // Step 1
+export const RELEASE_STEPS: Step[] = [
   {
     id: 1,
-    title: 'POTENCIAR LA EMOCIÓN',
-    subtitle: 'EL FOCO',
-    category: 'Concepto',
+    title: '6 SEMANAS ANTES: Cimientos',
+    subtitle: 'PREPARACIÓN Y ESTRATEGIA INICIAL',
+    category: 'Planificación',
+    philosophy: 'La base de un lanzamiento exitoso se construye mucho antes de que el público escuche la primera nota. Esta semana se centra en asegurar que todos los activos y la estrategia principal estén listos.',
     subSteps: [
-      { id: 'step-1-1', text: 'Escuchar la canción varias veces y definir la emoción principal en 1-3 palabras (ej. eufórico, melancólico, agresivo).', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-1-2', text: 'Identificar los 2-3 instrumentos o voces que son el corazón de esa emoción. Este es tu "Foco".', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-1-3', text: 'Crear una jerarquía inicial de mayor a menor importancia con relación al "Foco".', tutorialUrl: 'https://vimeo.com/365078627' },
+      { id: 'release-1-1', text: 'Finalizar la mezcla y el máster de la canción. Asegúrate de tener las versiones finales (WAV, MP3, instrumental).' },
+      { id: 'release-1-2', text: 'Diseñar la portada del sencillo en alta resolución (mínimo 3000x3000 píxeles).', guideLink: 'branding' },
+      { id: 'release-1-3', text: 'Escribir la biografía del artista y la nota de prensa del lanzamiento.', guideLink: 'branding' },
+      { id: 'release-1-4', text: 'Registrar la composición en tu Entidad de Gestión de Derechos (PRO, ej. SGAE, BMI, ASCAP).' },
+      { id: 'release-1-5', text: 'Definir los objetivos del lanzamiento (ej. número de streams, apariciones en playlists, seguidores ganados).', guideLink: 'marketing' },
     ],
   },
-  // Step 2
   {
     id: 2,
-    title: 'FILOSOFÍA Y FUNDAMENTOS',
-    subtitle: 'GAIN STAGING Y ENFOQUE DE MEZCLA',
-    category: 'Fundamento',
-    philosophy:'Antes de tocar un solo fader, define tu enfoque. Existen dos métodos de mezcla: "Bottom-Up", el método clásico de vieja escuela, donde todas las pistas tienen un Gain Staging de -18DBFS para tener "headroom". Y "Top-Down", un enfoque moderno donde las mezclas ya van preparadas para sonar cercano al resultado final.',
+    title: '5 SEMANAS ANTES: Imagen',
+    subtitle: 'CONSTRUCCIÓN DE LA MARCA VISUAL',
+    category: 'Branding',
+    philosophy: 'Tu música necesita una identidad visual coherente que conecte con tu audiencia. Esta semana se dedica a crear el universo visual que rodeará a tu lanzamiento.',
     subSteps: [
-      { id: 'step-2-1', text: 'Escoge tu método: "Bottom-Up (-18DBFS)" o "Top-Down (ZERO TO HERO)"', tutorialUrl: 'https://vimeo.com/365078627' },
+      { id: 'release-2-1', text: 'Actualizar las fotos de perfil y banners de todas las redes sociales con la nueva estética.', guideLink: 'branding' },
+      { id: 'release-2-2', text: 'Realizar una sesión de fotos o crear gráficos que sigan la línea de la portada.', guideLink: 'branding' },
+      { id: 'release-2-3', text: 'Crear un "Visualizer" o "Canvas" para Spotify.' },
+      { id: 'release-2-4', text: 'Grabar o recopilar contenido de video corto (TikToks, Reels, Shorts) para las próximas semanas.' },
+      { id: 'release-2-5', text: 'Diseñar un "Smart Link" o "Pre-Save Link" (ej. con Hypeddit, Toneden).' },
     ],
-    note: 'Tu DAW trabaja a 32-bit float, dándote un headroom interno casi infinito. El Gain Staging es para el CARÁCTER de tus plugins, no para la TÉCNICA de tu DAW.',
   },
-  // Step 3
   {
     id: 3,
-    title: 'ESTRUCTURA LA MEZCLA',
-    subtitle: 'LIMPIEZA',
-    category: 'Edición',
-    subSteps: [
-      { id: 'step-3-1', text: 'Rutea todas las pistas en grupos y subgrupos por familias (Drums, Bass, Instruments, Voces, FXs).', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-3-2', text: 'Revisa la fase de ondulación de todas las pistas. Invertir la polaridad si es necesario.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-3-3', text: 'Edita todas las pistas: eliminar ruidos, clics, silencios no deseados y Aplicar fades (fundidos).', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-3-4', text: 'Afina Voces e instrumentos.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-3-5', text: 'Sincronizar Voces & Cuantiza Instrumentos.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-3-6', text: 'Limpia respiraciones y sibilancias "el Santo grial de una mezcla profesional".', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-3-7', text: 'Ajustar el "Clip Gain" y "Gain Staging".', tutorialUrl: 'https://vimeo.com/365078627' },
+    title: '4 SEMANAS ANTES: Distribución',
+    subtitle: 'ENTREGANDO TU MÚSICA AL MUNDO',
+    category: 'Distribución',
+    philosophy: 'Este es el paso técnico más importante. Subir tu música con antelación te da la oportunidad de ser considerado para playlists editoriales, un factor clave para el éxito.',
+    subSteps:
+    [
+      { id: 'release-3-1', text: 'Elegir una distribuidora digital (ej. DistroKid, TuneCore) y subir la canción, portada y metadatos.' },
+      { id: 'release-3-2', text: 'Una vez que la canción sea aceptada, hacer el "pitch" a los editores de Spotify a través de Spotify for Artists.' },
+      { id: 'release-3-3', text: 'Crear un Kit de Prensa Electrónico (EPK) con tu bio, fotos, enlaces y la nota de prensa.', guideLink: 'marketing' },
+      { id: 'release-3-4', text: 'Empezar a enviar el EPK a blogs de música, radios y curadores de playlists independientes.' },
     ],
+    note: 'El pitch a Spotify debe hacerse al menos 2-3 semanas antes del lanzamiento. ¡No dejes este paso para el final!',
   },
-  // Step 4
   {
     id: 4,
-    title: 'BALANCE INICIAL',
-    subtitle: 'VOLUMEN JERÁRQUICO',
-    category: 'Balance',
+    title: '3 SEMANAS ANTES: Expectación',
+    subtitle: 'INICIO DE LA CAMPAÑA DE PRE-SAVE',
+    category: 'Marketing',
+    philosophy: 'La conversación sobre tu lanzamiento empieza ahora. El objetivo es generar curiosidad y conseguir que tu audiencia más fiel guarde la canción antes de que salga.',
     subSteps: [
-      { id: 'step-4-1', text: 'Poner todos los faders a -∞ y empezar subiendo los elementos del "Foco" y de mayor importancia.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-4-2', text: 'Construir el balance de volumen alrededor del "Foco", pista por pista.', tutorialUrl: 'https://vimeo.com/365078627' },
+      { id: 'release-4-1', text: 'Anunciar oficialmente la fecha de lanzamiento y la portada en redes sociales.' },
+      { id: 'release-4-2', text: 'Lanzar la campaña de Pre-Save/Pre-Add, explicando a tus fans por qué es importante.', guideLink: 'marketing' },
+      { id: 'release-4-3', text: 'Compartir fragmentos de la canción o videos "detrás de las cámaras" de la creación.' },
+      { id: 'release-4-4', text: 'Contactar a influencers o creadores de contenido que puedan encajar con tu música.' },
     ],
-    note: 'Coloca el "Foco" (ej. Piano) y los elementos que aportan a su emoción (Violines, Guitarras, Sintes) Sin que afecten su inteligibilidad y emoción. Recuerda que siempre dependerá del estilo y género, Ej. el foco de un dubstep puede ser un "Kick/Bass" y el de un Jazz un "Saxofón"',
   },
-
-  // Step 5
   {
     id: 5,
-    title: 'ABRIR ESPACIO CON PANNING',
-    subtitle: 'IMAGEN ESTÉREO CORRECTIVA Y ADITIVA',
-    category: 'Imagen',
-    philosophy: 'Aplica la filosofía "del Foco hacia afuera". El objetivo es construir la imagen estéreo de forma aditiva, asegurando que cada decisión de paneo. Trabaja del elemento más importante al menos importante.',
-    method: 'Sin dejar de escuchar el foco, añade instrumentos uno por uno (del más al menos importante), paneándolos para que cada uno ocupe su propio espacio sin enmascarar a los demás.',
+    title: '2 SEMANAS ANTES: Aceleración',
+    subtitle: 'INTENSIFICAR LA PROMOCIÓN',
+    category: 'Marketing',
+    philosophy: 'Con el lanzamiento a la vuelta de la esquina, es hora de aumentar la frecuencia y el alcance de tu mensaje.',
     subSteps: [
-      { id: 'step-5-1', text: 'Paneo Mid-Side, El Efecto Haas "Pseudo Stereo", Stereo Enhancer, Stereo Enhancer Multibanda, Reverbs Cortas "Algo Experimental", Auto-Panning.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-5-2', text: 'Verificación de Fase: Revisa que las pistas con paneo extremo o ensanchadores estéreo no sufran problemas de fase.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-5-3', text: 'Evita el "fake mono" (sonido amplio que se cancela en mono).', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-5-4', text: 'Prueba de Fuego (Chequeo en Mono): Al finalizar, comprueba la mezcla en mono. Asegúrate de que ningún elemento crucial desaparezca o pierda demasiada energía.', tutorialUrl: 'https://vimeo.com/365078627' },
+      { id: 'release-5-1', text: 'Comenzar a publicar el contenido de video corto creado en la semana 5.' },
+      { id: 'release-5-2', text: 'Considerar una campaña de publicidad de pago (Meta Ads, TikTok Ads) dirigida a la página de Pre-Save.', 
+        guideLink: 'marketing',
+        subItems: [
+          '**Presupuesto Bajo (~5-10€/día):** Campaña de tráfico al Smart Link/Pre-Save, segmentando a tus seguidores y audiencias similares.',
+          '**Presupuesto Medio (~20-50€/día):** Añadir campaña de Video Views con un fragmento atractivo. Crear audiencias personalizadas de quienes interactuaron.',
+          '**Presupuesto Alto (>50€/día):** Expandir a campañas de conversión. Usar múltiples creativos (videos, imágenes) para test A/B y optimizar.'
+        ] },
+      { id: 'release-5-3', text: 'Realizar un Instagram/TikTok Live para hablar de la canción y responder preguntas.' },
+      { id: 'release-5-4', text: 'Si tienes un videoclip, anunciar la fecha de su estreno (usualmente el día del lanzamiento).' },
     ],
   },
-  // Step 6
   {
     id: 6,
-    title: 'ECUALIZACIÓN CORRECTIVA',
-    subtitle: 'LIMPIEZA ESPECTRAL',
-    category: 'Pistas Individuales',
-    philosophy: 'Repetimos el proceso aditivo, esta vez para la ecualización. Al ecualizar cada nuevo elemento escuchando los anteriores, te aseguras de que encaje en el espectro de frecuencias sin competir innecesariamente.',
-    method: 'Comienza ecualizando el "Foco" en solo para limpiarlo. Luego, sin mutear el "Foco", añade el siguiente elemento más importante y ecualízalo para que "respete" al Foco, creando "bolsillos" de frecuencia. Continúa este proceso aditivo con el resto de las pistas.',
+    title: '1 SEMANA ANTES: Cuenta Atrás',
+    subtitle: 'LA RECTA FINAL',
+    category: 'Marketing',
+    philosophy: 'Toda la energía se concentra en la fecha de lanzamiento. La comunicación debe ser constante y clara.',
     subSteps: [
-      { id: 'step-6-1', text: 'Aplicar filtros de paso alto (HPF) en la mayoría de las pistas para eliminar graves innecesarios.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-6-2', text: 'Buscar y atenuar resonancias molestas con un Q estrecho (especialmente en voces, cajas y platillos).', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-6-3', text: 'Resolver conflictos de enmascaramiento entre Kick y Bajo, y entre Voces y Guitarras/Teclados.', tutorialUrl: 'https://vimeo.com/365078627' },
+      { id: 'release-6-1', text: 'Publicar contenido diario en redes sociales.',
+        subItems: [
+          '**7 días antes:** Post de "Falta 1 semana" con un nuevo fragmento.',
+          '**5 días antes:** Inicia una cuenta atrás interactiva en stories de Instagram.',
+          '**3 días antes:** Publica un video corto (Reel/TikTok) mostrando la emoción del lanzamiento.',
+          '**1 día antes:** Anuncio final "MAÑANA". Haz un Live para conectar con tus fans y recordarlo.'
+        ] },
+      { id: 'release-6-2', text: 'Enviar un recordatorio a tu lista de correo (email marketing).' },
+      { id: 'release-6-3', text: 'Confirmar cualquier entrevista, estreno en blogs o colaboración con influencers para la semana de lanzamiento.' },
+      { id: 'release-6-4', text: 'Preparar todos los textos y enlaces que necesitarás para el día de lanzamiento.' },
     ],
   },
-  // Step 7
   {
     id: 7,
-    title: 'COMPRESIÓN',
-    subtitle: 'CONTROL DE DINÁMICA | Controla la Fuerza', 
-    category: 'Pistas Individuales',
-    philosophy: 'El objetivo ahora es controlar la dinámica de cada pista individual para que sea consistente y articulada, sin afectar aún la cohesión general. Se busca domar picos y realzar el cuerpo de cada sonido por separado.',
-    method: 'Aplica compresión al "Foco" para controlar su dinámica y asegurar su presencia. Luego, uno por uno, añade los demás elementos, aplicando compresión individualmente para que cada pista tenga un nivel controlado y consistente antes de ser procesada en grupo.',
+    title: 'SEMANA DE LANZAMIENTO',
+    subtitle: '¡CELEBRACIÓN Y DIFUSIÓN!',
+    category: 'Lanzamiento',
+    philosophy: 'El trabajo duro da sus frutos. Hoy se trata de celebrar, agradecer y maximizar el alcance inicial, que es crucial para los algoritmos.',
     subSteps: [
-      { id: 'step-7-1', text: 'transient shapers, Gates, De-Essers', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-7-2', text: 'Comprimir de macro a micro "Serial Killer"', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-7-3', text: 'Compresión Sidechain: Aparta de mi Camino', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-7-4', text: 'Compresión paralela "New York"', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-7-5', text: 'Compresión Multibanda: para Frecuencias Rebeldes', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-7-6', text: 'Limitación: Simple y Multibanda', tutorialUrl: 'https://vimeo.com/365078627' },
-    ],
-    note: 'El ataque y el release son cruciales. Un ataque rápido controla transientes, uno lento los deja pasar. Un release rápido crea bombeo, uno lento es más transparente. Ajusta siempre al ritmo de la canción.',
-  },
-  // Step 8
-  {
-    id: 8,
-    title: 'ECUALIZACIÓN ADITIVA',
-    subtitle: 'COLOR Y CARÁCTER',
-    category: 'Pistas Individuales',
-    philosophy: 'Repetimos el proceso aditivo, esta vez para la ecualización. Al ecualizar cada nuevo elemento escuchando los anteriores, te aseguras de que encaje en el espectro de frecuencias sin competir innecesariamente.',
-    method: 'Ahora que la mezcla está limpia, es hora de añadir carácter.',
-    subSteps: [
-      { id: 'step-8-1', text: 'Ecualiza con saturación musical', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-8-2', text: 'EQ Match', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-8-3', text: 'Ecualiza "Pasiva"', tutorialUrl: 'https://vimeo.com/365078627' },
+      { id: 'release-7-1', text: 'Actualizar el enlace en la biografía de tus redes sociales al Smart Link con la canción ya disponible.' },
+      { id: 'release-7-2', text: 'Publicar en todas tus redes sociales anunciando que la canción ya está disponible.' },
+      { id: 'release-7-3', text: 'Pasar el día interactuando con los comentarios y compartiendo las publicaciones de los fans.' },
+      { id: 'release-7-4', text: 'Enviar un email a tu lista de correo anunciando el lanzamiento.' },
+      { id: 'release-7-5', text: 'Revisar Spotify for Artists y Apple Music for Artists para ver en qué playlists has entrado.' },
+      { id: 'release-7-6', text: '(Post-Lanzamiento) Continuar promocionando la canción durante las siguientes semanas con nuevo contenido.' },
+      { id: 'release-7-7', text: '(Post-Lanzamiento) Analizar las estadísticas para entender a tu audiencia y planificar futuros lanzamientos.' },
+      { id: 'release-7-8', text: '(Post-Lanzamiento) Registrar la canción en tu administradora de publishing (ej. Songtrust) para la recaudación global.'}
     ],
   },
-  // Step 9
-  {
-    id: 9,
-    title: 'EFECTOS CREATIVOS',
-    subtitle: 'PROFUNDIDAD Y ESPACIO',
-    category: 'Creatividad',
-    method: 'Crea un espacio tridimensional para tu mezcla. Usa buses de efectos para mantener la flexibilidad y ahorrar CPU.',
-    subSteps: [
-      { id: 'step-9-1', text: 'Configurar 2-3 buses de Reverb: uno corto (Room), uno medio (Plate/Hall) y uno largo (Hall/FX).', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-9-2', text: 'Configurar 2 buses de Delay: uno corto (Slapback) y uno largo (estéreo sincronizado al tempo).', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-9-3', text: 'Aplicar saturación para añadir calidez y armónicos (en pistas o en paralelo).', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-9-4', text: 'Experimentar con modulación (Chorus, Flanger, Phaser) para añadir movimiento.', tutorialUrl: 'https://vimeo.com/365078627' },
-    ],
-  },
-  // Step 10
-  {
-    id: 10,
-    title: 'AUTOMATIZACIÓN',
-    subtitle: 'MOVIMIENTO Y VIDA',
-    category: 'Creatividad',
-    method: 'La automatización transforma una mezcla estática en una pieza dinámica y emocionante. Automatiza todo lo que pueda servir a la canción.',
-    subSteps: [
-      { id: 'step-10-1', text: 'Automatiza volúmenes (ej: de versos y coros)', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-10-2', text: 'Automatiza los envíos a Reverb y Delay para abrir espacios o enfatizar ciertas frases y secciones.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-10-3', text: 'Automatiza los efectos modulares.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-10-4', text: 'Automatiza filtros (HPF/LPF) para crear transiciones y efectos de "barrido".', tutorialUrl: 'https://vimeo.com/365078627' },
-    ],
-  },
-  // Step 11
-  {
-    id: 11,
-    title: 'PROCESAMIENTO DE GRUPOS',
-    subtitle: 'COHESIÓN (GLUE)',
-    category: 'Procesamiento de Grupos',
-    method: 'Procesar los grupos de instrumentos juntos ayuda a que suenen como una unidad cohesiva. Esto se conoce como "pegamento" o "glue".',
-    subSteps: [
-      { id: 'step-11-1', text: 'Compresión Side-Chain Drums to Bass "ej: trackspacer"', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-11-2', text: 'Compresión Side-Chain Bass to Instruments "ej: trackspacer"', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-11-3', text: 'Compresión Side-Chain Voces to Instruments "ej: trackspacer"', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-11-4', text: 'Verifica la imagen estéreo de los grupos "La imagen se cierra"', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-11-5', text: 'EQ sustractiva en para la suma de resonancias, desenmascarar o abrir espacios Mid-Side', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-11-6', text: 'EQ Match del Mid-Side', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-11-7', text: 'Usar saturación de cinta para añadir calidez y cohesión analógica', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-11-8', text: 'Supresores de Resonancias para peinar frecuencias acumuladas', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-11-9', text: 'Compresión y limitación multibanda Mid-Side de picos y RMS', tutorialUrl: 'https://vimeo.com/365078627' },
-    ],
-  },
-  // Step 12
-  {
-    id: 12,
-    title: 'PROCESAMIENTO DEL MÁSTER BUS',
-    subtitle: 'PULIDO FINAL',
-    category: 'Verificación',
-    method: 'Ajustes finales y sutiles en el bus de mezcla principal para pulir el sonido general.',
-    subSteps: [
-      { id: 'step-12-1', text: 'Verifica la imagen estéreo multibanda.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-12-2', text: 'EQ Sustractiva y aditiva sutilmente.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-12-3', text: 'Usar compresión multibanda, Clippers y limitadores en serie para aumentar el volumen final de la mezcla a un nivel competitivo (-14 a -6 LUFS, dependiendo del estilo).', tutorialUrl: 'https://vimeo.com/365078627' },
-    ],
-  },
-  // Step 13
-  {
-    id: 13,
-    title: 'VERIFICACIÓN Y REFERENCIAS',
-    subtitle: 'CONTROL DE CALIDAD',
-    category: 'Verificación',
-    subSteps: [
-      { id: 'step-13-1', text: 'Escuchar la mezcla en diferentes sistemas: monitores de estudio, auriculares, altavoces de portátil, coche. (Realphones)', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-13-2', text: 'Comparar referencia comerciales Mid-Side Multibanda de Peak y RMS', tutorialUrl: 'https://vimeo.com/365078627' },
-    ],
-  },
-  // Step 14
-  {
-    id: 14,
-    title: 'ENTREGA',
-    subtitle: 'EXPORTACIÓN FINAL',
-    category: 'Entrega',
-    subSteps: [
-      { id: 'step-14-1', text: 'Exportar la mezcla final en formato WAV o AIFF, a la misma frecuencia de muestreo y profundidad de bits del proyecto.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-14-2', text: 'Pico máximos de -1.0 a -0.2 dBFS para evitar clipping en la conversión a otros formatos.', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-14-3', text: 'Exportar (instrumental, a capella y Stems).', tutorialUrl: 'https://vimeo.com/365078627' },
-      { id: 'step-14-4', text: 'Nombrar y organizar los archivos de forma clara y profesional antes de enviarlos.', tutorialUrl: 'https://vimeo.com/365078627' },
-    ],
-  }
 ];

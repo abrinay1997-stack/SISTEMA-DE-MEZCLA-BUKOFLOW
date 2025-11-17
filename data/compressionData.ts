@@ -1,111 +1,44 @@
+import type { GuideData } from '../types';
 
-import type { CompressionData } from '../types';
-
-export const compressionData: CompressionData = {
-    'tipos': [
-        { 'id': 'vca', 'tipo': 'VCA 🎚️', 'transparencia': 'Muy Alta ✅', 'color': '1-3 🟢', 'tipoColor': 'Neutral, mínimamente cálido 🌬️', 'rasgos': 'Limpio, preciso, controlado, versátil 🧼', 'ejemplos': 'FabFilter Pro-C2, Waves SSL G-Master Bus, Cytomic The Glue', 'aplicaciones': 'Mezcla, masterización, buses, control dinámico general 🎯', 'ventajas': 'Precisión, versatilidad, ideal para géneros modernos 🎯', 'limitaciones': 'Puede carecer de carácter creativo/vintage 🚫', 'ataqueRelease': 'Ataque: Rápido / Release: Ajustable ⚡', 'ratioKnee': 'Ajustable (soft–hard) 🔧', 'saturacion': '2 🟢' },
-        { 'id': 'digital', 'tipo': 'Digitales 💻', 'transparencia': 'Alta a Media 🔄', 'color': '1-5 🔄', 'tipoColor': 'Variable (según emulación/configuración) 🎭', 'rasgos': 'Transparente por defecto, emulación de otros tipos 🔧', 'ejemplos': 'FabFilter Pro-C2, iZotope Ozone Dynamics, Waves C1', 'aplicaciones': 'Mezcla, masterización, diseño sonoro, música electrónica 🎹', 'ventajas': 'Flexibilidad extrema, funciones avanzadas (sidechain, multibanda) 🚀', 'limitaciones': 'Menor sensación "orgánica", depende del plugin 🖥️', 'ataqueRelease': 'Variable según plugin 🔄', 'ratioKnee': 'Variable según algoritmo 🔄', 'saturacion': '1–8 🔄' },
-        { 'id': 'optico', 'tipo': 'Ópticos 💡', 'transparencia': 'Media ⚖️', 'color': '4-6 🟡', 'tipoColor': 'Calidez suave, armónicos redondeados 🌞', 'rasgos': 'Musical, orgánico, suaviza transientes 🌊', 'ejemplos': 'UAD LA-2A, Waves CLA-2A, Softube CL 1B', 'aplicaciones': 'Voces, bajos, guitarras acústicas, mezcla natural 🎤', 'ventajas': 'Sonido suave, musical, fácil de usar 🎶', 'limitaciones': 'Respuesta lenta, poco apto para transientes rápidos 🐢', 'ataqueRelease': 'Ataque: Medio-Lento / Release: Dependiente del programa 🕰️', 'ratioKnee': 'Knee suave (soft) 🌊', 'saturacion': '4–6 🟡' },
-        { 'id': 'fet', 'tipo': 'FET ⚡', 'transparencia': 'Media-Baja 🔽', 'color': '6-8 🟠', 'tipoColor': 'Saturación agresiva, "pegada" distintiva 💥', 'rasgos': 'Energía, presencia, distorsión armónica 🔊', 'ejemplos': 'UAD 1176 Collection, Waves CLA-76, Arturia Comp FET-76', 'aplicaciones': 'Baterías, voces, guitarras, géneros con "punch" 🥁', 'ventajas': 'Ataque ultrarrápido, carácter distintivo, resalta transientes ⚡', 'limitaciones': 'Puede ser demasiado agresivo para material delicado 😣', 'ataqueRelease': 'Ataque: Ultrarrápido / Release: Rápido 🚀', 'ratioKnee': 'Knee duro (hard) 🧱', 'saturacion': '7–9 🟠' },
-        { 'id': 'valvulas', 'tipo': 'Válvulas (Tube/Vari-Mu) 🔥', 'transparencia': 'Baja ⬇️', 'color': '8-10 🔴', 'tipoColor': 'Calidez rica, armónicos complejos 🕯️', 'rasgos': 'Vintage, profundo, envolvente, saturación armónica densa 🏰', 'ejemplos': 'UAD Fairchild Collection, Waves PuigChild, Arturia Comp Vari-Mu', 'aplicaciones': 'Voces, buses, master vintage, jazz, soul, rock clásico 🎷', 'ventajas': 'Sonido cálido, tridimensional, carácter único 🌌', 'limitaciones': 'Respuesta lenta, poco preciso para control dinámico quirúrgico 🩺', 'ataqueRelease': 'Ataque: Lento / Release: Suave 🐢', 'ratioKnee': 'Knee suave, musical 🎶', 'saturacion': '8–10 🔴' },
-        { 'id': 'diodo', 'tipo': 'Diodo Puente (Diode Bridge) 🔌', 'transparencia': 'Baja ⬇️', 'color': '8-10 🔴', 'tipoColor': 'Distorsión armónica robusta ⚙️', 'rasgos': 'Grueso, coloreado, no lineal, pegada vintage fuerte 🛠️', 'ejemplos': 'UAD Neve 33609, Arturia Comp DIODE-609, Lindell 354E', 'aplicaciones': 'Buses de batería, guitarras, mezcla con carácter pesado 🎸', 'ventajas': 'Añade grosor, textura analógica única 🛠️', 'limitaciones': 'Poco versátil, excesivamente coloreado 🚫', 'ataqueRelease': 'Ataque: Lento–Medio / Release: Medio ⏳', 'ratioKnee': 'Knee duro (hard) 🧱', 'saturacion': '9–10 🔴' }
-    ],
-    'instrumentos': [
-{ 'instrumento': 'Voz Principal (Lead Vocal) 🎤', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'FET ⚡', 'evitar': 'Diodo Puente 🔌', 'notas': 'Suavidad y control clásico. Óptico para baladas, FET para pop/rock.' },
-{ 'instrumento': 'Voz Principal Agresiva 😣', 'opcion1': 'FET ⚡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'VCA 🎚️', 'evitar': 'Digital 💻', 'notas': 'Metal, punk, rap. Presencia y ataque.' },
-{ 'instrumento': 'Coros/Backing Vocals 🎵', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'Óptico 💡', 'evitar': 'Diodo Puente 🔌', 'notas': 'Control limpio y estable.' },
-{ 'instrumento': 'Dobles de Voz 🎙️', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'FET ⚡', 'evitar': 'Válvulas 🔥', 'notas': 'Mantener estabilidad sin sumar color.' },
-{ 'instrumento': 'Voz Susurrada 🌬️', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'Digital 💻', 'evitar': 'Diodo Puente 🔌', 'notas': 'Para aire y cercanía natural.' },
-{ 'instrumento': 'Voz Hablada (Narración) 🎙️', 'opcion1': 'Óptico 💡', 'opcion2': 'VCA 🎚️', 'opcion3': 'Digital 💻', 'evitar': 'FET ⚡', 'notas': 'Estabilidad sin exagerar transientes.' },
-{ 'instrumento': 'Voz Gritada 🔊', 'opcion1': 'FET ⚡', 'opcion2': 'VCA 🎚️', 'opcion3': 'Diodo Puente 🔌', 'evitar': 'Óptico 💡', 'notas': 'Para controlar picos extremos.' },
-{ 'instrumento': 'Kick/Bombo 🥁', 'opcion1': 'FET ⚡', 'opcion2': 'VCA 🎚️', 'opcion3': 'Digital 💻', 'evitar': 'Óptico 💡', 'notas': 'Punch y control del sustain.' },
-{ 'instrumento': 'Snare/Caja 🥁', 'opcion1': 'FET ⚡', 'opcion2': 'VCA 🎚️', 'opcion3': 'Diodo Puente 🔌', 'evitar': 'Válvulas 🔥', 'notas': 'Ataque firme y grosor.' },
-{ 'instrumento': 'Hi-Hats/Charles 🥁', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'FET ⚡', 'evitar': 'Óptico 💡', 'notas': 'Transientes rápidas y precisas.' },
-{ 'instrumento': 'Toms 🥁', 'opcion1': 'VCA 🎚️', 'opcion2': 'FET ⚡', 'opcion3': 'Óptico 💡', 'evitar': 'Digital 💻', 'notas': 'Cuerpo y control.' },
-{ 'instrumento': 'Overheads 🎙️', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'VCA 🎚️', 'evitar': 'FET ⚡', 'notas': 'Cohesión natural del kit.' },
-{ 'instrumento': 'Room Mics 🏛️', 'opcion1': 'Válvulas 🔥', 'opcion2': 'Diodo Puente 🔌', 'opcion3': 'Digital 💻', 'evitar': 'FET ⚡', 'notas': 'Ambiente cálido y profundo.' },
-{ 'instrumento': 'Bajo Eléctrico 🎸', 'opcion1': 'Óptico 💡', 'opcion2': 'FET ⚡', 'opcion3': 'VCA 🎚️', 'evitar': 'Diodo Puente 🔌', 'notas': 'Redondez y definición.' },
-{ 'instrumento': 'Bajo Acústico 🎻', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'VCA 🎚️', 'evitar': 'Digital 💻', 'notas': 'Naturalidad orgánica.' },
-{ 'instrumento': 'Bajo Sintetizado 🎹', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'FET ⚡', 'evitar': 'Válvulas 🔥', 'notas': 'Control estricto del low-end.' },
-{ 'instrumento': 'Sub-Bass 808 ⚡', 'opcion1': 'Digital 💻', 'opcion2': 'VCA 🎚️', 'opcion3': 'Óptico 💡', 'evitar': 'FET ⚡', 'notas': 'Evitar distorsión indeseada.' },
-{ 'instrumento': 'Guitarra Eléctrica Rítmica 🎸', 'opcion1': 'VCA 🎚️', 'opcion2': 'FET ⚡', 'opcion3': 'Diodo Puente 🔌', 'evitar': 'Digital 💻', 'notas': 'Corte firme sin perder pegada.' },
-{ 'instrumento': 'Guitarra Eléctrica Lead 🎸🔥', 'opcion1': 'FET ⚡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'VCA 🎚️', 'evitar': 'Digital 💻', 'notas': 'Realza expresión.' },
-{ 'instrumento': 'Guitarra Acústica 🎻', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'VCA 🎚️', 'evitar': 'Diodo Puente 🔌', 'notas': 'Redondez clásica.' },
-{ 'instrumento': 'Piano Acústico 🎹', 'opcion1': 'Óptico 💡', 'opcion2': 'VCA 🎚️', 'opcion3': 'Digital 💻', 'evitar': 'Diodo Puente 🔌', 'notas': 'Dinámica equilibrada.' },
-{ 'instrumento': 'Piano Eléctrico (Rhodes/Wurly) 🎹', 'opcion1': 'Válvulas 🔥', 'opcion2': 'Óptico 💡', 'opcion3': 'FET ⚡', 'evitar': 'Digital 💻', 'notas': 'Calidez tradicional.' },
-{ 'instrumento': 'Pads Sintetizados 🌫️', 'opcion1': 'Digital 💻', 'opcion2': 'VCA 🎚️', 'opcion3': 'Óptico 💡', 'evitar': 'FET ⚡', 'notas': 'Estabilidad sin color.' },
-{ 'instrumento': 'Plucks Synth 🎶', 'opcion1': 'VCA 🎚️', 'opcion2': 'FET ⚡', 'opcion3': 'Digital 💻', 'evitar': 'Óptico 💡', 'notas': 'Ataques definidos.' },
-{ 'instrumento': 'Lead Synth 🎹⚡', 'opcion1': 'FET ⚡', 'opcion2': 'Digital 💻', 'opcion3': 'VCA 🎚️', 'evitar': 'Óptico 💡', 'notas': 'Presencia brillante.' },
-{ 'instrumento': 'Arps 🎛️', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'Óptico 💡', 'evitar': 'FET ⚡', 'notas': 'Claridad rítmica.' },
-{ 'instrumento': 'Cuarteto de Cuerdas 🎻🎻🎻🎻', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'Digital 💻', 'evitar': 'FET ⚡', 'notas': 'Musicalidad clásica.' },
-{ 'instrumento': 'Violín Solo 🎻', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'VCA 🎚️', 'evitar': 'Diodo Puente 🔌', 'notas': 'Expresividad natural.' },
-{ 'instrumento': 'Cello 🎻', 'opcion1': 'Válvulas 🔥', 'opcion2': 'Óptico 💡', 'opcion3': 'VCA 🎚️', 'evitar': 'FET ⚡', 'notas': 'Cuerpo cálido.' },
-{ 'instrumento': 'Metales 🎺', 'opcion1': 'FET ⚡', 'opcion2': 'VCA 🎚️', 'opcion3': 'Válvulas 🔥', 'evitar': 'Digital 💻', 'notas': 'Controlar potencia sin perder carácter.' },
-{ 'instrumento': 'Saxofón 🎷', 'opcion1': 'Válvulas 🔥', 'opcion2': 'Óptico 💡', 'opcion3': 'VCA 🎚️', 'evitar': 'Digital 💻', 'notas': 'Tono cálido y expresivo.' },
-{ 'instrumento': 'Flautas y Maderas 🎶', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'Digital 💻', 'evitar': 'FET ⚡', 'notas': 'Naturalidad suave.' },
-{ 'instrumento': 'FX y Diseños Sonoros 🎧', 'opcion1': 'Digital 💻', 'opcion2': 'VCA 🎚️', 'opcion3': 'FET ⚡', 'evitar': 'Válvulas 🔥', 'notas': 'Precisión absoluta.' },
-{ 'instrumento': 'Bus de Batería 🥁', 'opcion1': 'Diodo Puente 🔌', 'opcion2': 'FET ⚡', 'opcion3': 'Válvulas 🔥', 'evitar': 'Digital 💻', 'notas': 'Grosor y cohesión.' },
-{ 'instrumento': 'Drum Parallel Bus 🥁➕', 'opcion1': 'FET ⚡', 'opcion2': 'Diodo Puente 🔌', 'opcion3': 'VCA 🎚️', 'evitar': 'Óptico 💡', 'notas': 'Compresión agresiva.' },
-{ 'instrumento': 'Bus de Toms 🥁', 'opcion1': 'VCA 🎚️', 'opcion2': 'Óptico 💡', 'opcion3': 'FET ⚡', 'evitar': 'Digital 💻', 'notas': 'Cuerpo sin perder claridad.' },
-{ 'instrumento': 'Bus de Percusión Menor 🪘', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'Óptico 💡', 'evitar': 'FET ⚡', 'notas': 'Control de transientes irregulares.' },
-{ 'instrumento': 'Bus de Voces 🎤🎤', 'opcion1': 'Óptico 💡', 'opcion2': 'VCA 🎚️', 'opcion3': 'Digital 💻', 'evitar': 'Diodo Puente 🔌', 'notas': 'Unificación natural.' },
-{ 'instrumento': 'Bus de Voces Paralelo 🎤➕', 'opcion1': 'FET ⚡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'Diodo Puente 🔌', 'evitar': 'Digital 💻', 'notas': 'Engorde y presencia.' },
-{ 'instrumento': 'Bus de Guitarras Eléctricas 🎸🎸', 'opcion1': 'VCA 🎚️', 'opcion2': 'Diodo Puente 🔌', 'opcion3': 'FET ⚡', 'evitar': 'Óptico 💡', 'notas': 'Cohesión de densidad.' },
-{ 'instrumento': 'Bus de Guitarra Acústica 🎻🎻', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'VCA 🎚️', 'evitar': 'FET ⚡', 'notas': 'Calidez equilibrada.' },
-{ 'instrumento': 'Bus de Sintetizadores 🎹🎛️', 'opcion1': 'Digital 💻', 'opcion2': 'VCA 🎚️', 'opcion3': 'Óptico 💡', 'evitar': 'FET ⚡', 'notas': 'Control sin alterar el diseño original.' },
-{ 'instrumento': 'Bus de Subgraves 🔊', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'Óptico 💡', 'evitar': 'FET ⚡', 'notas': 'Preservar la pureza del low-end.' },
-{ 'instrumento': 'Bus de Cuerdas 🎻🎻🎻', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'Digital 💻', 'evitar': 'FET ⚡', 'notas': 'Cohesión orquestal.' },
-{ 'instrumento': 'Bus de Metales 🎺🎺', 'opcion1': 'FET ⚡', 'opcion2': 'VCA 🎚️', 'opcion3': 'Válvulas 🔥', 'evitar': 'Digital 💻', 'notas': 'Control de picos manteniendo el carácter.' },
-{ 'instrumento': 'Bus Orquestal 🎼', 'opcion1': 'Óptico 💡', 'opcion2': 'Válvulas 🔥', 'opcion3': 'Digital 💻', 'evitar': 'FET ⚡', 'notas': 'Uniformidad cinematográfica.' },
-{ 'instrumento': 'Bus General de Instrumentos 🎚️', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'Óptico 💡', 'evitar': 'FET ⚡', 'notas': 'Control suave previo al master.' },
-{ 'instrumento': 'Master Bus 🎚️', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'Válvulas 🔥', 'evitar': 'FET ⚡', 'notas': 'Transparencia clásica de master.' },
-{ 'instrumento': 'Master Paralelo 🎚️➕', 'opcion1': 'Válvulas 🔥', 'opcion2': 'Diodo Puente 🔌', 'opcion3': 'FET ⚡', 'evitar': 'Digital 💻', 'notas': 'Cuerpo y densidad estilo analógico.' },
-{ 'instrumento': 'Stem Vocal 🎤 Stem', 'opcion1': 'Óptico 💡', 'opcion2': 'VCA 🎚️', 'opcion3': 'Digital 💻', 'evitar': 'Diodo Puente 🔌', 'notas': 'Control global sin dañar la mezcla interna.' },
-{ 'instrumento': 'Stem Percusión 🥁 Stem', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'Diodo Puente 🔌', 'evitar': 'FET ⚡', 'notas': 'Control estable de grupos percusivos.' },
-{ 'instrumento': 'Stem Melódico 🎶 Stem', 'opcion1': 'Óptico 💡', 'opcion2': 'Digital 💻', 'opcion3': 'VCA 🎚️', 'evitar': 'Diodo Puente 🔌', 'notas': 'Limpieza y musicalidad.' },
-{ 'instrumento': 'Stem SubBass 🔊 Stem', 'opcion1': 'VCA 🎚️', 'opcion2': 'Digital 💻', 'opcion3': 'Óptico 💡', 'evitar': 'FET ⚡', 'notas': 'Evitar distorsión en graves profundos.' }
-    ],
-    'generos': [
-        { 'genero': 'Rock/Metal 🤘', 'compresores': 'FET ⚡, Diodo Puente 🔌, VCA 🎚️', 'enfoque': 'Agresividad, punch, definición 💥' },
-        { 'genero': 'Pop 🎤', 'compresores': 'VCA 🎚️, Óptico 💡, Digital 💻', 'enfoque': 'Balance entre calidez y control ⚖️' },
-        { 'genero': 'Jazz 🎷', 'compresores': 'Válvulas 🔥, Óptico 💡', 'enfoque': 'Calidez, naturalidad, dinámicas 🕯️' },
-        { 'genero': 'Electronic/EDM 🎹', 'compresores': 'Digital 💻, VCA 🎚️', 'enfoque': 'Precisión, flexibilidad, control 🎯' },
-        { 'genero': 'R&B/Soul 🎶', 'compresores': 'Válvulas 🔥, Óptico 💡, FET ⚡', 'enfoque': 'Calidez vintage, suavidad 🌊' },
-        { 'genero': 'Country 🎸', 'compresores': 'Válvulas 🔥, Óptico 💡', 'enfoque': 'Naturalidad, calidez 🌳' },
-        { 'genero': 'Hip-Hop 🎤', 'compresores': 'FET ⚡, VCA 🎚️, Digital 💻', 'enfoque': 'Punch, control, flexibilidad 💪' },
-        { 'genero': 'Folk/Acoustic 🎻', 'compresores': 'Óptico 💡, Válvulas 🔥', 'enfoque': 'Naturalidad, preservar dinámicas 🌳' }
-    ],
-    'listas': {
-        'vca': { 'name': 'VCA 🎚️', 'gratuitos': [ 'Ableton Glue Compressor', 'Klanghelm DC1A', 'RoughRider3 by Audio Damage', 'Eareckon FR-COMP 87', 'Acustica Tan', 'Analog Obsession BUSTERse', 'Sender Spike SN01-G', 'DCAM FreeComp' ], 'pago': [ 'Vertigo VSC-2 (Plugin Alliance)', 'Brainworx bx_glue (Plugin Alliance)', 'Cytomic The Glue', 'SSL Native Bus Compressor', 'MH Channel Strip (Metric Halo)', 'RCompressor (Waves)', 'Warm Audio Bus-Comp', 'dbx 266xs', 'ART SCL2', 'Empirical Labs EL8-X Distressor', 'Solid State Logic BUS+', 'Dangerous Music Compressor', 'Behringer MDX2600 V2', 'Tone Empire Model 5000', 'Bus Compressor (IK Multimedia)', 'Brainworx bx_townhouse Buss Compressor (Plugin Alliance)', 'SSL 4000 G Bus Compressor (Universal Audio)', 'CFA Sound GRIP Valve Drive Compressor', 'RVox (Waves)', 'Renaissance Axx (Waves)', 'SSLComp (Waves)', 'API-2500 (Waves)', 'dbx-160 (Waves)', 'DPR-402 (Waves)', 'Comp VCA-65 (Arturia)', 'VCA Compressor (Softube)', 'Classic Comp (IK Multimedia)', 'VBC FG-Grey (Slate Digital)', 'VBC FG-Red (Slate Digital)', 'Ozone 11 Vintage Compressor (iZotope)' ] },
-        'digital': { 'name': 'Digitales 💻', 'gratuitos': [ 'TDR Kotelnikov', 'DCAM FreeComp', 'SAFE Compressor', 'Audio Damage RoughRider 3', 'ReaComp', 'MCompressor (MeldaProduction)', 'Frontier', 'Pressure4 (Airwindows)', 'ButterComp (Airwindows)', 'Vocal Compressor', 'NightShine', 'OTT by XFER Records', 'Sonicrusher', 'FerricTDS – Tape Dynamics Simulator', 'Beatskillz MAX1', 'Vladg Molot Compressor', 'TDR Molotok' ], 'pago': [ 'elysia alpha compressor V2 (Plugin Alliance)', 'Bettermaker Mastering Compressor (Plugin Alliance)', 'Bettermaker C502V (Plugin Alliance)', 'AMEK Mastering Compressor (Plugin Alliance)', 'Shadow Hills Mastering Compressor Class A (Plugin Alliance)', 'Bettermaker Bus Compressor (Plugin Alliance)', 'Shadow Hills Mastering Compressor (Plugin Alliance)', 'Mäag Audio Magnum-K (Plugin Alliance)', 'elysia mpressor (Plugin Alliance)', 'Lindell Audio MBC (Plugin Alliance)', 'Unfiltered Audio Zip (Plugin Alliance)', 'ADPTR AUDIO SCULPT (Plugin Alliance)', 'ProAudioDSP DSM V3 (Plugin Alliance)', 'Three-Body Technology Cenozoix Compressor (Plugin Alliance)', 'Korvpressor (Klevgrand)', 'Brainworx bx_townhouse Buss Compressor (Plugin Alliance)', 'C1 comp (Waves)', 'C1 comp-sc (Waves)', 'RCompressor (Waves)', 'EMO-D5 (Waves)', 'H-Comp (Waves)', 'Compressor (Steinberg)', 'Compassion (DmgAudio)', 'Pro-C 2 (FabFilter)', 'Nectar 4 Compressor (iZotope)', 'Neutron 5 Compressor (iZotope)', 'Ozone 11 Dynamics (iZotope)' ] },
-        'optico': { 'name': 'Ópticos 💡', 'gratuitos': [ 'ThrillseekerLA mkII', 'BPB Dirty LA', 'TLS 1295 LEA', 'ADHD Leveling Tool', 'Brainworx bx_opto Pedal (Plugin Alliance)' ], 'pago': [ 'Mixland Vac Attack (Plugin Alliance)', 'NEOLD U2A (Plugin Alliance)', 'Brainworx bx_opto (Plugin Alliance)', 'Millennia TCL-2 (Plugin Alliance)', 'ACME Audio Opticom XLA-3 (Plugin Alliance)', 'Waves CLA-2A', 'Warm Audio WA-1B', 'Heritage Audio Tubesessor', 'Universal Audio Teletronix LA-2A', 'Tube-Tech CL 1B (Softube)', 'CLA-3A (Waves)', 'UADx LA-2A Tube Compressor (Universal Audio)', 'White 2A (IK Multimedia)', 'Comprexxor (IK Multimedia)', 'Opto Comp (IK Multimedia)', 'Quad Compressor (IK Multimedia)' ] },
-        'fet': { 'name': 'FET ⚡', 'gratuitos': [ 'Analog Obsession FETISH' ], 'pago': [ 'Kiive Audio XTComp (Plugin Alliance)', 'Purple Audio MC77 (Plugin Alliance)', 'Lindell Audio 7X-500 (Plugin Alliance)', 'UAD 1176 Collection', 'Klark Teknik 76-KT', 'Warm Audio WA76-D', 'Warm Audio WA76-A', 'FET Compressor MK II (Softube)', 'Comp76 FET Compressor-Limiter (Overloud)', '1178 Analog FET compressor (Pulsar)', 'VoxComp (Steinberg)', 'Black 76 (IK Multimedia)', 'CLA-76 (Waves)', 'VintageCompressor (Steinberg)', 'Comp FET-76 (Arturia)' ] },
-        'valvulas': { 'name': 'Válvulas 🔥', 'gratuitos': [ 'Klanghelm MJUC Jr', 'Native Instruments Supercharger', 'Analog Obsession VariMoon' ], 'pago': [ 'Lindell Audio MU-66 (Plugin Alliance)', 'SPL IRON (Plugin Alliance)', 'Arturia TUBE-STA', 'Audified u73b', 'Heritage Audio Herchild 660', 'Manley Variable Mu Stereo Compressor Limiter', 'Pulsar Audio Mu', 'Tone Empire FireChild Vari-Mu', 'Softube Summit Audio TLA-100A', 'Arturia Comp Tube-STA', 'Klanghelm MJUC', 'Overloud Comp670', 'Tube Compressor (Steinberg)', 'Black Valve (Steinberg)', 'VC-670 (IK Multimedia)', 'Dyna-Mu (IK Multimedia)', 'Abbey Road RS124 (Waves)', 'PuigChild 660 (Waves)', 'PuigChild 670 (Waves)', 'NEOLD U17 (Plugin Alliance)', 'NEOLD V76U73 (Plugin Alliance)' ] },
-        'diodo': { 'name': 'Diodo Puente 🔌', 'gratuitos': [ 'ViatorDSP Bedroom Compressor' ], 'pago': [ 'Lindell Audio 354E (Plugin Alliance)', 'RND-535 (Rupert Neve Designs)', 'Neve 33609', 'Comp DIODE-609 (Arturia)', 'Lindell Audio 254E (Plugin Alliance)', 'Neve 2254/E (Universal Audio)', 'DBC-20 (Buzz Audio)', 'VComp (Waves)', 'Kramer PIE (Waves)' ] }
-    }
-};
-
-export const compressionTooltips: { [key: string]: string } = {
-    'dinámica': 'La diferencia entre las partes más silenciosas y más fuertes de una señal de audio. Los compresores controlan esta dinámica reduciendo los picos más altos.',
-    'dinámicas': 'La diferencia entre las partes más silenciosas y más fuertes de una señal de audio. Los compresores controlan estas dinámicas reduciendo los picos más altos.',
-    'knee': 'La suavidad de la transición entre no compresión y compresión. Soft knee = transición gradual, Hard knee = transición abrupta al alcanzar el threshold.',
-    'ratio': 'Cuánta compresión se aplica. 2:1 significa que por cada 2dB que la señal supera el threshold, solo suena 1dB más fuerte. Ratios altos = más compresión.',
-    'sustain': 'La duración y sostenimiento de un sonido después del ataque inicial. Los compresores pueden aumentar el sustain al reducir el ataque y permitir que el cuerpo del sonido se mantenga más presente.',
-    'transientes': 'Los picos breves e iniciales de un sonido, como el golpe de una baqueta o el ataque de una cuerda. Son cruciales para la percepción del ritmo y la "pegada".',
-    'threshold': 'El nivel de volumen en el que el compresor comienza a actuar. Señales por encima del threshold son comprimidas, las que están por debajo no se afectan.',
-    'armónicos': 'Frecuencias adicionales que acompañan a la nota fundamental de un sonido. Los ecualizadores analógicos a menudo añaden armónicos agradables que "colorean" o enriquecen el sonido.',
-    'Alta': 'Tiene una transparencia alta.',
-    'Media': 'Tiene una transparencia media.',
-    'Baja': 'Tiene una poca transparencia.',
-    'distorsión armónica': 'Es la adición de frecuencias múltiples de la frecuencia fundamental a una señal, que la altera y la aleja de su forma ideal.',
-    'sidechain': 'Técnica que permite que un sonido se comprima de forma automática cada vez que otro sonido entra en acción.',
-    'low-end': 'Es el rango de frecuencias bajas (generalmente de 20 Hz a 250 Hz).',
-    'pegada': 'Es la sensación de fuerza, impacto y presencia de un sonido.',
-    'groove': 'Es la sensación rítmica y expansiva a los sonidos.',
-    'punch': 'Es la sensacion de pegada, que se logra acentuando los transitorios iniciales y reduciendo su sustain, para hacerlo más impactante y presente en la mezcla.',
-    'presencia': 'se refiere a la claridad.',
-    'Calidez': 'se refiere a un sonido más natural, rico y analógico que se logra mediante la saturación de armónicos y una compresión suave.',
-    'saturación': 'Es la distorsión armónica agradable que añade calidez y densidad al sonido. Los compresores analógicos vintage suelen añadir saturación naturalmente.',
-    'ataque': 'El tiempo que tarda el compresor en comenzar a reducir el volumen después de que la señal supera el threshold. Un ataque rápido captura transientes, uno lento los deja pasar.',
-    'release': 'El tiempo que tarda el compresor en dejar de comprimir después de que la señal cae por debajo del threshold. Controla qué tan rápido "suelta" la compresión.'
+export const brandingGuideData: GuideData = {
+    title: 'Guía de Branding para Artistas',
+    description: 'Define tu identidad, crea una imagen memorable y cuenta una historia que conecte con tu audiencia.',
+    sections: [
+        {
+            title: '1. El Núcleo de tu Marca: ¿Quién Eres?',
+            content: [
+                '**Misión:** ¿Por qué haces música? ¿Qué quieres aportar al mundo con tu arte?',
+                '**Visión:** ¿Dónde te ves en 5 años? ¿Qué impacto quieres tener?',
+                '**Valores:** ¿Qué principios guían tu música y tu carrera? (Autenticidad, innovación, diversión, etc.)',
+                '**Arquetipo de Marca:** ¿Eres el rebelde, el amante, el explorador, el sabio? Definir un arquetipo te ayuda a ser consistente. (Ej: The Weeknd - el Amante/Misterioso).'
+            ]
+        },
+        {
+            title: '2. Identidad Visual: Cómo te Ves',
+            content: [
+                '**Logo/Logotipo:** Crea un símbolo o una firma textual que sea reconocible.',
+                '**Paleta de Colores:** Elige 2-3 colores principales que representen la emoción de tu música. Usa herramientas como Coolors.co para inspirarte.',
+                '**Tipografía:** Selecciona 1-2 fuentes que complementen tu logo y estilo. Una para títulos (con personalidad) y otra para texto (legible).',
+                '**Estilo Fotográfico:** ¿Tus fotos son en blanco y negro, saturadas, oscuras, luminosas? Define un estilo de edición y mantenlo.',
+                '**Moodboard:** Crea un collage visual en Pinterest o Canva con todas estas ideas para tener una guía clara.'
+            ]
+        },
+        {
+            title: '3. Tono de Voz: Cómo Hablas',
+            content: [
+                'Define la personalidad con la que te comunicas. ¿Eres cercano, misterioso, divertido, serio, poético?',
+                '**Biografía:** Escribe tres versiones: una corta (para redes sociales), una media (para Spotify) y una larga (para tu EPK). Cuenta tu historia, no solo tus logros.',
+                '**Comunicación en Redes:** Usa un lenguaje consistente en tus publicaciones y respuestas. ¿Usas emojis? ¿Escribes en mayúsculas? ¿Eres formal o informal?'
+            ]
+        },
+        {
+            title: '4. Storytelling: La Historia que Cuentas',
+            content: [
+                'Tu carrera es una historia en desarrollo. Cada lanzamiento, cada post, cada concierto es un capítulo.',
+                '**Narrativa del Lanzamiento:** ¿Cuál es la historia de esta canción o álbum? ¿Qué inspiró su creación? Crea contenido que cuente esta historia poco a poco.',
+                '**Conecta con tu Audiencia:** Comparte tus luchas, tus inspiraciones y tus éxitos. La vulnerabilidad crea conexiones fuertes.',
+                '**Consistencia:** La clave del branding es la repetición. Asegúrate de que tu imagen visual, tu tono de voz y tu historia sean coherentes en todas las plataformas (Spotify, Instagram, YouTube, etc.).'
+            ]
+        }
+    ]
 };

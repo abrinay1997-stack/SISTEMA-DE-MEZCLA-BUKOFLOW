@@ -1,26 +1,28 @@
 import React from 'react';
-import { MIXING_STEPS } from '../constants';
 import type { Project, Step } from '../types';
 import { CheckCircleIcon, XIcon } from './icons';
 
+interface StepWithDate extends Step {
+    dateRange: string;
+}
 interface SidebarProps {
   currentStepIndex: number;
   onSelectStep: (index: number) => void;
   project: Project;
   isOpen: boolean;
   onClose: () => void;
+  stepsWithDates: StepWithDate[];
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentStepIndex, onSelectStep, project, isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentStepIndex, onSelectStep, project, isOpen, onClose, stepsWithDates }) => {
 
-  const groupedSteps = MIXING_STEPS.reduce((acc, step) => {
+  // FIX: Explicitly typing the initial value of the reduce function correctly types `groupedSteps`.
+  // This resolves the issue where `stepsInCategory` was inferred as `unknown`, fixing the type error on `.map`.
+  const groupedSteps = stepsWithDates.reduce((acc, step) => {
     const category = step.category || 'General';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(step);
+    (acc[category] = acc[category] || []).push(step);
     return acc;
-  }, {} as Record<string, Step[]>);
+  }, {} as Record<string, StepWithDate[]>);
 
   const renderNavContent = () => (
     <nav className="space-y-4">
@@ -30,7 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStepIndex, onSelectStep, proje
             <ul className="space-y-1">
               {stepsInCategory.map((step) => {
                 const isActive = currentStepIndex === (step.id - 1);
-                const isCompleted = step.subSteps.every(subStep => project.subStepFeedback.get(subStep.id)?.completed);
+                const isCompleted = step.subSteps.every(subStep => !!project.subStepFeedback.get(subStep.id)?.completed);
                 return (
                   <li key={step.id}>
                     <button
@@ -40,7 +42,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStepIndex, onSelectStep, proje
                       <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
                         {isCompleted ? <CheckCircleIcon className="w-5 h-5 text-theme-success" /> : <span className="w-2 h-2 rounded-full bg-theme-accent-secondary/50"></span>}
                       </div>
-                      <span className="flex-1">{step.id}. {step.title}</span>
+                      <div className="flex-1">
+                        <span>{step.title}</span>
+                        {step.dateRange && <p className="text-xs text-theme-accent font-mono">{step.dateRange}</p>}
+                      </div>
                     </button>
                   </li>
                 );
@@ -60,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStepIndex, onSelectStep, proje
         <div className="absolute inset-0 bg-black/60" onClick={onClose}></div>
         <div className={`relative h-full transition-transform duration-300 ease-in-out bg-theme-bg-secondary backdrop-blur-md w-full max-w-xs flex flex-col p-4 border-r border-theme-border ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                <h2 className="text-lg font-bold text-theme-accent">Ruta de Mezcla</h2>
+                <h2 className="text-lg font-bold text-theme-accent">Ruta del Lanzamiento</h2>
                 <button onClick={onClose} className="p-1 rounded-full hover:bg-white/10">
                     <XIcon className="w-6 h-6 text-theme-text-secondary"/>
                 </button>
@@ -73,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStepIndex, onSelectStep, proje
 
       {/* Desktop Sidebar (Static) */}
       <aside className="hidden lg:block lg:w-1/3 xl:w-1/4 flex-shrink-0 bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg lg:sticky lg:top-8 h-fit p-4">
-        <h2 className="text-lg font-bold text-theme-accent mb-4 text-center">Ruta de Mezcla</h2>
+        <h2 className="text-lg font-bold text-theme-accent mb-4 text-center">Ruta del Lanzamiento</h2>
         {renderNavContent()}
       </aside>
     </>
