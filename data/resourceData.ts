@@ -69,6 +69,16 @@ export const resourceData: Resource[] = [
     tags: ['descargas', 'plantillas', 'checklist', 'recursos'],
     relatedSteps: [],
   },
+  {
+    id: 'res-presets',
+    title: 'Descargar Presets',
+    description: 'Accede a una colección de presets para tus plugins favoritos.',
+    type: 'download',
+    url: 'https://bukoflow.aweb.page/p/52775fa2-e70c-4240-b6d1-bd4936c26f11',
+    category: 'recursos',
+    tags: ['descargas', 'presets', 'plugins', 'recursos'],
+    relatedSteps: [],
+  },
   // --- New FAQs con videos ---
 
   {
