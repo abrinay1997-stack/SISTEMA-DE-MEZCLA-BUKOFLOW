@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { resourceData } from '../data/resourceData';
 import type { Resource, Step } from '../types';
 import { 
-    XIcon, StarIcon, StarFilledIcon, DownloadIcon, ChatBubbleIcon, QuestionMarkCircleIcon
+    XIcon, StarIcon, StarFilledIcon, PlayIcon, DownloadIcon, ChatBubbleIcon, QuestionMarkCircleIcon
 } from './icons';
 
 // --- Resource Card Sub-component --- //
@@ -10,11 +10,13 @@ interface ResourceCardProps {
     resource: Resource;
     isFavorite: boolean;
     onToggleFavorite: (id: string) => void;
+    onOpenTutorial: (url: string, title: string) => void;
 }
 
-const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onToggleFavorite }) => {
+const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onToggleFavorite, onOpenTutorial }) => {
     const renderIcon = () => {
         switch (resource.type) {
+            case 'video': return <PlayIcon className="w-5 h-5 text-theme-accent-secondary" />;
             case 'community': return <ChatBubbleIcon className="w-5 h-5 text-green-400" />;
             case 'download': return <DownloadIcon className="w-5 h-5 text-theme-accent" />;
             case 'faq': return <QuestionMarkCircleIcon className="w-5 h-5 text-indigo-400" />;
@@ -23,7 +25,9 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onTog
     };
 
     const handleAction = () => {
-        if (resource.type !== 'faq') { // Prevent click for faq
+        if (resource.type === 'video') {
+            onOpenTutorial(resource.url, resource.title);
+        } else if (resource.type !== 'faq') { // Prevent click for faq
             window.open(resource.url, '_blank', 'noopener,noreferrer');
         }
     };
@@ -55,9 +59,10 @@ interface ResourcePanelProps {
   currentStep: Step | null;
   favorites: Set<string>;
   onToggleFavorite: (id: string) => void;
+  onOpenTutorial: (url: string, title: string) => void;
 }
 
-const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentStep, favorites, onToggleFavorite }) => {
+const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentStep, favorites, onToggleFavorite, onOpenTutorial }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const relevantResources = useMemo(() => {
@@ -124,6 +129,7 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentS
                                     resource={res} 
                                     isFavorite={favorites.has(res.id)} 
                                     onToggleFavorite={onToggleFavorite} 
+                                    onOpenTutorial={onOpenTutorial} 
                                 />
                             ))}
                         </div>
@@ -140,6 +146,7 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentS
                                     resource={res} 
                                     isFavorite={true} 
                                     onToggleFavorite={onToggleFavorite} 
+                                    onOpenTutorial={onOpenTutorial} 
                                 />
                             ))}
                         </div>

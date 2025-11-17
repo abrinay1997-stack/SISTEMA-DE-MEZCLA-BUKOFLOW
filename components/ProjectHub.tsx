@@ -1,20 +1,15 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import type { Project, Resource, SubStepFeedback, Step } from '../types';
+import type { Project, Resource, SubStepFeedback } from '../types';
 import { resourceData, resourceCategories } from '../data/resourceData';
 import { themes, ThemeName } from '../themes';
-// FIX: Import RELEASE_STEPS to be used in the data import logic.
-import { RELEASE_STEPS } from '../constants';
 import { 
-    StarIcon, StarFilledIcon, TrashIcon, PlusIcon, DotsVerticalIcon, XIcon, CheckBadgeIcon, PencilIcon,
-    MarketingIcon, BrandingIcon, SpotifyIcon,
-    MusicNoteIcon, MicrophoneIcon, GuitarIcon, PianoIcon, DrumIcon, HeadphonesIcon, SlidersIcon,
-    DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon,
-    ChartBarIcon
+    LogoIcon, StarIcon, StarFilledIcon, TrashIcon, PlusIcon, DotsVerticalIcon, XIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, CheckBadgeIcon, PencilIcon,
+    WaveformIcon, UserVoiceIcon, GuitarPickIcon, PianoIcon, DrumIcon, HeadphonesIcon, WaveSineIcon,
+    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon
 } from './icons';
 import ProgressBar from './ProgressBar';
+import { MIXING_STEPS } from '../constants';
 import VideoTutorialModal from './VideoTutorialModal';
-import ComparisonModal from './ComparisonModal';
-import VisualAssetCreatorModal from './VisualAssetCreatorModal';
 
 type ResourceCategoryKey = keyof typeof resourceCategories;
 
@@ -23,15 +18,16 @@ interface ResourceCardProps {
     resource: Resource;
     isFavorite: boolean;
     onToggleFavorite: (id: string) => void;
+    onOpenTutorial: (url: string, title: string) => void;
 }
 
-const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onToggleFavorite }) => {
+const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onToggleFavorite, onOpenTutorial }) => {
     const renderIcon = () => {
         switch (resource.type) {
+            case 'video': return <PlayIcon className="w-5 h-5 text-theme-accent-secondary" />;
             case 'community': return <ChatBubbleIcon className="w-5 h-5 text-green-400" />;
             case 'download': return <DownloadIcon className="w-5 h-5 text-theme-accent" />;
             case 'faq': return <QuestionMarkCircleIcon className="w-5 h-5 text-indigo-400" />;
-            case 'link': return <svg className="w-5 h-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>;
             default: return null;
         }
     };
@@ -39,10 +35,12 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onTog
     const actionButton = () => {
         const commonClasses = "flex-shrink-0 flex items-center gap-2 text-xs font-semibold py-1 px-2 rounded-md transition-opacity duration-200 border";
         switch (resource.type) {
+            case 'video':
+                return <button onClick={() => onOpenTutorial(resource.url, resource.title)} className={`${commonClasses} bg-theme-accent/10 text-theme-accent border-theme-accent/20 hover:bg-theme-accent/20`}><PlayIcon className="w-4 h-4" /> Ver</button>;
             case 'community':
-            case 'link':
+                return <a href={resource.url} target="_blank" rel="noopener noreferrer" className={`${commonClasses} bg-green-500/10 text-green-300 border-green-500/20 hover:bg-green-500/20`}><ChatBubbleIcon className="w-4 h-4" /> Unirse</a>;
             case 'download':
-                return <a href={resource.url} target="_blank" rel="noopener noreferrer" className={`${commonClasses} bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20`}><svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-4.5 4.5V3m0 0L9 6m3-3l3 3" /></svg> Abrir</a>;
+                return <a href={resource.url} target="_blank" rel="noopener noreferrer" className={`${commonClasses} bg-theme-accent-secondary/10 text-theme-accent-secondary border-theme-accent-secondary/20 hover:bg-theme-accent-secondary/20`}><DownloadIcon className="w-4 h-4" /> Abrir</a>;
             case 'faq':
                 return null;
             default: return null;
@@ -73,11 +71,12 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, isFavorite, onTog
 interface ResourceCenterModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenTutorial: (url: string, title: string) => void;
   favorites: Set<string>;
   onToggleFavorite: (id: string) => void;
 }
 
-const ResourceCenterModal: React.FC<ResourceCenterModalProps> = ({ isOpen, onClose, favorites, onToggleFavorite }) => {
+const ResourceCenterModal: React.FC<ResourceCenterModalProps> = ({ isOpen, onClose, onOpenTutorial, favorites, onToggleFavorite }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<ResourceCategoryKey | 'all' | 'favorites'>('all');
 
@@ -165,6 +164,7 @@ const ResourceCenterModal: React.FC<ResourceCenterModalProps> = ({ isOpen, onClo
                             resource={resource}
                             isFavorite={favorites.has(resource.id)}
                             onToggleFavorite={onToggleFavorite}
+                            onOpenTutorial={onOpenTutorial}
                         />
                     ))}
                 </div>
@@ -182,13 +182,13 @@ const ResourceCenterModal: React.FC<ResourceCenterModalProps> = ({ isOpen, onClo
 
 // --- Icon Components & Map --- //
 const projectIcons: { [key: string]: React.FC<{className?: string}> } = {
-  default: MusicNoteIcon,
-  vocals: MicrophoneIcon,
-  guitar: GuitarIcon,
+  default: WaveformIcon,
+  vocals: UserVoiceIcon,
+  guitar: GuitarPickIcon,
   keys: PianoIcon,
   drums: DrumIcon,
   mix: HeadphonesIcon,
-  electronic: SlidersIcon,
+  synth: WaveSineIcon,
 };
 
 const iconKeys = Object.keys(projectIcons);
@@ -210,13 +210,11 @@ interface EditProjectModalProps {
 const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, project, onSave }) => {
     const [name, setName] = useState('');
     const [icon, setIcon] = useState('default');
-    const [releaseDate, setReleaseDate] = useState('');
 
     useEffect(() => {
         if(project) {
             setName(project.name);
             setIcon(project.icon || 'default');
-            setReleaseDate(project.releaseDate || '');
         }
     }, [project]);
 
@@ -224,7 +222,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
 
     const handleSave = () => {
         if (name.trim()) {
-            onSave({ ...project, name: name.trim(), icon, releaseDate });
+            onSave({ ...project, name: name.trim(), icon });
             onClose();
         }
     }
@@ -239,29 +237,19 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center p-4 border-b border-theme-border-secondary">
-                    <h2 className="text-lg font-bold text-theme-accent-secondary">Editar Lanzamiento</h2>
+                    <h2 className="text-lg font-bold text-theme-accent-secondary">Editar Proyecto</h2>
                     <button onClick={onClose} className="p-1 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
                         <XIcon className="w-6 h-6" />
                     </button>
                 </div>
                 <div className="p-6 space-y-6">
                     <div>
-                        <label htmlFor="projectName" className="block mb-2 text-sm font-medium text-theme-text">Nombre del Lanzamiento</label>
+                        <label htmlFor="projectName" className="block mb-2 text-sm font-medium text-theme-text">Nombre del Proyecto</label>
                         <input
                             type="text"
                             id="projectName"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="bg-theme-bg border-2 border-theme-border-secondary text-theme-text text-sm rounded-lg focus:ring-theme-accent-secondary focus:border-theme-accent-secondary block w-full p-2.5"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="releaseDate" className="block mb-2 text-sm font-medium text-theme-text">Fecha de Lanzamiento</label>
-                        <input
-                            type="date"
-                            id="releaseDate"
-                            value={releaseDate}
-                            onChange={(e) => setReleaseDate(e.target.value)}
                             className="bg-theme-bg border-2 border-theme-border-secondary text-theme-text text-sm rounded-lg focus:ring-theme-accent-secondary focus:border-theme-accent-secondary block w-full p-2.5"
                         />
                     </div>
@@ -303,18 +291,19 @@ interface SettingsModalProps {
   projects: Project[];
   favorites: Set<string>;
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
+  setThemeName: React.Dispatch<React.SetStateAction<ThemeName>>;
   setFavorites: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ 
     isOpen, onClose, onLogout, onReset, themeName, onSetThemeName, 
-    projects, favorites, setProjects, setFavorites
+    projects, favorites, setProjects, setThemeName, setFavorites
 }) => {
     const importInputRef = useRef<HTMLInputElement>(null);
 
     const handleExport = () => {
         const backupData = {
-            releaseProjects: projects.map(p => ({
+            mixingProjects: projects.map(p => ({
                 ...p,
                 subStepFeedback: Array.from(p.subStepFeedback.entries()),
             })),
@@ -327,7 +316,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         const a = document.createElement('a');
         const date = new Date().toISOString().slice(0, 10);
         a.href = url;
-        a.download = `guia_lanzamiento_backup_${date}.json`;
+        a.download = `rutadelviajero_backup_${date}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -349,16 +338,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 if (typeof text !== 'string') throw new Error('File could not be read');
                 const data = JSON.parse(text);
 
-                if (data.releaseProjects && data.appTheme && data.resourceFavorites) {
-                    const importedProjects: Project[] = data.releaseProjects.map((p: any) => ({
+                if (data.mixingProjects && data.appTheme && data.resourceFavorites) {
+                    const importedProjects: Project[] = data.mixingProjects.map((p: any) => ({
                         ...p,
-                        steps: (p.steps && p.steps.length > 0) ? p.steps : JSON.parse(JSON.stringify(RELEASE_STEPS)),
-                        budget: p.budget || [],
-                        activityLog: p.activityLog || [],
                         subStepFeedback: new Map<string, SubStepFeedback>(p.subStepFeedback),
                     }));
                     setProjects(importedProjects);
-                    onSetThemeName(data.appTheme);
+                    setThemeName(data.appTheme);
                     setFavorites(new Set<string>(data.resourceFavorites));
                     alert('¡Progreso importado con éxito!');
                     onClose();
@@ -454,14 +440,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 // --- Project Hub Component --- //
 interface ProjectHubProps {
   projects: Project[];
-  onAddProject: (name: string, releaseDate?: string) => void;
+  onAddProject: (name: string) => void;
   onDeleteProject: (id: string) => void;
   onTogglePriority: (id: string) => void;
   onUpdateProject: (project: Project) => void;
   onLogout: () => void;
   onResetAllProjects: () => void;
-  onOpenSpotifyExplorer: () => void;
+  onOpenEQGuide: () => void;
+  onOpenCompressionGuide: () => void;
+  onOpenReverbGuide: () => void;
+  onOpenSaturationGuide: () => void;
   themeName: ThemeName;
+  onSetThemeName: (themeName: ThemeName) => void;
   favorites: Set<string>;
   onToggleFavorite: (id: string) => void;
   onOpenSearch: () => void;
@@ -479,8 +469,12 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     onUpdateProject,
     onLogout, 
     onResetAllProjects,
-    onOpenSpotifyExplorer,
+    onOpenEQGuide,
+    onOpenCompressionGuide,
+    onOpenReverbGuide,
+    onOpenSaturationGuide,
     themeName,
+    onSetThemeName,
     favorites,
     onToggleFavorite,
     onOpenSearch,
@@ -490,20 +484,30 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     setFavorites
 }) => {
   const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectDate, setNewProjectDate] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isResourceCenterOpen, setIsResourceCenterOpen] = useState(false);
-  const [isComparisonOpen, setIsComparisonOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [isAssetCreatorOpen, setIsAssetCreatorOpen] = useState(false);
-  const newProjectNameInputRef = useRef<HTMLInputElement>(null);
   
+  const [tutorialModalState, setTutorialModalState] = useState<{ isOpen: boolean; url: string; title: string }>({ isOpen: false, url: '', title: '' });
+
+  const handleOpenTutorial = useCallback((url: string, title: string) => {
+    setTutorialModalState({ isOpen: true, url, title });
+  }, []);
+
+  const handleCloseTutorial = useCallback(() => {
+    setTutorialModalState({ isOpen: false, url: '', title: '' });
+  }, []);
+  
+  const totalSubSteps = useMemo(() =>
+    MIXING_STEPS.reduce((count, step) => count + step.subSteps.length, 0),
+    []
+  );
+
   const handleAddProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (newProjectName.trim()) {
-      onAddProject(newProjectName.trim(), newProjectDate || undefined);
+      onAddProject(newProjectName.trim());
       setNewProjectName('');
-      setNewProjectDate('');
     }
   };
   
@@ -521,25 +525,9 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
   };
 
   const calculateProgress = (project: Project) => {
-    const totalSubSteps = project.steps.reduce((count, step) => count + step.subSteps.length, 0);
-    if (totalSubSteps === 0) return 0;
     const completedCount = Array.from(project.subStepFeedback.values()).filter(f => f.completed).length;
-    return (completedCount / totalSubSteps) * 100;
+    return totalSubSteps > 0 ? (completedCount / totalSubSteps) * 100 : 0;
   };
-  
-  const getCountdown = (releaseDate?: string) => {
-    if (!releaseDate) return null;
-    const release = new Date(`${releaseDate}T00:00:00`);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diffTime = release.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffTime < - (1000 * 60 * 60 * 24)) return { text: "Lanzado", isPast: true };
-    if (diffDays === 0) return { text: "¡Hoy!", isPast: false, isToday: true };
-    if (diffDays === 1) return { text: "Mañana", isPast: false };
-    return { text: `en ${diffDays} días`, isPast: false };
-  }
 
   return (
     <>
@@ -549,12 +537,12 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
       <div className="container mx-auto px-4 py-8 md:py-12">
         <header className="flex justify-between items-center mb-8 md:mb-12">
           <div className="flex items-center gap-4">
-            <img alt="Logo" className="w-12 h-auto md:w-16 md:h-auto filter drop-shadow-[0_0_8px_var(--theme-accent)]" src="https://hostedimages-cdn.aweber-static.com/MjM0MTQ0NQ==/thumbnail/188302f5ca5241bd9111d44862883f63.png" />
+            <LogoIcon className="w-12 h-12 md:w-16 md:h-16 object-contain" />
             <div>
                 <h1 className="text-xl md:text-3xl font-bold text-theme-accent-secondary tracking-widest uppercase">
-                    Panel de Proyectos
+                    Hub de Proyectos
                 </h1>
-                <p className="text-sm md:text-lg text-theme-accent">Tus Lanzamientos Musicales</p>
+                <p className="text-sm md:text-lg text-theme-accent">Tus Mezclas</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -564,13 +552,6 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                 aria-label="Búsqueda Global"
             >
                 <SearchIcon className="w-7 h-7" />
-            </button>
-             <button 
-                onClick={() => setIsComparisonOpen(true)}
-                className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                aria-label="Comparar Lanzamientos"
-            >
-                <ChartBarIcon className="w-7 h-7" />
             </button>
             <button 
                 onClick={() => setIsResourceCenterOpen(true)}
@@ -590,23 +571,15 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
         </header>
 
         <div className="max-w-3xl mx-auto mb-8">
-            <form onSubmit={handleAddProject} className="flex flex-col sm:flex-row gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-accent-secondary">
+            <form onSubmit={handleAddProject} className="flex gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-accent-secondary">
                 <input
-                    ref={newProjectNameInputRef}
                     type="text"
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
-                    placeholder="Nombre del nuevo lanzamiento..."
+                    placeholder="Nombre de la nueva mezcla..."
                     className="flex-grow bg-theme-bg border-2 border-theme-border-secondary text-theme-text rounded-lg focus:ring-theme-accent-secondary focus:border-theme-accent-secondary p-2.5"
-                    required
                 />
-                <input
-                    type="date"
-                    value={newProjectDate}
-                    onChange={(e) => setNewProjectDate(e.target.value)}
-                    className="sm:w-48 bg-theme-bg border-2 border-theme-border-secondary text-theme-text rounded-lg focus:ring-theme-accent-secondary focus:border-theme-accent-secondary p-2.5"
-                />
-                <button type="submit" className="flex items-center justify-center gap-2 text-white bg-gradient-to-r from-theme-accent to-theme-accent-secondary hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-theme-accent-secondary font-medium rounded-lg px-5 py-2.5">
+                <button type="submit" className="flex items-center gap-2 text-white bg-gradient-to-r from-theme-accent to-theme-accent-secondary hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-theme-accent-secondary font-medium rounded-lg px-5 py-2.5">
                     <PlusIcon className="w-5 h-5" />
                     <span className="hidden sm:inline">Crear</span>
                 </button>
@@ -614,14 +587,35 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
         </div>
         
         <div className="max-w-3xl mx-auto mb-12">
-            <h2 className="text-xl font-bold text-theme-accent-secondary mb-4 text-center">Herramientas y Guías</h2>
-            <div className="max-w-xs mx-auto">
-                 <button
-                    onClick={onOpenSpotifyExplorer}
-                    className="w-full flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border text-green-500 hover:bg-green-500/10 hover:shadow-lg hover:shadow-green-500/20 transform hover:-translate-y-1"
+            <h2 className="text-xl font-bold text-theme-accent-secondary mb-4 text-center">Guías Profesionales</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button
+                    onClick={onOpenEQGuide}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border-secondary text-theme-accent hover:bg-theme-accent/20 hover:shadow-lg hover:shadow-accent transform hover:-translate-y-1"
                 >
-                    <SpotifyIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Análisis e Investigación de Artistas</span>
+                    <BookOpenIcon className="w-8 h-8" />
+                    <span className="text-sm text-center">Ecualización</span>
+                </button>
+                 <button
+                    onClick={onOpenCompressionGuide}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border text-theme-accent-secondary hover:bg-theme-accent-secondary/20 hover:shadow-lg hover:shadow-accent-secondary transform hover:-translate-y-1"
+                >
+                    <SlidersIcon className="w-8 h-8" />
+                    <span className="text-sm text-center">Compresión</span>
+                </button>
+                <button
+                    onClick={onOpenReverbGuide}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-purple-500/30 text-purple-300 hover:bg-purple-500/20 hover:shadow-lg hover:shadow-purple-500/20 transform hover:-translate-y-1"
+                >
+                    <ReverbIcon className="w-8 h-8" />
+                    <span className="text-sm text-center">Reverb</span>
+                </button>
+                <button
+                    onClick={onOpenSaturationGuide}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:shadow-lg hover:shadow-amber-500/20 transform hover:-translate-y-1"
+                >
+                    <SaturationIcon className="w-8 h-8" />
+                    <span className="text-sm text-center">Saturación</span>
                 </button>
             </div>
         </div>
@@ -631,7 +625,6 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                 sortedProjects.map(project => {
                     const progress = calculateProgress(project);
                     const isCompleted = progress >= 100;
-                    const countdown = getCountdown(project.releaseDate);
                     return (
                         <div 
                            key={project.id} 
@@ -640,14 +633,7 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                            <div className="flex-grow cursor-pointer flex items-center gap-4" onClick={() => onSelectProject(project.id)}>
                                <ProjectIcon icon={project.icon} className="w-8 h-8 text-theme-accent-secondary flex-shrink-0" />
                                <div className="flex-grow">
-                                   <div className="flex items-center gap-2">
-                                     <h3 className={`font-bold text-lg ${project.isPriority ? 'text-theme-priority' : 'text-theme-text'}`}>{project.name}</h3>
-                                     {countdown && (
-                                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${countdown.isPast ? 'bg-gray-500/20 text-gray-300' : countdown.isToday ? 'bg-theme-accent text-white' : 'bg-theme-accent-secondary/20 text-theme-accent-secondary'}`}>
-                                             {countdown.text}
-                                         </span>
-                                     )}
-                                   </div>
+                                   <h3 className={`font-bold text-lg ${project.isPriority ? 'text-theme-priority' : 'text-theme-text'}`}>{project.name}</h3>
                                    {isCompleted ? (
                                         <div className="flex items-center gap-2 mt-1 h-4">
                                             <CheckBadgeIcon className="w-6 h-6 text-theme-success" />
@@ -685,25 +671,9 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                     )
                 })
             ) : (
-                 <div className="text-center py-12 px-4 bg-theme-bg-secondary rounded-lg border border-dashed border-theme-border animate-fade-in-step">
-                    <h3 className="text-2xl font-bold text-theme-accent-secondary">¡Bienvenido a tu Asistente de Lanzamiento!</h3>
-                    <p className="text-theme-text-secondary mt-2 mb-8 max-w-xl mx-auto">Empecemos a construir tu próximo éxito. ¿Qué te gustaría hacer primero?</p>
-                    <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                        <button 
-                            onClick={() => newProjectNameInputRef.current?.focus()}
-                            className="w-full sm:w-auto flex items-center justify-center gap-3 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-theme-accent to-theme-accent-secondary text-white hover:shadow-lg hover:shadow-accent-secondary/30 transform hover:-translate-y-1"
-                        >
-                            <PlusIcon className="w-6 h-6" />
-                            Crear mi primer plan de lanzamiento
-                        </button>
-                        <button
-                            onClick={onOpenSpotifyExplorer}
-                            className="w-full sm:w-auto flex items-center justify-center gap-3 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-theme-bg border-2 border-theme-border text-theme-text hover:border-theme-accent transform hover:-translate-y-1"
-                        >
-                            <SpotifyIcon className="w-6 h-6" />
-                            Investigar artistas para inspirarme
-                        </button>
-                    </div>
+                <div className="text-center py-12 px-4 bg-theme-bg-secondary rounded-lg border border-dashed border-theme-border">
+                    <h3 className="text-xl text-theme-accent-secondary">No hay proyectos todavía.</h3>
+                    <p className="text-theme-text-secondary mt-2">Crea tu primer proyecto de mezcla para empezar la ruta.</p>
                 </div>
             )}
         </main>
@@ -716,10 +686,11 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
         onLogout={onLogout}
         onReset={onResetAllProjects}
         themeName={themeName}
-        onSetThemeName={setThemeName}
+        onSetThemeName={onSetThemeName}
         projects={projects}
         favorites={favorites}
         setProjects={setProjects}
+        setThemeName={setThemeName}
         setFavorites={setFavorites}
     />
     <EditProjectModal 
@@ -731,17 +702,15 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     <ResourceCenterModal 
         isOpen={isResourceCenterOpen}
         onClose={() => setIsResourceCenterOpen(false)}
+        onOpenTutorial={handleOpenTutorial}
         favorites={favorites}
         onToggleFavorite={onToggleFavorite}
     />
-     <ComparisonModal
-        isOpen={isComparisonOpen}
-        onClose={() => setIsComparisonOpen(false)}
-        projects={projects}
-    />
-    <VisualAssetCreatorModal
-        isOpen={isAssetCreatorOpen}
-        onClose={() => setIsAssetCreatorOpen(false)}
+    <VideoTutorialModal 
+        isOpen={tutorialModalState.isOpen}
+        onClose={handleCloseTutorial}
+        videoUrl={tutorialModalState.url}
+        title={tutorialModalState.title}
     />
     </>
   );

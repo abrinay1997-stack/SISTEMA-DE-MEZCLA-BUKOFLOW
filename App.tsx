@@ -1,33 +1,25 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import type { Project, SubStepFeedback, ReleaseProfile } from './types';
+import type { Project, SubStepFeedback } from './types';
 import { themes, ThemeName } from './themes';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import LoginPage from './components/LoginPage';
 import ProjectHub from './components/ProjectHub';
-import ReleasePlanView from './components/ReleasePlanView';
+import MixingView from './components/MixingView';
 import ConfirmModal from './components/ConfirmModal';
+import EQGuideModal from './components/EQGuideModal';
+import CompressionGuideModal from './components/CompressionGuideModal';
+import ReverbGuideModal from './components/ReverbGuideModal';
+import SaturationGuideModal from './components/SaturationGuideModal';
 import GlobalSearchModal from './components/GlobalSearchModal';
-import { RELEASE_STEPS } from './constants';
-import SpotifyExplorerModal from './components/SpotifyExplorerModal';
-import MarketingGuideModal from './components/EQGuideModal';
-import BrandingGuideModal from './components/CompressionGuideModal';
-import ReleaseProfileModal from './components/ReleaseProfileModal';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useLocalStorage('isAuthenticated', false);
-  const [projects, setProjects] = useLocalStorage<Project[]>('releaseProjects', []);
+  const [projects, setProjects] = useLocalStorage<Project[]>('mixingProjects', []);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [themeName, setThemeName] = useLocalStorage<ThemeName>('app-theme', 'bukoflow-dark-orange');
   const [favorites, setFavorites] = useLocalStorage<Set<string>>('resourceFavorites', new Set());
   
   const [initialStepIndex, setInitialStepIndex] = useState<number | null>(null);
-
-  // State for new release profile flow
-  const [profilingProject, setProfilingProject] = useState<Project | null>(null);
-  
-  // State to pass project context to guide modals
-  const [guideProject, setGuideProject] = useState<Project | null>(null);
-
 
   useEffect(() => {
     const theme = themes[themeName];
@@ -39,18 +31,32 @@ const App: React.FC = () => {
 
   const [confirmAction, setConfirmAction] = useState<{ action: (() => void) | null; title: string; message: string }>({ action: null, title: '', message: '' });
 
+  const [isEQGuideOpen, setIsEQGuideOpen] = useState(false);
+  const [isCompressionGuideOpen, setIsCompressionGuideOpen] = useState(false);
+  const [isReverbGuideOpen, setIsReverbGuideOpen] = useState(false);
+  const [isSaturationGuideOpen, setIsSaturationGuideOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isSpotifyExplorerOpen, setIsSpotifyExplorerOpen] = useState(false);
-  const [isMarketingGuideOpen, setIsMarketingGuideOpen] = useState(false);
-  const [isBrandingGuideOpen, setIsBrandingGuideOpen] = useState(false);
 
+  const openEQGuide = useCallback(() => setIsEQGuideOpen(true), []);
+  const closeEQGuide = useCallback(() => setIsEQGuideOpen(false), []);
+  const openCompressionGuide = useCallback(() => setIsCompressionGuideOpen(true), []);
+  const closeCompressionGuide = useCallback(() => setIsCompressionGuideOpen(false), []);
+  const openReverbGuide = useCallback(() => setIsReverbGuideOpen(true), []);
+  const closeReverbGuide = useCallback(() => setIsReverbGuideOpen(false), []);
+  const openSaturationGuide = useCallback(() => setIsSaturationGuideOpen(true), []);
+  const closeSaturationGuide = useCallback(() => setIsSaturationGuideOpen(false), []);
+
+  const guideHandlers = {
+    onOpenEQGuide: openEQGuide,
+    onOpenCompressionGuide: openCompressionGuide,
+    onOpenReverbGuide: openReverbGuide,
+    onOpenSaturationGuide: openSaturationGuide,
+  };
 
   const handleLoginSuccess = () => setIsAuthenticated(true);
   const handleLogout = () => setIsAuthenticated(false);
 
-  const handleAddProject = (name: string, releaseDate?: string) => {
-    const newProjectSteps = JSON.parse(JSON.stringify(RELEASE_STEPS));
-
+  const handleAddProject = (name: string) => {
     const newProject: Project = {
       id: crypto.randomUUID(),
       name,
@@ -59,31 +65,8 @@ const App: React.FC = () => {
       createdAt: Date.now(),
       icon: 'default',
       lastStepIndex: 0,
-      releaseDate,
-      steps: newProjectSteps,
-      budget: [],
-      income: [],
-      advances: 0,
-      royaltySplits: '',
-      activityLog: [],
-      performanceSummary: {
-        spotifyStreams: Math.floor(Math.random() * 20000) + 5000,
-        instagramFollowersGained: Math.floor(Math.random() * 500) + 100,
-        presaveCost: parseFloat((Math.random() * 0.5 + 0.1).toFixed(2)),
-        tiktokViews: Math.floor(Math.random() * 400000) + 50000,
-      }
     };
     setProjects(prev => [...prev, newProject]);
-    setProfilingProject(newProject); // Open profile modal for the new project
-  };
-
-  const handleSaveProfile = (projectId: string, profile: ReleaseProfile) => {
-    setProjects(prevProjects => 
-        prevProjects.map(p => 
-            p.id === projectId ? { ...p, releaseProfile: profile } : p
-        )
-    );
-    setProfilingProject(null); // Close the modal
   };
 
   const handleDeleteProject = (id: string) => {
@@ -93,7 +76,7 @@ const App: React.FC = () => {
         closeConfirmModal();
       },
       title: 'Confirmar Eliminación',
-      message: '¿Estás seguro de que quieres eliminar este lanzamiento? Esta acción no se puede deshacer.'
+      message: '¿Estás seguro de que quieres eliminar este proyecto? Esta acción no se puede deshacer.'
     });
   };
   
@@ -104,7 +87,7 @@ const App: React.FC = () => {
         closeConfirmModal();
       },
       title: 'Confirmar Reinicio',
-      message: '¿Estás seguro de que quieres reiniciar la aplicación? Se eliminarán TODOS los lanzamientos y su progreso. Esta acción no se puede deshacer.'
+      message: '¿Estás seguro de que quieres reiniciar la aplicación? Se eliminarán TODOS los proyectos y su progreso. Esta acción no se puede deshacer.'
     });
   };
 
@@ -141,32 +124,20 @@ const App: React.FC = () => {
     return projects.find(p => p.id === activeProjectId) || null;
   }, [activeProjectId, projects]);
 
-  const openMarketingGuide = (project: Project) => {
-    setGuideProject(project);
-    setIsMarketingGuideOpen(true);
-  };
-
-  const openBrandingGuide = (project: Project) => {
-    setGuideProject(project);
-    setIsBrandingGuideOpen(true);
-  };
-
   if (!isAuthenticated) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
   const mainContent = activeProject ? 
-    <ReleasePlanView 
+    <MixingView 
         project={activeProject} 
         onUpdateProject={handleUpdateProject} 
         onGoToHub={handleGoToHub}
         favorites={favorites}
-        // FIX: The prop was being passed an undefined variable. Changed to use the correct handler function.
         onToggleFavorite={handleToggleFavorite}
         initialStepIndex={initialStepIndex}
         onClearInitialStep={() => setInitialStepIndex(null)}
-        onOpenMarketingGuide={() => openMarketingGuide(activeProject)}
-        onOpenBrandingGuide={() => openBrandingGuide(activeProject)}
+        {...guideHandlers}
     /> :
     <ProjectHub
       projects={projects}
@@ -177,15 +148,15 @@ const App: React.FC = () => {
       onLogout={handleLogout}
       onResetAllProjects={handleResetAllProjects}
       themeName={themeName}
+      onSetThemeName={setThemeName}
       favorites={favorites}
-      // FIX: The prop was being passed an undefined variable. Changed to use the correct handler function.
       onToggleFavorite={handleToggleFavorite}
       onOpenSearch={() => setIsSearchOpen(true)}
       onSelectProject={setActiveProjectId}
       setProjects={setProjects}
       setThemeName={setThemeName}
       setFavorites={setFavorites}
-      onOpenSpotifyExplorer={() => setIsSpotifyExplorerOpen(true)}
+      {...guideHandlers}
     />;
 
   return (
@@ -203,29 +174,12 @@ const App: React.FC = () => {
         onClose={() => setIsSearchOpen(false)}
         projects={projects}
         onSelectProjectAndStep={handleSelectProjectAndStep}
-        onOpenMarketingGuide={() => activeProject && openMarketingGuide(activeProject)}
-        onOpenBrandingGuide={() => activeProject && openBrandingGuide(activeProject)}
+        {...guideHandlers}
       />
-       <SpotifyExplorerModal
-        isOpen={isSpotifyExplorerOpen}
-        onClose={() => setIsSpotifyExplorerOpen(false)}
-      />
-      <MarketingGuideModal
-        isOpen={isMarketingGuideOpen}
-        onClose={() => setIsMarketingGuideOpen(false)}
-        project={guideProject}
-      />
-       <BrandingGuideModal
-        isOpen={isBrandingGuideOpen}
-        onClose={() => setIsBrandingGuideOpen(false)}
-        project={guideProject}
-      />
-      <ReleaseProfileModal
-        isOpen={!!profilingProject}
-        onClose={() => setProfilingProject(null)}
-        project={profilingProject}
-        onSave={handleSaveProfile}
-       />
+      <EQGuideModal isOpen={isEQGuideOpen} onClose={closeEQGuide} />
+      <CompressionGuideModal isOpen={isCompressionGuideOpen} onClose={closeCompressionGuide} />
+      <ReverbGuideModal isOpen={isReverbGuideOpen} onClose={closeReverbGuide} />
+      <SaturationGuideModal isOpen={isSaturationGuideOpen} onClose={closeSaturationGuide} />
     </>
   );
 };

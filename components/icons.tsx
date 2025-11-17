@@ -1,5 +1,13 @@
 import React from 'react';
 
+export const LogoIcon = ({ className }: { className?: string }) => (
+  <img 
+    src="https://hostedimages-cdn.aweber-static.com/MjM0MTQ0NQ==/thumbnail/188302f5ca5241bd9111d44862883f63.png" 
+    alt="Logo de la aplicación" 
+    className={`${className} filter drop-shadow-[0_0_3px_var(--theme-accent)]`} 
+  />
+);
+
 export const LightbulbIcon = ({ className }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -44,8 +52,15 @@ export const LoaderIcon = ({ className }: { className?: string }) => (
 
 export const BookOpenIcon = ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 3v18M12 3v18M18 3v18" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 9h4m2 6h4m2-12h4" />
     </svg>
+);
+
+export const SlidersIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6L9 12.75l4.306-4.306a11.95 11.95 0 015.814 5.518l2.74 1.22m0 0L15.75 9M21.75 18V13.5H17.25" />
+  </svg>
 );
 
 export const StarIcon = ({ className }: { className?: string }) => (
@@ -84,15 +99,17 @@ export const DotsVerticalIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export const MarketingIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519 2.25 2.25 0 012.185 2.185 11.95 11.95 0 01-5.519 5.814l-4.306-4.307L2.25 18z" />
+export const ReverbIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path d="M4 8C4 8 6 6 8 6C10 6 12 8 14 8C16 8 18 6 20 6" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M4 12C4 12 6 10 8 10C10 10 12 12 14 12C16 12 18 10 20 10" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M4 16C4 16 6 14 8 14C10 14 12 16 14 16C16 16 18 14 20 14" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
 );
 
-export const BrandingIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1120.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5" />
+export const SaturationIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 00-2.422 2.473" />
     </svg>
 );
 
@@ -150,137 +167,75 @@ export const QuestionMarkCircleIcon = ({ className }: { className?: string }) =>
     </svg>
 );
 
-// FIX: Added SpotifyIcon to be used in the SpotifyExplorerModal.
-export const SpotifyIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" fill="currentColor">
-        <path d="M248 8C111.1 8 0 119.1 0 256s111.1 248 248 248 248-111.1 248-248S384.9 8 248 8zm100.7 364.9c-4.2 0-6.8-1.3-10.7-3.6-62.4-37.6-135-46.3-240-25.5-3.9 1.3-7.9 2.6-11.9 2.6-9.7 0-15.8-7.7-15.8-15.8 0-10.3 6.1-15.2 13.6-16.8 81.9-18.1 165.6-16.5 237 26.2 6.1 3.9 9.7 7.7 9.7 16.8s-7.7 15.8-15.9 15.8zM372.7 299c-5.8 0-11.9-2.2-16.5-5.5-67.2-40-155-44.5-257-24.5-4.2 1-9.7 2.2-13.6 2.2-11.9 0-19.4-8.8-19.4-19.4s5.5-16.5 17.2-18.1c94.2-17.2 181.9-12.7 252.3 30.6 6.8 4.2 11.9 8.8 11.9 19.4.1 11.9-8.7 22.8-20.9 22.8zm23.8-67.2c-7.7 0-13.6-2.6-19.4-6.8-84.3-52.1-197.4-55.6-293-30.6-5.5 1.3-11.9 2.6-16.5 2.6-13.6 0-23.4-10.3-23.4-23.4s7.2-20.9 21.2-23.4c116.1-24.5 238.8-19.4 338.7 39.5 8.8 4.9 13.6 11.9 13.6 23.4 0 13.6-11.9 26.1-26.8 26.1z"/>
-    </svg>
-);
-
 // --- New Aesthetic Project Icons ---
 
-export const MusicNoteIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V7.5A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v1.5M9 9l-3 3m0 0l3 3m-3-3h12" />
+export const WaveformIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M3 12h5l4 8v-16l4 8h5" />
     </svg>
 );
 
-export const MicrophoneIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 013-3a3 3 0 013 3v8.25a3 3 0 01-3 3z" />
+export const UserVoiceIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M9 20h6" />
+        <path d="M12 17v3" />
+        <path d="M12 13a4 4 0 0 0 4 -4v-1a4 4 0 1 0 -8 0v1a4 4 0 0 0 4 4z" />
+        <path d="M18.5 14.5a3.5 3.5 0 1 0 -5 0a3.5 3.5 0 1 0 5 0" />
     </svg>
 );
 
-export const GuitarIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V7.5A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v1.5M9 9l-3 3m0 0l3 3m-3-3h12" />
+export const GuitarPickIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M10.134 3.113a3.866 3.866 0 0 1 3.732 0l6 3.5c2.1 1.225 2.1 4.202 0 5.426l-6 3.5a3.866 3.866 0 0 1 -3.732 0l-6 -3.5c-2.1 -1.225 -2.1 -4.202 0 -5.426l6 -3.5z" />
     </svg>
 );
 
 export const PianoIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v5.25a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25v-5.25M19.5 14.25v-5.25a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v5.25m15 0v-2.25a.75.75 0 00-.75-.75H5.25a.75.75 0 00-.75.75v2.25" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 12.75h.008v.008H9.75v-.008zM12 12.75h.008v.008H12v-.008zM14.25 12.75h.008v.008H14.25v-.008z" />
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M3 5m0 1a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1z" />
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="8" y1="5" x2="8" y2="15" />
+        <line x1="16" y1="5" x2="16" y2="15" />
+        <line x1="5" y1="5" x2="5" y2="15" />
+        <line x1="19" y1="5" x2="19" y2="15" />
     </svg>
 );
 
 export const DrumIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6.375l-3.375-3.375M16.5 6.375v3.375h-3.375M16.5 6.375l-6.375 6.375" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 12.375l-3.375 3.375M7.5 12.375v-3.375h3.375M7.5 12.375l6.375-6.375" />
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M18 10a6 6 0 1 0 -12 0a6 6 0 0 0 12 0z" />
+        <path d="M6 10l12 0" />
+        <path d="M6.5 15l-1.5 6" />
+        <path d="M17.5 15l1.5 6" />
     </svg>
 );
 
 export const HeadphonesIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.75a1.5 1.5 0 011.5 1.5v13.5a1.5 1.5 0 01-1.5-1.5h-1.5a1.5 1.5 0 01-1.5-1.5v-1.5a1.5 1.5 0 00-1.5-1.5h-3a1.5 1.5 0 00-1.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H6a1.5 1.5 0 01-1.5-1.5V5.25a1.5 1.5 0 011.5-1.5h1.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 001.5 1.5h3a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 011.5-1.5h1.5z" />
     </svg>
 );
 
-export const SlidersIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
+export const WaveSineIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M21 12h-2c-.89 -4.28 -2.63 -7.37 -4.5 -8.5s-4.11 -.56 -5.5 1.5s-1.44 4.5 -1.5 5.5h-2" />
+    </svg>
+);
+
+export const PlayIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
     </svg>
 );
 
 export const SearchIcon = ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-    </svg>
-);
-
-export const ChartBarIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-    </svg>
-);
-
-export const CurrencyDollarIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-);
-
-export const ClipboardListIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-);
-
-export const TrendingUpIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519 2.25 2.25 0 012.185 2.185 11.95 11.95 0 01-5.519 5.814l-4.306-4.307L2.25 18z" />
-    </svg>
-);
-
-// --- Category Pattern Icons ---
-export const PlanificationPatternIcon = ({ className }: { className?: string }) => (
-    <svg className={className} width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <pattern id="planGrid" patternUnits="userSpaceOnUse" width="10" height="10">
-                <circle cx="2" cy="2" r="1" fill="currentColor"/>
-            </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#planGrid)" />
-    </svg>
-);
-
-export const BrandingPatternIcon = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M -10,110 Q 50,0 110,-10" stroke="currentColor" strokeWidth="2" fill="none" />
-        <path d="M -10,70 Q 30,0 70,70 T 110,30" stroke="currentColor" strokeWidth="2" fill="none" />
-    </svg>
-);
-
-export const DistributionPatternIcon = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="10" cy="90" r="3" fill="currentColor" />
-        <circle cx="50" cy="50" r="3" fill="currentColor" />
-        <circle cx="90" cy="10" r="3" fill="currentColor" />
-        <circle cx="30" cy="20" r="3" fill="currentColor" />
-        <circle cx="80" cy="80" r="3" fill="currentColor" />
-        <line x1="10" y1="90" x2="50" y2="50" stroke="currentColor" strokeWidth="1"/>
-        <line x1="50" y1="50" x2="30" y2="20" stroke="currentColor" strokeWidth="1"/>
-        <line x1="50" y1="50" x2="90" y2="10" stroke="currentColor" strokeWidth="1"/>
-        <line x1="50" y1="50" x2="80" y2="80" stroke="currentColor" strokeWidth="1"/>
-    </svg>
-);
-
-export const MarketingPatternIcon = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <polyline points="0 90 20 60 40 80 60 40 80 70 100 20" stroke="currentColor" strokeWidth="3" fill="none"/>
-    </svg>
-);
-
-export const LaunchPatternIcon = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <line x1="50" y1="50" x2="50" y2="0" stroke="currentColor" strokeWidth="2"/>
-        <line x1="50" y1="50" x2="100" y2="50" stroke="currentColor" strokeWidth="2"/>
-        <line x1="50" y1="50" x2="50" y2="100" stroke="currentColor" strokeWidth="2"/>
-        <line x1="50" y1="50" x2="0" y2="50" stroke="currentColor" strokeWidth="2"/>
-        <line x1="50" y1="50" x2="92" y2="8" stroke="currentColor" strokeWidth="2"/>
-        <line x1="50" y1="50" x2="8" y2="92" stroke="currentColor" strokeWidth="2"/>
-        <line x1="50" y1="50" x2="92" y2="92" stroke="currentColor" strokeWidth="2"/>
-        <line x1="50" y1="50" x2="8" y2="8" stroke="currentColor" strokeWidth="2"/>
     </svg>
 );

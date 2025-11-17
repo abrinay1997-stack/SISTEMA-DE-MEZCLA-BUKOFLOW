@@ -1,7 +1,9 @@
-import { RELEASE_STEPS } from '../constants';
+import { MIXING_STEPS } from '../constants';
 import { resourceData } from '../data/resourceData';
-import { marketingGuideData } from '../data/eqData';
-import { brandingGuideData } from '../data/compressionData';
+import { eqData } from '../data/eqData';
+import { compressionData } from '../data/compressionData';
+import { reverbData } from '../data/reverbData';
+import { saturationData } from '../data/saturationData';
 import type { SearchResult, Step, Resource } from '../types';
 
 const searchInString = (term: string, content: string | undefined): boolean => {
@@ -15,7 +17,7 @@ export const performSearch = (searchTerm: string): SearchResult => {
     }
 
     // Search Steps
-    const steps: Step[] = RELEASE_STEPS.filter(step =>
+    const steps: Step[] = MIXING_STEPS.filter(step =>
         searchInString(term, step.title) ||
         searchInString(term, step.subtitle) ||
         searchInString(term, step.philosophy) ||
@@ -25,12 +27,18 @@ export const performSearch = (searchTerm: string): SearchResult => {
     );
 
     // Search Guides
-    const guides: { guide: 'marketing' | 'branding'; term: string }[] = [];
-    if (JSON.stringify(marketingGuideData).toLowerCase().includes(term)) {
-        guides.push({ guide: 'marketing', term: 'Plan de Marketing' });
+    const guides: { guide: 'eq' | 'compression' | 'reverb' | 'saturation'; term: string }[] = [];
+    if (JSON.stringify(eqData).toLowerCase().includes(term)) {
+        guides.push({ guide: 'eq', term: 'Ecualización' });
     }
-    if (JSON.stringify(brandingGuideData).toLowerCase().includes(term)) {
-        guides.push({ guide: 'branding', term: 'Branding de Artista' });
+    if (JSON.stringify(compressionData).toLowerCase().includes(term)) {
+        guides.push({ guide: 'compression', term: 'Compresión' });
+    }
+    if (JSON.stringify(reverbData).toLowerCase().includes(term)) {
+        guides.push({ guide: 'reverb', term: 'Reverb' });
+    }
+    if (JSON.stringify(saturationData).toLowerCase().includes(term)) {
+        guides.push({ guide: 'saturation', term: 'Saturación' });
     }
 
     // Search FAQs
