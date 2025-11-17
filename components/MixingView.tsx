@@ -61,17 +61,19 @@ const MixingView: React.FC<MixingViewProps> = ({
   );
 
   const { progress, isCompleted } = useMemo(() => {
-    // FIX: Re-create a properly typed map to ensure type safety, fixing the error on this line.
-    const typedFeedbackMap = new Map<string, SubStepFeedback>(project.subStepFeedback.entries() as any);
-    const completedCount = Array.from(typedFeedbackMap.values()).filter(f => f.completed).length;
+    // The project.subStepFeedback data from localStorage might not be a proper Map instance.
+    // Creating a new Map from it ensures we can safely use Map methods like .values().
+    const feedbackMap = new Map<string, SubStepFeedback>(project.subStepFeedback as any);
+    const completedCount = Array.from(feedbackMap.values()).filter(f => f.completed).length;
     const progress = totalSubSteps > 0 ? (completedCount / totalSubSteps) * 100 : 0;
     const isCompleted = totalSubSteps > 0 && completedCount === totalSubSteps;
     return { progress, isCompleted };
   }, [project.subStepFeedback, totalSubSteps]);
   
   const handleUpdateSubStep = useCallback((subStepId: string, feedbackUpdate: Partial<SubStepFeedback>) => {
-    // Create a new, correctly typed Map from the potentially untyped project data.
-    const newFeedbackMap = new Map<string, SubStepFeedback>(project.subStepFeedback.entries() as any);
+    // Create a new Map instance to ensure data is a proper Map and to avoid direct state mutation.
+    // This is safer than assuming `project.subStepFeedback` is already a Map instance with an `.entries()` method.
+    const newFeedbackMap = new Map<string, SubStepFeedback>(project.subStepFeedback as any);
     const currentFeedback = newFeedbackMap.get(subStepId);
 
     // Create a well-defined SubStepFeedback object to ensure type consistency.
