@@ -1,0 +1,350 @@
+import React, { useState, useMemo } from 'react';
+import { reverbData, reverbTooltips } from '../data/reverbData';
+import { XIcon, ChevronDownIcon } from './icons';
+import type { ReverbType, ReverbPlugin } from '../types';
+
+type FilterType = 'asistente' | 'tipos' | 'usos' | 'diseno' | 'lista';
+
+interface ReverbGuideModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface TooltipProps {
+  text: string;
+  children: React.ReactNode;
+}
+
+const Tooltip: React.FC<TooltipProps> = ({ text, children }) => (
+  <span className="group relative">
+    {children}
+    <span className="absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-md border border-white/10 bg-theme-bg px-3 py-2 text-left text-sm text-theme-text opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+      {text}
+    </span>
+  </span>
+);
+
+const applyTooltips = (text: string) => {
+    if (!text) return text;
+    const terms = Object.keys(reverbTooltips);
+    const regex = new RegExp(`\\b(${terms.join('|')})\\b`, 'gi');
+    const parts = text.split(regex);
+
+    return parts.map((part, index) => {
+        const matchingTerm = terms.find(t => t.toLowerCase() === part.toLowerCase());
+        if (matchingTerm) {
+            return (
+                <Tooltip key={index} text={reverbTooltips[matchingTerm]}>
+                    <span className="cursor-help border-b border-dotted border-purple-400">{part}</span>
+                </Tooltip>
+            );
+        }
+        return part;
+    });
+};
+
+const goalOptions: Record<string, string> = {
+    '': 'Selecciona un objetivo...',
+    'cohesion': 'Crear Cohesión y Espacio Realista',
+    'depth': 'Añadir Profundidad y Tamaño Épico',
+    'presence': 'Añadir Brillo y Presencia',
+    'vintage': 'Conseguir un Carácter Vintage',
+    'creative': 'Crear Texturas y Efectos Creativos',
+};
+
+const ReverbGuideModal: React.FC<ReverbGuideModalProps> = ({ isOpen, onClose }) => {
+  const [activeFilter, setActiveFilter] = useState<FilterType>('asistente');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [openAccordionKey, setOpenAccordionKey] = useState<string | null>(null);
+
+  const [selectedInstrument, setSelectedInstrument] = useState<string>('');
+  const [selectedGoal, setSelectedGoal] = useState<string>('');
+
+
+  const handleClear = () => {
+    setSearchTerm('');
+    setActiveFilter('asistente');
+    setOpenAccordionKey(null);
+    setSelectedInstrument('');
+    setSelectedGoal('');
+  };
+
+  const handleFilterChange = (filter: FilterType) => {
+    setActiveFilter(filter);
+    setOpenAccordionKey(null);
+  }
+  
+  const instrumentOptions = useMemo(() => reverbData.usos.map(i => i.instrumento), []);
+  
+  const recommendation = useMemo(() => {
+    if (!selectedInstrument || !selectedGoal) return null;
+
+    const instrumentRecsData = reverbData.usos.find(i => i.instrumento === selectedInstrument);
+    if (!instrumentRecsData) return null;
+
+    const instrumentRecs = [instrumentRecsData.opcion1, instrumentRecsData.opcion2, instrumentRecsData.opcion3];
+    
+    let targetReverbs: string[] = [];
+    let reason = `Para ${goalOptions[selectedGoal].toLowerCase()} en "${selectedInstrument}", se recomiendan reverbs que cumplan con este objetivo.`;
+
+    switch(selectedGoal) {
+        case 'cohesion': 
+            targetReverbs = ['Room 🛋️']; 
+            reason += ' Las reverbs tipo "Room" son perfectas para simular un espacio pequeño y creíble donde todos los instrumentos coexisten, "pegándolos" de forma natural.';
+            break;
+        case 'depth': 
+            targetReverbs = ['Hall 🏛️', 'Convolution 🎤']; 
+            reason += ' Las reverbs "Hall" y de Convolución (con IRs de espacios grandes) crean colas largas y difusas, ideales para dar una sensación de inmensidad y profundidad.';
+            break;
+        case 'presence': 
+            targetReverbs = ['Plate ⚙️']; 
+            reason += ' Las reverbs de "Placas" tienen un carácter brillante y denso que destaca en la mezcla, añadiendo presencia a voces y cajas sin embarrar el sonido.';
+            break;
+        case 'vintage': 
+            targetReverbs = ['Spring 🌀', 'Plate ⚙️']; 
+            reason += ' Las reverbs de "Muelles" (Spring) son el sonido clásico de los amplificadores de guitarra vintage. Las de Placas (Plate) fueron un estándar en los estudios de los 60 y 70.';
+            break;
+        case 'creative': 
+            targetReverbs = ['Algorithmic 💻']; 
+            reason += ' Las reverbs Algorítmicas son capaces de crear espacios imposibles y efectos como "Shimmer" o "Reverse", ideales para el diseño sonoro y la experimentación.';
+            break;
+    }
+
+    const finalRecs = Array.from(new Set(instrumentRecs.filter(rev => targetReverbs.includes(rev))));
+    if (finalRecs.length === 0) {
+        finalRecs.push(...targetReverbs);
+    }
+     if (finalRecs.length === 0 && instrumentRecs.length > 0) {
+        finalRecs.push(instrumentRecs[0]);
+    }
+
+    const recDetails = finalRecs
+        .map(recName => reverbData.tipos.find(t => t.tipo === recName))
+        .filter(Boolean) as ReverbType[];
+
+    return {
+        recommendations: recDetails,
+        reason: reason,
+    };
+}, [selectedInstrument, selectedGoal]);
+
+
+  const filteredData = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    if (!term) return reverbData;
+    return {
+      tipos: reverbData.tipos.filter(item => Object.values(item).join(' ').toLowerCase().includes(term)),
+      usos: reverbData.usos.filter(item => Object.values(item).join(' ').toLowerCase().includes(term)),
+      diseno: reverbData.diseno.filter(item => Object.values(item).join(' ').toLowerCase().includes(term)),
+      lista: reverbData.lista.filter(item => Object.values(item).join(' ').toLowerCase().includes(term)),
+    };
+  }, [searchTerm]);
+
+
+  if (!isOpen) return null;
+  
+  const characteristics: { key: keyof ReverbType; label: string }[] = [
+    { key: 'sonido', label: 'Sonido Característico' }, { key: 'caracteristicas', label: 'Características Principales' }, { key: 'decayTipico', label: 'Decay Típico' }, { key: 'densidad', label: 'Densidad' }, { key: 'usosComunes', label: 'Usos Comunes' }, { key: 'ejemplos', label: 'Ejemplos (Plugins)' }];
+  
+  const reverbPluginTypes = ['Algorithmic 💻', 'Convolution 🎤', 'Plate ⚙️', 'Spring 🌀', 'Hall / Room'];
+  const groupedPlugins = reverbPluginTypes.reduce((acc, type) => {
+    acc[type] = filteredData.lista.filter(p => p.tipo === type);
+    return acc;
+  }, {} as Record<string, ReverbPlugin[]>);
+
+
+  return (
+    <div 
+        className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-2 sm:p-4 animate-fade-in-backdrop"
+        onClick={onClose}
+    >
+      <div
+        className="bg-theme-bg-secondary backdrop-blur-md border border-purple-500/50 rounded-lg shadow-[0_0_30px_rgba(168,85,247,0.3)] w-full h-full max-w-7xl flex flex-col animate-scale-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex-shrink-0 p-4 text-center border-b border-purple-500/30 relative">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent uppercase tracking-wider">
+            Guía Pro de Reverb
+          </h1>
+          <p className="text-purple-200/80 text-sm">Tipos, Espacios y Funciones</p>
+           <button onClick={onClose} className="absolute top-2 right-2 p-2 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+            <XIcon className="w-6 h-6" />
+          </button>
+        </header>
+
+        <div className="flex-shrink-0 p-4 bg-black/20 border-b border-purple-500/30">
+            <div className="max-w-3xl mx-auto">
+                <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Buscar por instrumento, tipo, plugin..."
+                    className="w-full px-4 py-2 text-lg bg-theme-bg border-2 border-indigo-500/30 rounded-full text-theme-text placeholder-theme-text-secondary focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <div className="flex justify-center flex-wrap gap-2 sm:gap-4 mt-4">
+                    {(['asistente', 'tipos', 'usos', 'diseno', 'lista'] as FilterType[]).map(filter => (
+                        <button
+                            key={filter}
+                            onClick={() => handleFilterChange(filter)}
+                            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 border-2 ${activeFilter === filter ? 'bg-purple-500/20 border-purple-400 text-purple-200' : 'bg-black/30 border-transparent text-theme-text-secondary hover:bg-white/10 hover:border-purple-500/50'}`}
+                        >
+                           {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                        </button>
+                    ))}
+                    <button onClick={handleClear} className="px-3 py-1.5 rounded-full bg-indigo-500/20 text-indigo-200 font-bold" aria-label="Limpiar">🔄</button>
+                </div>
+            </div>
+        </div>
+        
+        <main className="flex-grow p-4 overflow-auto">
+            <div className="w-full h-full">
+                <div className="text-xl font-bold text-purple-300 mb-4 px-2">
+                    {activeFilter === 'asistente' && 'Asistente Interactivo de Reverb'}
+                    {activeFilter === 'tipos' && 'Características de Reverbs por Tipo'}
+                    {activeFilter === 'usos' && 'Reverbs Recomendadas por Instrumento'}
+                    {activeFilter === 'diseno' && 'Aplicaciones de Reverb para Diseño Sonoro'}
+                    {activeFilter === 'lista' && 'Lista de Reverbs por Tipo'}
+                </div>
+                 {activeFilter === 'asistente' ? (
+                    <div className="max-w-4xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-black/20 rounded-lg border border-purple-500/30">
+                            <div>
+                                <label className="block mb-2 text-sm font-bold text-theme-text">1. ¿Qué quieres procesar?</label>
+                                <select value={selectedInstrument} onChange={e => setSelectedInstrument(e.target.value)} className="w-full p-2 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-purple-500">
+                                    <option value="">Selecciona un instrumento...</option>
+                                    {instrumentOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block mb-2 text-sm font-bold text-theme-text">2. ¿Qué objetivo buscas?</label>
+                                <select value={selectedGoal} onChange={e => setSelectedGoal(e.target.value)} className="w-full p-2 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-purple-500">
+                                    {Object.entries(goalOptions).map(([key, value]) => <option key={key} value={key}>{value}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        {recommendation ? (
+                            <div className="mt-6 animate-fade-in-step">
+                                <p className="text-center italic text-theme-text-secondary mb-4">{recommendation.reason}</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {recommendation.recommendations.map(rec => (
+                                        <div key={rec.tipo} className="bg-black/30 p-4 rounded-lg border border-purple-500/30">
+                                            <h3 className="font-bold text-lg text-purple-300 mb-2">{rec.tipo}</h3>
+                                            <p className="text-sm text-theme-text mb-2"><strong className="text-purple-400/80">Sonido:</strong> {rec.sonido}</p>
+                                            <p className="text-sm text-theme-text"><strong className="text-purple-400/80">Ideal para:</strong> {rec.usosComunes}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center p-8 mt-6 bg-black/10 rounded-lg">
+                                <p className="text-theme-text-secondary">Selecciona un instrumento y un objetivo para ver la recomendación.</p>
+                            </div>
+                        )}
+                    </div>
+                ) : activeFilter === 'tipos' ? (
+                     <div className="space-y-3">
+                        {filteredData.tipos.length > 0 ? filteredData.tipos.map(t => {
+                            const isOpen = openAccordionKey === t.tipo;
+                            return (
+                                <div key={t.tipo} className="border border-purple-500/20 rounded-lg bg-black/20 overflow-hidden transition-all duration-300">
+                                    <button
+                                        onClick={() => setOpenAccordionKey(isOpen ? null : t.tipo)}
+                                        className="w-full flex justify-between items-center p-4 text-left font-bold text-purple-200 hover:bg-purple-500/10"
+                                    >
+                                        <span>{t.tipo}</span>
+                                        <ChevronDownIcon className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {isOpen && (
+                                        <div className="p-4 bg-black/30 border-t border-purple-500/20">
+                                            <ul className="space-y-3">
+                                                {characteristics.map(char => (
+                                                    <li key={char.key} className="grid grid-cols-1 sm:grid-cols-3 gap-1 text-sm">
+                                                        <strong className="text-purple-300/80 sm:col-span-1">{char.label}</strong>
+                                                        <div className="text-theme-text sm:col-span-2">{applyTooltips(t[char.key])}</div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        }) : <p className="text-center text-theme-text-secondary mt-8">No se encontraron resultados para "{searchTerm}".</p>}
+                    </div>
+                ) : activeFilter === 'lista' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {Object.entries(groupedPlugins).filter(([, plugins]) => plugins.length > 0).length > 0 ? (
+                            Object.entries(groupedPlugins).filter(([, plugins]) => plugins.length > 0).map(([type, plugins]) => (
+                                <div key={type} className="bg-black/30 p-4 rounded-lg border border-purple-500/20">
+                                    <h3 className="font-bold text-purple-300 mb-3 text-lg border-b border-purple-500/30 pb-2">{type}</h3>
+                                    <ul className="space-y-3 text-sm">
+                                        {(plugins as ReverbPlugin[]).map(plugin => (
+                                            <li key={plugin.nombre}>
+                                                <strong className="text-theme-text">{plugin.nombre}</strong>
+                                                <p className="text-xs italic text-theme-text-secondary mt-1">{plugin.notasSonido}</p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))
+                        ) : <p className="col-span-full text-center text-theme-text-secondary mt-8">No se encontraron resultados para "{searchTerm}".</p>}
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[1000px] text-sm text-left text-theme-text md:table-auto table-fixed">
+                            {activeFilter === 'usos' && (
+                               <>
+                                    <thead className="bg-white/5 text-xs text-purple-200 uppercase hidden md:table-header-group">
+                                        <tr>
+                                            <th className="px-4 py-3 w-1/4">Instrumento/Fuente</th>
+                                            <th className="px-4 py-3">🥇 1ª Opción</th>
+                                            <th className="px-4 py-3">🥈 2ª Opción</th>
+                                            <th className="px-4 py-3">🥉 3ª Opción</th>
+                                            <th className="px-4 py-3 w-1/3">💡 Notas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="block md:table-row-group">
+                                        {filteredData.usos.map(item => (
+                                            <tr key={item.instrumento} className="block md:table-row mb-4 md:mb-0 border md:border-b border-purple-500/20 rounded-lg md:rounded-none">
+                                                <td className="p-3 block md:table-cell font-semibold border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">Instrumento: </span>{item.instrumento}</td>
+                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">🥇 1ª Opción: </span>{item.opcion1}</td>
+                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">🥈 2ª Opción: </span>{item.opcion2}</td>
+                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">🥉 3ª Opción: </span>{item.opcion3}</td>
+                                                <td className="p-3 block md:table-cell"><span className="md:hidden font-bold mr-2 text-purple-300">💡 Notas: </span>{item.notas}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                               </>
+                            )}
+                             {activeFilter === 'diseno' && (
+                               <>
+                                    <thead className="bg-white/5 text-xs text-purple-200 uppercase hidden md:table-header-group">
+                                        <tr>
+                                            <th className="px-4 py-3">Objetivo Creativo</th>
+                                            <th className="px-4 py-3">Tipo de Reverb Sugerido</th>
+                                            <th className="px-4 py-3">Parámetros Clave</th>
+                                            <th className="px-4 py-3">Resultado Sonoro</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="block md:table-row-group">
+                                        {filteredData.diseno.map(item => (
+                                            <tr key={item.objetivo} className="block md:table-row mb-4 md:mb-0 border md:border-b border-purple-500/20 rounded-lg md:rounded-none">
+                                                <td className="p-3 block md:table-cell font-semibold border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">Objetivo: </span>{item.objetivo}</td>
+                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">Tipo Sugerido: </span>{item.tipoReverb}</td>
+                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">Parámetros: </span>{applyTooltips(item.parametrosClave)}</td>
+                                                <td className="p-3 block md:table-cell"><span className="md:hidden font-bold mr-2 text-purple-300">Resultado: </span>{item.resultado}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                               </>
+                            )}
+                        </table>
+                    </div>
+                )}
+            </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default ReverbGuideModal;

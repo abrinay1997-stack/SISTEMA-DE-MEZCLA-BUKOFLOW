@@ -1,0 +1,5 @@
+{
+  "name": "Asistente de Mezcla de Audio",
+  "description": "Una guía paso a paso para el proceso de mezcla de audio profesional, inspirada en la 'Ruta del Viajero'. Los usuarios pueden seguir los pasos, marcar su progreso y obtener consejos profesionales impulsados por la IA de Gemini para cada etapa.",
+  "requestFramePermissions": []
+}
