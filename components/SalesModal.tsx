@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { XIcon, CheckBadgeIcon, StarFilledIcon, ArrowUpTrayIcon } from './icons';
+import { XIcon, CheckBadgeIcon, StarFilledIcon } from './icons';
 
 interface SalesModalProps {
   isOpen: boolean;
@@ -11,14 +11,17 @@ const SalesModal: React.FC<SalesModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const benefits = [
-    "Asistene de Mezcla, un sistema paso a paso",
-    "Gestion bilateral, un sistema 'En sincronía con tus mezclas'",
-    "Guías interactivas de EQ, Compresión Reverb y Saturación, etc",
-    "Gestión de proyectos y seguimiento de progreso",
-    "Plantillas, Librerías, Samples, Presets, recursos y tutoriales",
-    "Acceso a la comunidad y soporte",
-    "Actualizaciones futuras incluidas"
+    "Sistema 'Ruta del Viajero': Asistencia guiada paso a paso con Tutoriales en cada lección",
+    "Guías Pro Interactivas: Domina la EQ, Compresión, Reverb y Saturación",
+    "Spectrum Target (Guru Mode): Clava el balance tonal de Trap, Urbano y Pop",
+    "Suite de Herramientas: Monitor de Fatiga, Calculadora BPM y Simulador de Entornos",
+    "Gestión Profesional: Proyección de Entrega, Comparador A/B y Notas de Proyecto",
+    "Vault de Producción: Acceso a Plantillas, Samples, Presets y Contratos",
+    "Comunidad y Soporte VIP: Networking y asistencia continua en tu proceso",
+    "Acceso Vitalicio: Sin mensualidades. Todas las actualizaciones futuras gratis"
   ];
+
+  const PAYPAL_LINK = "https://www.paypal.com/ncp/payment/66UP6BCRWS5K6";
 
   return (
     <div 
@@ -51,7 +54,7 @@ const SalesModal: React.FC<SalesModalProps> = ({ isOpen, onClose }) => {
                     ¿Tus mezclas suenan "amateur"?
                 </h3>
                 <p className="text-lg text-gray-400">
-                    Deja de adivinar. Convierte tu Home Studio en una cabina profesional con el sistema definitivo de mezcla guiada.
+                    Deja de adivinar. Convierte tu Home Studio en una cabina profesional con el sistema definitivo de mezcla guiada y herramientas de ingeniería avanzadas.
                 </p>
             </div>
 
@@ -84,20 +87,22 @@ const SalesModal: React.FC<SalesModalProps> = ({ isOpen, onClose }) => {
                 <p className="text-sm text-gray-400 mt-2">Pago único. Acceso de por vida.</p>
             </div>
 
-            {/* CTA Button */}
-            <a 
-                href="https://wa.link/x1oqhd" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="group relative w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#25D366] to-[#128C7E] hover:to-[#075E54] text-white font-bold text-xl py-4 px-6 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(37,211,102,0.3)]"
-            >
-                <span className="absolute inset-0 w-full h-full bg-white/20 group-hover:bg-transparent transition-all rounded-xl"></span>
-                <span>Obtener Acceso Inmediato</span>
-                <ArrowUpTrayIcon className="w-6 h-6 rotate-90" />
-            </a>
+            {/* Direct Payment Button */}
+            <div className="w-full flex justify-center">
+                 <a 
+                    href={PAYPAL_LINK}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="group w-full max-w-sm py-4 bg-[#0070ba] hover:bg-[#005ea6] text-white font-bold rounded-lg shadow-lg hover:shadow-[#0070ba]/40 transition-all flex items-center justify-center gap-3 text-lg relative overflow-hidden"
+                >
+                     {/* PayPal Logo SVG optional, using text for clarity */}
+                     <span className="relative z-10">Obtener Acceso Inmediato</span>
+                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+                </a>
+            </div>
             
             <p className="text-xs text-center text-gray-500 mt-4">
-                Garantía de satisfacción. Precio ajustado para LATAM y USA.
+                Garantía de satisfacción. Procesado de forma segura por PayPal.
             </p>
 
         </div>

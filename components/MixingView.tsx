@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { MIXING_STEPS } from '../constants';
 import type { Project, SubStepFeedback } from '../types';
@@ -8,7 +9,13 @@ import CompletionView from './CompletionView';
 import ToastNotification from './ToastNotification';
 import VideoTutorialModal from './VideoTutorialModal';
 import ResourcePanel from './ResourcePanel';
-import { LogoIcon, ArrowLeftIcon, HamburgerIcon, QuestionMarkCircleIcon } from './icons';
+import DeliveryEstimatorModal from './DeliveryEstimatorModal';
+import BPMCalculatorModal from './BPMCalculatorModal';
+import AcousticsCheckModal from './AcousticsCheckModal';
+import BlindTestModal from './BlindTestModal';
+import FatigueMonitor from './FatigueMonitor';
+import ReferenceTracksModal from './ReferenceTracksModal'; // Import
+import { LogoIcon, ArrowLeftIcon, HamburgerIcon, QuestionMarkCircleIcon, ChartBarIcon } from './icons'; // Import Icon
 
 interface MixingViewProps {
     project: Project;
@@ -43,6 +50,13 @@ const MixingView: React.FC<MixingViewProps> = ({
   const [toast, setToast] = useState<{ title: string; message: string } | null>(null);
   const [tutorialModalState, setTutorialModalState] = useState<{ isOpen: boolean; url: string; title: string }>({ isOpen: false, url: '', title: '' });
 
+  // Tool Modal States
+  const [isEstimatorOpen, setIsEstimatorOpen] = useState(false);
+  const [isBPMCalculatorOpen, setIsBPMCalculatorOpen] = useState(false);
+  const [isAcousticsCheckOpen, setIsAcousticsCheckOpen] = useState(false);
+  const [isBlindTestOpen, setIsBlindTestOpen] = useState(false);
+  const [isReferenceTracksOpen, setIsReferenceTracksOpen] = useState(false); // New State
+
   useEffect(() => {
     if (initialStepIndex !== null) {
         onClearInitialStep();
@@ -61,8 +75,6 @@ const MixingView: React.FC<MixingViewProps> = ({
   );
 
   const { progress, isCompleted } = useMemo(() => {
-    // The project.subStepFeedback data from localStorage might not be a proper Map instance.
-    // Creating a new Map from it ensures we can safely use Map methods like .values().
     const feedbackMap = new Map<string, SubStepFeedback>(project.subStepFeedback as any);
     const completedCount = Array.from(feedbackMap.values()).filter(f => f.completed).length;
     const progress = totalSubSteps > 0 ? (completedCount / totalSubSteps) * 100 : 0;
@@ -71,12 +83,9 @@ const MixingView: React.FC<MixingViewProps> = ({
   }, [project.subStepFeedback, totalSubSteps]);
   
   const handleUpdateSubStep = useCallback((subStepId: string, feedbackUpdate: Partial<SubStepFeedback>) => {
-    // Create a new Map instance to ensure data is a proper Map and to avoid direct state mutation.
-    // This is safer than assuming `project.subStepFeedback` is already a Map instance with an `.entries()` method.
     const newFeedbackMap = new Map<string, SubStepFeedback>(project.subStepFeedback as any);
     const currentFeedback = newFeedbackMap.get(subStepId);
 
-    // Create a well-defined SubStepFeedback object to ensure type consistency.
     const updatedFeedback: SubStepFeedback = {
       completed: currentFeedback?.completed ?? false,
       userNotes: currentFeedback?.userNotes,
@@ -86,18 +95,13 @@ const MixingView: React.FC<MixingViewProps> = ({
     
     const stepOfToggledSubstep = MIXING_STEPS.find(s => s.subSteps.some(ss => ss.id === subStepId));
 
-    // Check if 'completed' was part of the update to trigger toast logic
     if (stepOfToggledSubstep && 'completed' in feedbackUpdate) {
         const category = stepOfToggledSubstep.category;
         const allSubstepIdsInCategory = MIXING_STEPS.filter(s => s.category === category).flatMap(s => s.subSteps.map(ss => ss.id));
-        
-        // Check the category completion status BEFORE applying the new update.
         const wasCategoryAlreadyComplete = allSubstepIdsInCategory.every(id => newFeedbackMap.get(id)?.completed);
 
-        // Apply the update to the map.
         newFeedbackMap.set(subStepId, updatedFeedback);
         
-        // Check the category completion status AFTER the update.
         const isCategoryCompleteNow = allSubstepIdsInCategory.every(id => newFeedbackMap.get(id)?.completed);
 
         if (!wasCategoryAlreadyComplete && isCategoryCompleteNow) {
@@ -115,7 +119,6 @@ const MixingView: React.FC<MixingViewProps> = ({
             setToast({ title: '¡Hito Alcanzado!', message });
         }
     } else {
-      // If no completion status changed, just set the updated feedback.
       newFeedbackMap.set(subStepId, updatedFeedback);
     }
 
@@ -154,17 +157,40 @@ const MixingView: React.FC<MixingViewProps> = ({
         favorites={favorites}
         onToggleFavorite={onToggleFavorite}
         onOpenTutorial={handleOpenTutorial}
+        onOpenEstimator={() => setIsEstimatorOpen(true)}
       />
+      <DeliveryEstimatorModal
+        isOpen={isEstimatorOpen}
+        onClose={() => setIsEstimatorOpen(false)}
+        projects={[project]}
+      />
+      <BPMCalculatorModal
+        isOpen={isBPMCalculatorOpen}
+        onClose={() => setIsBPMCalculatorOpen(false)}
+      />
+      <AcousticsCheckModal
+        isOpen={isAcousticsCheckOpen}
+        onClose={() => setIsAcousticsCheckOpen(false)}
+      />
+      <BlindTestModal
+        isOpen={isBlindTestOpen}
+        onClose={() => setIsBlindTestOpen(false)}
+      />
+      <ReferenceTracksModal
+        isOpen={isReferenceTracksOpen}
+        onClose={() => setIsReferenceTracksOpen(false)}
+      />
+
       <div className="container mx-auto px-4 py-8 md:py-12">
-        <header className="flex justify-between items-center mb-8 md:mb-12 relative">
-            <div className="flex-1">
+        <header className="flex flex-wrap justify-between items-center mb-8 md:mb-12 relative gap-4">
+            <div className="flex-1 order-1">
                 <button onClick={onGoToHub} className="flex items-center gap-2 py-2 px-4 rounded-md font-semibold transition-all duration-300 bg-theme-accent-secondary/20 text-theme-accent-secondary hover:bg-theme-accent-secondary/30">
                     <ArrowLeftIcon className="w-5 h-5"/>
                     <span className="hidden sm:inline">Volver al Hub</span>
                 </button>
             </div>
 
-            <div className="flex-1 flex justify-center">
+            <div className="flex-1 order-3 md:order-2 flex justify-center w-full md:w-auto">
                 <div className="flex items-center gap-4">
                     <LogoIcon className="w-12 h-12 md:w-16 md:h-16 object-contain" />
                     <div>
@@ -176,7 +202,8 @@ const MixingView: React.FC<MixingViewProps> = ({
                 </div>
             </div>
             
-            <div className="flex-1 flex justify-end items-center gap-2">
+            <div className="flex-1 order-2 md:order-3 flex justify-end items-center gap-3">
+                 <FatigueMonitor />
                  <button onClick={() => setIsResourcePanelOpen(true)} className="p-2 rounded-full text-theme-accent-secondary hover:bg-theme-accent-secondary/30 transition-colors">
                     <QuestionMarkCircleIcon className="w-7 h-7" />
                 </button>
@@ -219,7 +246,22 @@ const MixingView: React.FC<MixingViewProps> = ({
                                 onOpenReverbGuide={onOpenReverbGuide}
                                 onOpenSaturationGuide={onOpenSaturationGuide}
                                 onOpenTutorial={handleOpenTutorial}
+                                onOpenBPMCalculator={() => setIsBPMCalculatorOpen(true)}
+                                onOpenAcousticsCheck={() => setIsAcousticsCheckOpen(true)}
+                                onOpenBlindTest={() => setIsBlindTestOpen(true)}
                             />
+                             {/* Inject Reference Tracks Button for relevant steps */}
+                            {(currentStepData.id === 6 || currentStepData.id === 8 || currentStepData.id === 13) && (
+                                <div className="mt-4 w-full">
+                                    <button
+                                        onClick={() => setIsReferenceTracksOpen(true)}
+                                        className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-500/30 transform hover:-translate-y-1"
+                                    >
+                                        <ChartBarIcon className="w-6 h-6" />
+                                        Caja de Referencias (Spectrum Target)
+                                    </button>
+                                </div>
+                            )}
                         </div>
                         <div className="flex justify-between items-center w-full max-w-4xl mt-4">
                             <button

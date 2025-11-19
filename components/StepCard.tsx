@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Step, SubStepFeedback, SubStep, ToolType } from '../types';
-import { BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, PlayIcon, StarIcon, StarFilledIcon, ChevronDownIcon } from './icons';
+import { BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, PlayIcon, StarIcon, StarFilledIcon, ChevronDownIcon, ClockIcon, MetronomeIcon, SpeakerWaveIcon, ScaleIcon } from './icons';
 import { suggestedTools } from '../data/suggestedToolsData';
 
 // --- SubStepItem Component --- //
@@ -115,6 +115,9 @@ interface StepViewProps {
   onOpenReverbGuide: () => void;
   onOpenSaturationGuide: () => void;
   onOpenTutorial: (url: string, title: string) => void;
+  onOpenBPMCalculator: () => void;
+  onOpenAcousticsCheck: () => void;
+  onOpenBlindTest: () => void;
 }
 
 const StepView: React.FC<StepViewProps> = ({ 
@@ -125,7 +128,10 @@ const StepView: React.FC<StepViewProps> = ({
   onOpenCompressionGuide,
   onOpenReverbGuide,
   onOpenSaturationGuide,
-  onOpenTutorial
+  onOpenTutorial,
+  onOpenBPMCalculator,
+  onOpenAcousticsCheck,
+  onOpenBlindTest
 }) => {
   const toolsForStep = suggestedTools[step.id];
 
@@ -217,7 +223,7 @@ const StepView: React.FC<StepViewProps> = ({
         )}
       </div>
       
-      {(step.id === 1 || step.id === 2 || step.id === 3 || step.id === 4 || step.id === 5 || step.id === 6 || step.id === 7 || step.id === 8 || step.id === 8 || step.id === 9 || step.id === 10 || step.id === 11 || step.id === 12) && (
+      {(step.id === 1 || step.id === 2 || step.id === 3 || step.id === 4 || step.id === 5 || step.id === 6 || step.id === 7 || step.id === 8 || step.id === 9 || step.id === 10 || step.id === 11 || step.id === 12 || step.id === 13 || step.id === 14) && (
         <div className="mt-4 pt-6 border-t border-theme-border grid grid-cols-1 md:grid-cols-2 gap-4">
             {(step.id === 6 || step.id === 8 || step.id === 11 || step.id === 12) && (
                 <button
@@ -252,6 +258,33 @@ const StepView: React.FC<StepViewProps> = ({
                 >
                   <SaturationIcon className="w-6 h-6" />
                   Guía Pro de Saturación
+                </button>
+              </>
+            )}
+            {(step.id === 9 || step.id === 10) && (
+                 <button
+                    onClick={onOpenBPMCalculator}
+                    className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-all duration-300 bg-gradient-to-r from-pink-500 to-rose-600 text-white hover:shadow-lg hover:shadow-pink-500/30 transform hover:-translate-y-1"
+                >
+                    <MetronomeIcon className="w-6 h-6" />
+                    Calculadora BPM
+                </button>
+            )}
+             {(step.id === 13 || step.id === 14) && (
+              <>
+                 <button
+                    onClick={onOpenAcousticsCheck}
+                    className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-all duration-300 bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-lg hover:shadow-cyan-500/30 transform hover:-translate-y-1"
+                >
+                    <SpeakerWaveIcon className="w-6 h-6" />
+                    Simulador Entornos
+                </button>
+                <button
+                    onClick={onOpenBlindTest}
+                    className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-all duration-300 bg-gradient-to-r from-orange-500 to-red-600 text-white hover:shadow-lg hover:shadow-orange-500/30 transform hover:-translate-y-1"
+                >
+                    <ScaleIcon className="w-6 h-6" />
+                    Comparador A/B
                 </button>
               </>
             )}

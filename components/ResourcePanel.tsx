@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { resourceData } from '../data/resourceData';
 import type { Resource, Step } from '../types';
 import { 
-    XIcon, StarIcon, StarFilledIcon, PlayIcon, DownloadIcon, ChatBubbleIcon, QuestionMarkCircleIcon
+    XIcon, StarIcon, StarFilledIcon, PlayIcon, DownloadIcon, ChatBubbleIcon, QuestionMarkCircleIcon, ClockIcon
 } from './icons';
 
 // --- Resource Card Sub-component --- //
@@ -60,9 +60,10 @@ interface ResourcePanelProps {
   favorites: Set<string>;
   onToggleFavorite: (id: string) => void;
   onOpenTutorial: (url: string, title: string) => void;
+  onOpenEstimator: () => void;
 }
 
-const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentStep, favorites, onToggleFavorite, onOpenTutorial }) => {
+const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentStep, favorites, onToggleFavorite, onOpenTutorial, onOpenEstimator }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const relevantResources = useMemo(() => {
@@ -108,7 +109,16 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentS
                 </button>
             </header>
             
-            <div className="flex-shrink-0 p-4 border-b border-theme-border">
+            <div className="flex-shrink-0 p-4 border-b border-theme-border space-y-4">
+                 {/* Tools Section */}
+                <button
+                    onClick={onOpenEstimator}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md bg-theme-success/20 text-theme-success border border-theme-success/30 hover:bg-theme-success/30 transition-all font-semibold"
+                >
+                    <ClockIcon className="w-5 h-5" />
+                    Proyección de Entrega
+                </button>
+
                 <input
                     type="text"
                     value={searchTerm}

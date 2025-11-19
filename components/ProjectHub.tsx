@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import type { Project, Resource, SubStepFeedback } from '../types';
 import { resourceData, resourceCategories } from '../data/resourceData';
@@ -5,11 +6,16 @@ import { themes, ThemeName } from '../themes';
 import { 
     LogoIcon, StarIcon, StarFilledIcon, TrashIcon, PlusIcon, DotsVerticalIcon, XIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, CheckBadgeIcon, PencilIcon,
     WaveformIcon, UserVoiceIcon, GuitarPickIcon, PianoIcon, DrumIcon, HeadphonesIcon, WaveSineIcon,
-    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon
+    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon, ClockIcon, MetronomeIcon, SpeakerWaveIcon, ScaleIcon, ChartBarIcon
 } from './icons';
 import ProgressBar from './ProgressBar';
 import { MIXING_STEPS } from '../constants';
 import VideoTutorialModal from './VideoTutorialModal';
+import DeliveryEstimatorModal from './DeliveryEstimatorModal';
+import BPMCalculatorModal from './BPMCalculatorModal';
+import AcousticsCheckModal from './AcousticsCheckModal';
+import BlindTestModal from './BlindTestModal';
+import ReferenceTracksModal from './ReferenceTracksModal';
 
 type ResourceCategoryKey = keyof typeof resourceCategories;
 
@@ -486,6 +492,12 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
   const [newProjectName, setNewProjectName] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isResourceCenterOpen, setIsResourceCenterOpen] = useState(false);
+  const [isEstimatorOpen, setIsEstimatorOpen] = useState(false);
+  const [isBPMCalculatorOpen, setIsBPMCalculatorOpen] = useState(false);
+  const [isAcousticsCheckOpen, setIsAcousticsCheckOpen] = useState(false);
+  const [isBlindTestOpen, setIsBlindTestOpen] = useState(false);
+  const [isReferenceTracksOpen, setIsReferenceTracksOpen] = useState(false); // New State
+
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   
   const [tutorialModalState, setTutorialModalState] = useState<{ isOpen: boolean; url: string; title: string }>({ isOpen: false, url: '', title: '' });
@@ -588,7 +600,7 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
         
         <div className="max-w-3xl mx-auto mb-12">
             <h2 className="text-xl font-bold text-theme-accent-secondary mb-4 text-center">Guías Profesionales</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <button
                     onClick={onOpenEQGuide}
                     className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border-secondary text-theme-accent hover:bg-theme-accent/20 hover:shadow-lg hover:shadow-accent transform hover:-translate-y-1"
@@ -616,6 +628,46 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                 >
                     <SaturationIcon className="w-8 h-8" />
                     <span className="text-sm text-center">Saturación</span>
+                </button>
+                
+                <button
+                    onClick={() => setIsEstimatorOpen(true)}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-success/30 text-theme-success hover:bg-theme-success/20 hover:shadow-lg hover:shadow-theme-success/20 transform hover:-translate-y-1"
+                >
+                    <ClockIcon className="w-8 h-8" />
+                    <span className="text-sm text-center">Proyección Entrega</span>
+                </button>
+
+                <button
+                    onClick={() => setIsBPMCalculatorOpen(true)}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-pink-500/30 text-pink-300 hover:bg-pink-500/20 hover:shadow-lg hover:shadow-pink-500/20 transform hover:-translate-y-1"
+                >
+                    <MetronomeIcon className="w-8 h-8" />
+                    <span className="text-sm text-center">Calculadora BPM</span>
+                </button>
+
+                <button
+                    onClick={() => setIsAcousticsCheckOpen(true)}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/20 transform hover:-translate-y-1"
+                >
+                    <SpeakerWaveIcon className="w-8 h-8" />
+                    <span className="text-sm text-center">Simulador Entornos</span>
+                </button>
+
+                <button
+                    onClick={() => setIsBlindTestOpen(true)}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-orange-500/30 text-orange-300 hover:bg-orange-500/20 hover:shadow-lg hover:shadow-orange-500/20 transform hover:-translate-y-1"
+                >
+                    <ScaleIcon className="w-8 h-8" />
+                    <span className="text-sm text-center">Comparador A/B</span>
+                </button>
+                
+                <button
+                    onClick={() => setIsReferenceTracksOpen(true)}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/20 transform hover:-translate-y-1"
+                >
+                    <ChartBarIcon className="w-8 h-8" />
+                    <span className="text-sm text-center">Caja Referencias</span>
                 </button>
             </div>
         </div>
@@ -711,6 +763,27 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
         onClose={handleCloseTutorial}
         videoUrl={tutorialModalState.url}
         title={tutorialModalState.title}
+    />
+    <DeliveryEstimatorModal
+        isOpen={isEstimatorOpen}
+        onClose={() => setIsEstimatorOpen(false)}
+        projects={projects}
+    />
+    <BPMCalculatorModal
+        isOpen={isBPMCalculatorOpen}
+        onClose={() => setIsBPMCalculatorOpen(false)}
+    />
+    <AcousticsCheckModal
+        isOpen={isAcousticsCheckOpen}
+        onClose={() => setIsAcousticsCheckOpen(false)}
+    />
+    <BlindTestModal
+        isOpen={isBlindTestOpen}
+        onClose={() => setIsBlindTestOpen(false)}
+    />
+     <ReferenceTracksModal
+        isOpen={isReferenceTracksOpen}
+        onClose={() => setIsReferenceTracksOpen(false)}
     />
     </>
   );
