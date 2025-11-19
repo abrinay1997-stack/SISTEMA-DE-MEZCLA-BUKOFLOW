@@ -64,7 +64,7 @@ export const resourceData: Resource[] = [
     title: 'Descargar Contratos',
     description: 'Accede a contratos y herramientas del negocio musical.',
     type: 'download',
-    url: 'https://bukoflow.aweb.page/p/52775fa2-e70c-4240-b6d1-bd4936c26f11',
+    url: 'https://artist.bukoflow.com/',
     category: 'recursos',
     tags: ['descargas', 'plantillas', 'checklist', 'recursos'],
     relatedSteps: [],
