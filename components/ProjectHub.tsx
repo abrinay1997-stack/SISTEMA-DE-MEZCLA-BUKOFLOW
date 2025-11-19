@@ -6,7 +6,7 @@ import { themes, ThemeName } from '../themes';
 import { 
     LogoIcon, StarIcon, StarFilledIcon, TrashIcon, PlusIcon, DotsVerticalIcon, XIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, CheckBadgeIcon, PencilIcon,
     WaveformIcon, UserVoiceIcon, GuitarPickIcon, PianoIcon, DrumIcon, HeadphonesIcon, WaveSineIcon,
-    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon, ClockIcon, MetronomeIcon, SpeakerWaveIcon, ScaleIcon, ChartBarIcon
+    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon, ClockIcon, MetronomeIcon, SpeakerWaveIcon, ScaleIcon, ChartBarIcon, HomeIcon
 } from './icons';
 import ProgressBar from './ProgressBar';
 import { MIXING_STEPS } from '../constants';
@@ -544,9 +544,9 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
   return (
     <>
     <div 
-        className="min-h-screen bg-theme-bg background-grid"
+        className="min-h-screen bg-theme-bg background-grid flex flex-col"
     >
-      <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="container mx-auto px-4 py-8 md:py-12 flex-grow">
         <header className="flex justify-between items-center mb-8 md:mb-12">
           <div className="flex items-center gap-4">
             <LogoIcon className="w-12 h-12 md:w-16 md:h-16 object-contain" />
@@ -558,6 +558,15 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <a 
+                href="https://tienda.bukoflow.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
+                aria-label="Ir a la Tienda"
+            >
+                <HomeIcon className="w-7 h-7" />
+            </a>
             <button 
                 onClick={onOpenSearch}
                 className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
@@ -703,21 +712,21 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                                  aria-label="Editar"
                                 >
                                   <PencilIcon className="w-5 h-5 text-theme-text-secondary group-hover:text-theme-accent" />
-                               </button>
-                               <button 
+                                </button>
+                                <button 
                                  onClick={(e) => { e.stopPropagation(); onTogglePriority(project.id); }}
                                  className="p-2 rounded-full hover:bg-white/10 transition-colors"
                                  aria-label="Priorizar"
                                 >
                                   {project.isPriority ? <StarFilledIcon className="w-6 h-6 text-theme-priority" /> : <StarIcon className="w-6 h-6 text-theme-text-secondary group-hover:text-theme-priority" />}
-                               </button>
-                               <button 
+                                </button>
+                                <button 
                                  onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
                                  className="p-2 rounded-full hover:bg-white/10 transition-colors"
                                  aria-label="Eliminar"
                                 >
                                    <TrashIcon className="w-6 h-6 text-theme-text-secondary group-hover:text-theme-danger" />
-                               </button>
+                                </button>
                            </div>
                         </div>
                     )
@@ -729,8 +738,11 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                 </div>
             )}
         </main>
-
       </div>
+
+      <footer className="mt-auto py-6 text-center text-theme-text-secondary text-sm w-full">
+         <p>© 2025 | BUKOFLOW LLC</p>
+      </footer>
     </div>
     <SettingsModal 
         isOpen={isSettingsOpen}

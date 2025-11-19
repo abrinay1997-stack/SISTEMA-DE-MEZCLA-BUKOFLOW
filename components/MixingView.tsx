@@ -141,7 +141,7 @@ const MixingView: React.FC<MixingViewProps> = ({
 
   return (
     <div 
-        className="min-h-screen bg-theme-bg bg-cover bg-fixed background-grid" 
+        className="min-h-screen bg-theme-bg bg-cover bg-fixed background-grid flex flex-col" 
     >
       {toast && <ToastNotification title={toast.title} message={toast.message} onClose={() => setToast(null)} />}
       <VideoTutorialModal 
@@ -181,7 +181,7 @@ const MixingView: React.FC<MixingViewProps> = ({
         onClose={() => setIsReferenceTracksOpen(false)}
       />
 
-      <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="container mx-auto px-4 py-8 md:py-12 flex-grow">
         <header className="flex flex-wrap justify-between items-center mb-8 md:mb-12 relative gap-4">
             <div className="flex-1 order-1">
                 <button onClick={onGoToHub} className="flex items-center gap-2 py-2 px-4 rounded-md font-semibold transition-all duration-300 bg-theme-accent-secondary/20 text-theme-accent-secondary hover:bg-theme-accent-secondary/30">
@@ -287,6 +287,9 @@ const MixingView: React.FC<MixingViewProps> = ({
             </main>
         </div>
       </div>
+      <footer className="mt-auto py-6 text-center text-theme-text-secondary text-sm w-full">
+         <p>© 2025 | BUKOFLOW LLC</p>
+      </footer>
     </div>
   );
 };
