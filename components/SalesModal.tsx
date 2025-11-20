@@ -29,7 +29,7 @@ const SalesModal: React.FC<SalesModalProps> = ({ isOpen, onClose }) => {
     {
       icon: <ScaleIcon className="w-5 h-5" />,
       title: "Blind A/B Comparer",
-      desc: "Sistema de test ciego con igualación automática de volumen (RMS Match)."
+      desc: "Sistema de test ciego con igualación automática de sonoridad (LUFS Match)."
     },
     {
       icon: <BookOpenIcon className="w-5 h-5" />,
