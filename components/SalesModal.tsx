@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { XIcon, CheckBadgeIcon, StarFilledIcon } from './icons';
+import { XIcon, CheckBadgeIcon, StarFilledIcon, SpeakerWaveIcon, ChartBarIcon, ScaleIcon, BookOpenIcon, LockClosedIcon, WaveformIcon } from './icons';
 
 interface SalesModalProps {
   isOpen: boolean;
@@ -10,101 +10,136 @@ interface SalesModalProps {
 const SalesModal: React.FC<SalesModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
-  const benefits = [
-    "Sistema 'Ruta del Viajero': Asistencia guiada paso a paso con Tutoriales en cada lección",
-    "Guías Pro Interactivas: Domina la EQ, Compresión, Reverb y Saturación",
-    "Spectrum Target (Guru Mode): Clava el balance tonal de Trap, Urbano y Pop",
-    "Suite de Herramientas: Monitor de Fatiga, Calculadora BPM y Simulador de Entornos",
-    "Gestión Profesional: Proyección de Entrega, Comparador A/B y Notas de Proyecto",
-    "Vault de Producción: Acceso a Plantillas, Samples, Presets y Contratos",
-    "Comunidad y Soporte VIP: Networking y asistencia continua en tu proceso",
-    "Acceso Vitalicio: Sin mensualidades. Todas las actualizaciones futuras gratis"
+  const features = [
+    {
+      icon: <WaveformIcon className="w-5 h-5" />,
+      title: "The Professional Mixing Route",
+      desc: "Sistema integral de 14 etapas. Un flujo de trabajo guiado desde la emoción inicial hasta el master final."
+    },
+    {
+      icon: <ChartBarIcon className="w-5 h-5" />,
+      title: "Spectrum Target System",
+      desc: "Curvas de referencia tonal para Trap, Urbano y Pop (Pink Noise Balance)."
+    },
+    {
+      icon: <SpeakerWaveIcon className="w-5 h-5" />,
+      title: "Acoustic Simulator",
+      desc: "Motor de convolución para emular Coche, Club, TV y dispositivos móviles."
+    },
+    {
+      icon: <ScaleIcon className="w-5 h-5" />,
+      title: "Blind A/B Comparer",
+      desc: "Sistema de test ciego con igualación automática de volumen (RMS Match)."
+    },
+    {
+      icon: <BookOpenIcon className="w-5 h-5" />,
+      title: "Interactive Pro Guides",
+      desc: "Base de datos técnica de EQ, Compresión y Saturación por instrumento."
+    },
+    {
+        icon: <StarFilledIcon className="w-5 h-5" />,
+        title: "Workflow Tools",
+        desc: "Calculadora BPM, Monitor de Fatiga Auditiva y Estimador de Entrega."
+    },
+    {
+        icon: <CheckBadgeIcon className="w-5 h-5" />,
+        title: "Production Vault",
+        desc: "Acceso a librería de Contratos, Presets y Plantillas de sesión."
+    }
   ];
 
   const PAYPAL_LINK = "https://www.paypal.com/ncp/payment/66UP6BCRWS5K6";
 
   return (
     <div 
-        className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-4 animate-fade-in-backdrop overflow-y-auto"
+        className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-4 animate-fade-in-backdrop"
         onClick={onClose}
     >
       <div
-        className="relative bg-[#0f1115] border border-theme-accent/30 rounded-2xl shadow-[0_0_50px_rgba(255,61,0,0.15)] w-full max-w-2xl flex flex-col animate-scale-up my-auto"
+        className="relative bg-[#0f1115] border border-theme-border-secondary rounded-lg shadow-2xl w-full max-w-4xl flex flex-col md:flex-row animate-scale-up overflow-hidden"
         onClick={(e) => e.stopPropagation()}
+        style={{ maxHeight: '90vh' }}
       >
-        {/* Header Image / Gradient */}
-        <div className="relative h-32 bg-gradient-to-r from-theme-accent-secondary to-theme-accent overflow-hidden rounded-t-2xl flex items-center justify-center">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-            <div className="absolute inset-0 bg-black/20"></div>
-            <h2 className="relative z-10 text-3xl md:text-4xl font-extrabold text-white tracking-widest text-center uppercase drop-shadow-lg">
-                Flow Academy
-            </h2>
-            <button 
-                onClick={onClose} 
-                className="absolute top-3 right-3 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white transition-all backdrop-blur-sm"
-            >
-                <XIcon className="w-6 h-6" />
-            </button>
-        </div>
+        <button 
+            onClick={onClose} 
+            className="absolute top-4 right-4 p-2 text-theme-text-secondary hover:text-white transition-colors z-10"
+        >
+            <XIcon className="w-6 h-6" />
+        </button>
 
-        <div className="p-6 md:p-8">
-            {/* The Hook */}
-            <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-white mb-2">
-                    ¿Tus mezclas suenan "amateur"?
-                </h3>
-                <p className="text-lg text-gray-400">
-                    Deja de adivinar. Convierte tu Home Studio en una cabina profesional con el sistema definitivo de mezcla guiada y herramientas de ingeniería avanzadas.
+        {/* Left Panel: The Product Suite */}
+        <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-2">
+                    <span className="bg-gradient-to-r from-theme-accent to-theme-accent-secondary bg-clip-text text-transparent">FLOW ACADEMY</span>
+                    <span className="text-xs font-mono bg-white/10 text-gray-300 px-2 py-0.5 rounded border border-white/10">SUITE v1.0</span>
+                </h2>
+                <p className="text-gray-400 text-sm">
+                    Herramientas de ingeniería y asistencia de mezcla para productores profesionales.
                 </p>
             </div>
 
-            {/* The Value Stack */}
-            <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-8">
-                <h4 className="text-theme-accent font-bold uppercase text-sm tracking-wider mb-4 border-b border-white/10 pb-2">
-                    Lo que obtienes hoy:
-                </h4>
-                <ul className="space-y-3">
-                    {benefits.map((benefit, index) => (
-                        <li key={index} className="flex items-start gap-3 text-gray-200">
-                            <CheckBadgeIcon className="w-6 h-6 text-theme-success flex-shrink-0" />
-                            <span>{benefit}</span>
-                        </li>
-                    ))}
-                </ul>
+            <div className="grid grid-cols-1 gap-4">
+                {features.map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-4 p-3 rounded-md bg-white/5 border border-white/5 hover:border-theme-accent/30 transition-colors">
+                        <div className="p-2 rounded bg-black/40 text-theme-accent-secondary">
+                            {feature.icon}
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-200">{feature.title}</h3>
+                            <p className="text-xs text-gray-500 leading-relaxed">{feature.desc}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Right Panel: The Checkout / License */}
+        <div className="w-full md:w-80 bg-[#050608] border-l border-theme-border-secondary/50 p-8 flex flex-col justify-between relative">
+            
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-theme-accent to-theme-accent-secondary"></div>
+
+            <div>
+                <h3 className="text-lg font-bold text-white mb-6">Licencia de Usuario</h3>
+                
+                <div className="space-y-4 mb-8">
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400">Acceso Suite Completa</span>
+                        <span className="text-white">Incluido</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400">Actualizaciones Futuras</span>
+                        <span className="text-white">Incluido</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400">Suscripción Mensual</span>
+                        <span className="text-theme-success font-bold">NO</span>
+                    </div>
+                    <div className="h-px bg-white/10 my-4"></div>
+                    <div className="flex justify-between items-end">
+                        <span className="text-gray-400 text-sm">Precio Único</span>
+                        <div className="text-right">
+                            <span className="block text-xs text-gray-600 line-through mb-0.5">$197 USD</span>
+                            <span className="text-3xl font-bold text-white">$67 <span className="text-sm font-normal text-gray-500">USD</span></span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Pricing & Offer */}
-            <div className="text-center mb-8">
-                <div className="inline-block bg-theme-priority/20 border border-theme-priority/50 rounded-full px-4 py-1 mb-4">
-                    <span className="text-theme-priority font-bold text-sm flex items-center gap-2">
-                        <StarFilledIcon className="w-4 h-4" /> Oferta de Lanzamiento Global
-                    </span>
-                </div>
-                <div className="flex items-center justify-center gap-4">
-                    <span className="text-2xl text-gray-500 line-through font-semibold">$47 USD</span>
-                    <span className="text-5xl font-bold text-white">$17 USD</span>
-                </div>
-                <p className="text-sm text-gray-400 mt-2">Pago único. Acceso de por vida.</p>
-            </div>
-
-            {/* Direct Payment Button */}
-            <div className="w-full flex justify-center">
-                 <a 
+            <div>
+                <a 
                     href={PAYPAL_LINK}
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="group w-full max-w-sm py-4 bg-[#0070ba] hover:bg-[#005ea6] text-white font-bold rounded-lg shadow-lg hover:shadow-[#0070ba]/40 transition-all flex items-center justify-center gap-3 text-lg relative overflow-hidden"
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-white text-black hover:bg-gray-200 font-bold rounded transition-all mb-3"
                 >
-                     {/* PayPal Logo SVG optional, using text for clarity */}
-                     <span className="relative z-10">Obtener Acceso Inmediato</span>
-                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+                    <LockClosedIcon className="w-4 h-4" />
+                    Comprar Licencia
                 </a>
+                <p className="text-[10px] text-center text-gray-600 leading-tight">
+                    Pago único seguro procesado por PayPal. Acceso inmediato tras la confirmación. Garantía de devolución de 14 días.
+                </p>
             </div>
-            
-            <p className="text-xs text-center text-gray-500 mt-4">
-                Garantía de satisfacción. Procesado de forma segura por PayPal.
-            </p>
-
         </div>
       </div>
     </div>
