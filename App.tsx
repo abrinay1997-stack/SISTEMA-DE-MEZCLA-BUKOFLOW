@@ -1,7 +1,9 @@
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import type { Project, SubStepFeedback } from './types';
 import { themes, ThemeName } from './themes';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { VALID_ACCESS_KEYS } from './constants';
 import LoginPage from './components/LoginPage';
 import ProjectHub from './components/ProjectHub';
 import MixingView from './components/MixingView';
@@ -13,7 +15,21 @@ import SaturationGuideModal from './components/SaturationGuideModal';
 import GlobalSearchModal from './components/GlobalSearchModal';
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useLocalStorage('isAuthenticated', false);
+  // Security Update: Store the actual token (password) used, not just a boolean.
+  // This allows us to invalidate sessions if we change VALID_ACCESS_KEYS in constants.ts
+  const [sessionToken, setSessionToken] = useLocalStorage<string | null>('sessionToken', null);
+  
+  // Backward compatibility migration: check if old 'isAuthenticated' exists and clear it
+  useEffect(() => {
+      if (localStorage.getItem('isAuthenticated')) {
+          localStorage.removeItem('isAuthenticated');
+      }
+  }, []);
+
+  const isAuthenticated = useMemo(() => {
+      return sessionToken !== null && VALID_ACCESS_KEYS.includes(sessionToken);
+  }, [sessionToken]);
+
   const [projects, setProjects] = useLocalStorage<Project[]>('mixingProjects', []);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [themeName, setThemeName] = useLocalStorage<ThemeName>('app-theme', 'bukoflow-dark-orange');
@@ -53,8 +69,8 @@ const App: React.FC = () => {
     onOpenSaturationGuide: openSaturationGuide,
   };
 
-  const handleLoginSuccess = () => setIsAuthenticated(true);
-  const handleLogout = () => setIsAuthenticated(false);
+  const handleLoginSuccess = (token: string) => setSessionToken(token);
+  const handleLogout = () => setSessionToken(null);
 
   const handleAddProject = (name: string) => {
     const newProject: Project = {

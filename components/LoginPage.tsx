@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { LogoIcon, StarIcon } from './icons';
 import SalesModal from './SalesModal';
+import { VALID_ACCESS_KEYS } from '../constants';
 
 interface LoginPageProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (token: string) => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
@@ -14,9 +15,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // FIX: The comma operator was used incorrectly. Changed to a logical OR to check for multiple valid passwords.
-    if (password === '1997' || password === 'avalon') {
-      onLoginSuccess();
+    
+    if (VALID_ACCESS_KEYS.includes(password)) {
+      onLoginSuccess(password);
     } else {
       setError('Clave de acceso incorrecta.');
       setPassword('');
