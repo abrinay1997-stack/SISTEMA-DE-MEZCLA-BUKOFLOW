@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { XIcon, CheckBadgeIcon, StarFilledIcon, SpeakerWaveIcon, ChartBarIcon, ScaleIcon, BookOpenIcon, LockClosedIcon, WaveformIcon } from './icons';
+import { XIcon, CheckBadgeIcon, StarFilledIcon, SpeakerWaveIcon, ChartBarIcon, ScaleIcon, BookOpenIcon, LockClosedIcon, WaveformIcon, HeadphonesIcon } from './icons';
 
 interface SalesModalProps {
   isOpen: boolean;
@@ -15,6 +15,11 @@ const SalesModal: React.FC<SalesModalProps> = ({ isOpen, onClose }) => {
       icon: <WaveformIcon className="w-5 h-5" />,
       title: "The Professional Mixing Route",
       desc: "Sistema integral de 14 etapas. Un flujo de trabajo guiado desde la emoción inicial hasta el master final."
+    },
+    {
+        icon: <HeadphonesIcon className="w-5 h-5" />,
+        title: "Headphone Calibration Engine",
+        desc: "Corrección de respuesta de frecuencia para +300 modelos de auriculares (Flat Response)."
     },
     {
       icon: <ChartBarIcon className="w-5 h-5" />,

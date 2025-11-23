@@ -1,6 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { XIcon, ScaleIcon, PlayIcon, TrashIcon, CheckBadgeIcon, SlidersIcon, MagicWandIcon } from './icons';
+import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
+import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
 
 interface BlindTestModalProps {
   isOpen: boolean;
@@ -31,7 +33,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [isDragging, setIsDragging] = useState(false); // New state for seek handling
+    const [isDragging, setIsDragging] = useState(false); 
     
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -44,6 +46,9 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
     const gainNodeBRef = useRef<GainNode | null>(null);
     const masterGainRef = useRef<GainNode | null>(null);
     
+    // Calibration Engine
+    const calibrationEngineRef = useRef<HeadphoneCalibrationEngine | null>(null);
+    
     const startTimeRef = useRef<number>(0);
     const pauseTimeRef = useRef<number>(0);
     const animationFrameRef = useRef<number | null>(null);
@@ -53,8 +58,18 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
         if (isOpen && !audioCtxRef.current) {
             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
             audioCtxRef.current = new AudioContext();
+            
+            // Create Nodes
             masterGainRef.current = audioCtxRef.current.createGain();
-            masterGainRef.current.connect(audioCtxRef.current.destination);
+            
+            // Initialize Calibration
+            calibrationEngineRef.current = new HeadphoneCalibrationEngine(audioCtxRef.current);
+            
+            // Routing: Master Gain -> Calibration Input
+            masterGainRef.current.connect(calibrationEngineRef.current.getInputNode());
+            
+            // Calibration Output -> Destination
+            calibrationEngineRef.current.getOutputNode().connect(audioCtxRef.current.destination);
         }
         
         return () => {
@@ -76,6 +91,14 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
             setGainA(1.0);
             setGainB(1.0);
             stopAudio();
+            if (calibrationEngineRef.current) {
+                calibrationEngineRef.current.dispose();
+                calibrationEngineRef.current = null;
+            }
+            if (audioCtxRef.current) {
+                audioCtxRef.current.close();
+                audioCtxRef.current = null;
+            }
         }
     }, [isOpen]);
 
@@ -126,7 +149,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
         gainNodeARef.current = audioCtxRef.current.createGain();
         gainNodeBRef.current = audioCtxRef.current.createGain();
 
-        // 3. Connect: Source -> Gain -> Master
+        // 3. Connect: Source -> Gain -> Master (Master is already routed to Calibration)
         sourceARef.current.connect(gainNodeARef.current);
         gainNodeARef.current.connect(masterGainRef.current!);
         sourceBRef.current.connect(gainNodeBRef.current);
@@ -217,7 +240,6 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
 
         if (stage === 'setup') {
             // In setup, activeChannel acts as simple selector for listening
-            // Use "X" state to represent "Listen A" and "Y" for "Listen B" for code simplicity
             if (activeBlindChannel === 'X') targetGainA = gainA; 
             else targetGainB = gainB;
         } else {
@@ -309,9 +331,6 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
         
         setStage('testing');
         setActiveBlindChannel('X'); // Reset to X
-        
-        // If not playing, user can start manually. If playing, it continues seamless.
-        // We just need to trigger updateGains via the useEffect dependency.
     };
 
     const reveal = () => {
@@ -360,6 +379,14 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
+                    
+                    {/* Correction Module */}
+                    <HeadphoneCorrectionControls 
+                        onProfileChange={(p) => calibrationEngineRef.current?.loadProfile(p)}
+                        onAmountChange={(a) => calibrationEngineRef.current?.setAmount(a)}
+                        onBypassChange={(b) => calibrationEngineRef.current?.setBypass(b)}
+                    />
+
                     {isLoading && <div className="text-center text-theme-accent p-4 bg-black/40 rounded-lg mb-4"><p className="animate-pulse">Analizando audio...</p></div>}
                     {error && <div className="text-center text-red-500 bg-red-500/10 p-2 rounded mb-4 text-sm">{error}</div>}
 

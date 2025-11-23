@@ -1,3 +1,4 @@
+
 export interface SubStep {
   id: string;
   text: string;
@@ -206,6 +207,22 @@ export interface SaturationData {
     instrumentos: SaturationInstrument[];
     generos: SaturationGenre[];
     lista: SaturationPlugin[];
+}
+
+//--- Headphone Correction Types ---//
+export type FilterType = 'LSC' | 'HSC' | 'PK';
+
+export interface CorrectionFilter {
+    type: FilterType;
+    fc: number;
+    gain: number;
+    q: number;
+}
+
+export interface HeadphoneProfile {
+    name: string;
+    preamp: number;
+    filters: CorrectionFilter[];
 }
 
 //--- Resource Center Types ---//

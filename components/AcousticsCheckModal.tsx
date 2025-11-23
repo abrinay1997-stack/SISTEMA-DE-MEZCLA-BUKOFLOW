@@ -1,6 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { XIcon, SpeakerWaveIcon, PlayIcon } from './icons';
+import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
+import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
+import { HeadphoneProfile } from '../types';
 
 interface AcousticsCheckModalProps {
   isOpen: boolean;
@@ -198,6 +201,9 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
     const gainNodeRef = useRef<GainNode | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     
+    // Calibration Engine Ref
+    const calibrationEngineRef = useRef<HeadphoneCalibrationEngine | null>(null);
+
     // Nodes for FX Chain
     const filtersRef = useRef<BiquadFilterNode[]>([]);
     const convolverNodeRef = useRef<ConvolverNode | null>(null);
@@ -214,6 +220,9 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
             audioContextRef.current = new AudioContext();
             
+            // Initialize Calibration Engine
+            calibrationEngineRef.current = new HeadphoneCalibrationEngine(audioContextRef.current);
+
             // Create shared nodes
             gainNodeRef.current = audioContextRef.current.createGain();
             analyserRef.current = audioContextRef.current.createAnalyser();
@@ -225,10 +234,6 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
             wetGainNodeRef.current = audioContextRef.current.createGain();
             convolverNodeRef.current = audioContextRef.current.createConvolver();
 
-            // Connect Master Gain -> Analyser -> Destination (Output)
-            gainNodeRef.current.connect(analyserRef.current);
-            analyserRef.current.connect(audioContextRef.current.destination);
-            
             // Audio Element
             audioElementRef.current = new Audio();
             audioElementRef.current.crossOrigin = "anonymous";
@@ -249,8 +254,17 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
             // Connect Element -> Source Node
             sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElementRef.current);
             
-            // Default routing (Bypass)
-            sourceNodeRef.current.connect(gainNodeRef.current);
+            // --- NEW ROUTING CHAIN ---
+            // 1. Source -> Calibration Engine Input
+            sourceNodeRef.current.connect(calibrationEngineRef.current.getInputNode());
+            
+            // 2. Calibration Engine Output -> Master Gain (Sim Input)
+            calibrationEngineRef.current.getOutputNode().connect(gainNodeRef.current);
+
+            // 3. Master Gain -> Analyser -> Destination
+            // Note: The simulation chain (EQ + Reverb) will interrupt 2 & 3 later in applyEnvironment
+            gainNodeRef.current.connect(analyserRef.current);
+            analyserRef.current.connect(audioContextRef.current.destination);
         }
 
         return () => {
@@ -265,6 +279,10 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
             if (audioElementRef.current) {
                 audioElementRef.current.pause();
                 audioElementRef.current.src = "";
+            }
+            if (calibrationEngineRef.current) {
+                calibrationEngineRef.current.dispose();
+                calibrationEngineRef.current = null;
             }
         };
     }, [isOpen]);
@@ -338,8 +356,9 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
         gainNodeRef.current.gain.setValueAtTime(gainNodeRef.current.gain.value, now);
         gainNodeRef.current.gain.linearRampToValueAtTime(def.gainCorrection, now + 0.1);
 
-        // 2. Disconnect EVERYTHING to rebuild chain
-        sourceNodeRef.current.disconnect();
+        // 2. Reset Chain: Disconnect Sim Output (GainNode) from downstream
+        gainNodeRef.current.disconnect();
+        
         filtersRef.current.forEach(f => f.disconnect());
         filtersRef.current = [];
         
@@ -348,13 +367,14 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
         if (wetGainNodeRef.current) wetGainNodeRef.current.disconnect();
         if (convolverNodeRef.current) convolverNodeRef.current.disconnect();
 
-        let chainInput: AudioNode = sourceNodeRef.current;
-        let lastEqNode: AudioNode = sourceNodeRef.current; // Will hold the last node of the EQ chain
+        // The Input to the Sim Chain is gainNodeRef.current (which comes from calibration)
+        let chainInput: AudioNode = gainNodeRef.current;
+        let lastEqNode: AudioNode = gainNodeRef.current;
 
         // --- BUILD EQ CHAIN ---
         let nodes: BiquadFilterNode[] = [];
         
-        // ... (EQ Definitions kept the same as before)
+        // ... (EQ Definitions) ...
          if (env === 'cubes') {
             const hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = 90; 
             const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 10000;
@@ -477,17 +497,17 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
             dryGainNodeRef.current.gain.value = 1.0; // Dry full signal (usually)
             wetGainNodeRef.current.gain.value = def.reverb.mix;
 
-            // 3. Route: EQ -> DryGain -> Master
+            // 3. Route: EQ -> DryGain -> Analyser
             lastEqNode.connect(dryGainNodeRef.current);
-            dryGainNodeRef.current.connect(gainNodeRef.current);
+            dryGainNodeRef.current.connect(analyserRef.current);
 
-            // 4. Route: EQ -> Convolver -> WetGain -> Master
+            // 4. Route: EQ -> Convolver -> WetGain -> Analyser
             lastEqNode.connect(convolverNodeRef.current);
             convolverNodeRef.current.connect(wetGainNodeRef.current);
-            wetGainNodeRef.current.connect(gainNodeRef.current);
+            wetGainNodeRef.current.connect(analyserRef.current);
         } else {
-            // No Reverb: EQ -> Master
-            lastEqNode.connect(gainNodeRef.current);
+            // No Reverb: EQ -> Analyser
+            lastEqNode.connect(analyserRef.current!);
         }
         
         setActiveEnv(env);
@@ -557,6 +577,13 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
 
                 <div className="p-4 sm:p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
                     
+                    {/* Headphone Correction Module */}
+                    <HeadphoneCorrectionControls 
+                        onProfileChange={(p) => calibrationEngineRef.current?.loadProfile(p)}
+                        onAmountChange={(a) => calibrationEngineRef.current?.setAmount(a)}
+                        onBypassChange={(b) => calibrationEngineRef.current?.setBypass(b)}
+                    />
+
                     {/* File Upload / Player Section */}
                     <div className="flex flex-col gap-4">
                          {!fileName ? (

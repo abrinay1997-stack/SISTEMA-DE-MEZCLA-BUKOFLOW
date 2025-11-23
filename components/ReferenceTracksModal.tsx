@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { XIcon, ChartBarIcon, PlayIcon, SpeakerWaveIcon, EyeIcon, ArrowPathIcon, StarFilledIcon } from './icons';
+import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
+import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
 
 interface ReferenceTracksModalProps {
   isOpen: boolean;
@@ -104,7 +106,6 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   
   // Controls
   const [visualGain, setVisualGain] = useState<number>(0.8); 
-  // Range recalibrated: 0.92 (Fast/1s) to 0.999 (Slow/6s)
   const [smoothing, setSmoothing] = useState<number>(0.96); 
   const [showPeakHold, setShowPeakHold] = useState(true);
 
@@ -113,6 +114,9 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Calibration Engine
+  const calibrationEngineRef = useRef<HeadphoneCalibrationEngine | null>(null);
   
   // Canvas Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -131,19 +135,25 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
         analyserRef.current = audioContextRef.current.createAnalyser();
         analyserRef.current.fftSize = 4096; 
         analyserRef.current.smoothingTimeConstant = smoothing;
-        // Standard dB range for typical music material
         analyserRef.current.minDecibels = -100;
         analyserRef.current.maxDecibels = -30;
         
+        // Initialize Calibration
+        calibrationEngineRef.current = new HeadphoneCalibrationEngine(audioContextRef.current);
+
         audioElementRef.current = new Audio();
         audioElementRef.current.crossOrigin = "anonymous";
         audioElementRef.current.loop = true;
 
         sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElementRef.current);
         
-        // Connect: Source -> Analyser -> Destination
+        // Routing for "Visualizing the File" but "Hearing the Correction"
+        // Strategy: 
+        // Source -> Analyser (See Raw) -> Calibration (Correct) -> Destination (Hear Flat)
+        
         sourceNodeRef.current.connect(analyserRef.current);
-        analyserRef.current.connect(audioContextRef.current.destination);
+        analyserRef.current.connect(calibrationEngineRef.current.getInputNode());
+        calibrationEngineRef.current.getOutputNode().connect(audioContextRef.current.destination);
         
         startVisualizer();
     }
@@ -159,9 +169,13 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                 audioElementRef.current.pause();
                 audioElementRef.current.src = "";
             }
+            if (calibrationEngineRef.current) {
+                calibrationEngineRef.current.dispose();
+                calibrationEngineRef.current = null;
+            }
             setIsPlaying(false);
             setFileName(null);
-            peakDataRef.current = null; // Clear peak memory on close
+            peakDataRef.current = null;
         }
     }
   }, [isOpen]);
@@ -394,7 +408,6 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   }, [showPeakHold]);
   
   // Display Logic for Smoothing Time
-  // New Mapping: Min 0.92 (~1s) - Max 0.999 (~6s)
   const getSmoothingLabel = (val: number) => {
       if (val <= 0.93) return "Rápido (~1s)";
       if (val >= 0.99) return "Lento (~6s)";
@@ -425,10 +438,18 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
         </div>
 
         <div className="p-6 overflow-y-auto custom-scrollbar">
+            
+            {/* Headphone Correction Module */}
+            <HeadphoneCorrectionControls 
+                onProfileChange={(p) => calibrationEngineRef.current?.loadProfile(p)}
+                onAmountChange={(a) => calibrationEngineRef.current?.setAmount(a)}
+                onBypassChange={(b) => calibrationEngineRef.current?.setBypass(b)}
+            />
+
             <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg mb-6 text-sm text-blue-200 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div>
-                    <strong> Nota del Gurú:</strong> Analizador de Espectro Logarítmico en Tiempo Real. 
-                    Muestra la distribución de energía sin compensación de pendiente.
+                    <strong> Nota del Gurú:</strong> La calibración de auriculares se aplica DESPUÉS del análisis visual.
+                    Lo que ves es el archivo original, lo que escuchas es la versión plana.
                 </div>
                 <div className="text-xs bg-black/40 px-3 py-1 rounded border border-blue-500/30 font-mono">
                     Integración: {getSmoothingLabel(smoothing)}
