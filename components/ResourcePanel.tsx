@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { resourceData } from '../data/resourceData';
 import type { Resource, Step } from '../types';
 import { 
@@ -66,6 +66,16 @@ interface ResourcePanelProps {
 
 const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentStep, favorites, onToggleFavorite, onOpenTutorial, onOpenEstimator }) => {
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Scroll Lock
+  useEffect(() => {
+    if (isOpen) {
+        document.body.classList.add('modal-open');
+    } else {
+        document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [isOpen]);
 
   const relevantResources = useMemo(() => {
     if (!currentStep) return [];

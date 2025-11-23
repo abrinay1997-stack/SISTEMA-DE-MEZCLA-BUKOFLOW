@@ -31,7 +31,7 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ title, message, o
 
     return (
         <div 
-            className={`fixed top-5 left-1/2 -translate-x-1/2 z-[80] w-full max-w-sm ${isExiting ? 'animate-fade-out-up' : 'animate-slide-in-down'}`}
+            className={`fixed top-5 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-sm ${isExiting ? 'animate-fade-out-up' : 'animate-slide-in-down'}`}
             onAnimationEnd={handleAnimationEnd}
         >
             <div className="bg-theme-bg border border-theme-success/50 rounded-lg shadow-success-lg p-4 flex items-start gap-4">

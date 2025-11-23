@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { Project } from '../types';
 import { themes, ThemeName } from '../themes';
 import { XIcon, DownloadIcon, ArrowUpTrayIcon } from './icons';
@@ -24,6 +24,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     projects, favorites, setProjects, setThemeName, setFavorites
 }) => {
     const importInputRef = useRef<HTMLInputElement>(null);
+
+    // Scroll Lock
+    useEffect(() => {
+        if (isOpen) {
+            document.body.classList.add('modal-open');
+        } else {
+            document.body.classList.remove('modal-open');
+        }
+        return () => document.body.classList.remove('modal-open');
+    }, [isOpen]);
 
     const handleExport = () => {
         const backupData = {
@@ -98,7 +108,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             >
                 <div className="flex justify-between items-center p-4 border-b border-theme-border-secondary">
                     <h2 className="text-lg font-bold text-theme-accent-secondary">Configuración</h2>
-                    <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+                    <button onClick={onClose} className="p-1 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
                         <XIcon className="w-6 h-6" />
                     </button>
                 </div>

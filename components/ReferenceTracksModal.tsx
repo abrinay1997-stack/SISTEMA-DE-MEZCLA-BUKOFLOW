@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { XIcon, ChartBarIcon, PlayIcon, SpeakerWaveIcon, EyeIcon, ArrowPathIcon, StarFilledIcon } from './icons';
+import { XIcon, ChartBarIcon, PlayIcon, SpeakerWaveIcon, EyeIcon, ArrowPathIcon, StarFilledIcon, DownloadIcon } from './icons';
 import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
 import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
 import { CalibrationState } from '../types';
@@ -38,13 +38,13 @@ const genres: GenreProfile[] = [
   { 
     id: 'urban', 
     name: 'Reggaeton / Urbano', 
-    description: 'Curva precisa Top Chart. Sub-grave profundo (+39dB pico), medios presentes (+19dB) y roll-off suave en agudos.',
+    description: 'Curva precisa Top Chart. Sub-grave profundo (+39dB pico), medios claros y roll-off suave en agudos.',
     curve: [0.88, 0.80, 0.75, 0.62, 0.53, 0.44, 0.20] 
   },
   { 
     id: 'modern_rap', 
     name: 'Rap Moderno', 
-    description: 'Grave dominante (+41dB), medios claros para voz (+22dB en 1k) y agudos controlados/oscuros (caída post 12kHz).',
+    description: 'Grave dominante (+41dB), medios claros para voz y agudos controlados/oscuros.',
     curve: [0.91, 0.85, 0.76, 0.67, 0.53, 0.44, 0.22] 
   },
   { 
@@ -132,6 +132,9 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   
+  // Sync Ref
+  const isPlayingRef = useRef(false);
+  
   // Calibration Engine
   const calibrationEngineRef = useRef<HeadphoneCalibrationEngine | null>(null);
   
@@ -155,6 +158,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
+  // Setup Audio Context & Calibration - ONLY on open
   useEffect(() => {
     if (isOpen && !audioContextRef.current) {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -173,67 +177,70 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
         audioElementRef.current.crossOrigin = "anonymous";
         audioElementRef.current.loop = true;
         
-        // Update state on time update for Waveform
-        audioElementRef.current.ontimeupdate = () => {
-            if (audioElementRef.current) {
-                setCurrentTime(audioElementRef.current.currentTime);
-            }
-        };
-
         sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElementRef.current);
         
-        // Routing for "Visualizing the File" but "Hearing the Correction"
-        // Strategy: 
-        // Source -> Analyser (See Raw) -> Calibration (Correct) -> Destination (Hear Flat)
-        
+        // Routing: Source -> Analyser (Raw Viz) -> Calibration -> Output (Flat Audio)
         sourceNodeRef.current.connect(analyserRef.current);
         analyserRef.current.connect(calibrationEngineRef.current.getInputNode());
         calibrationEngineRef.current.getOutputNode().connect(audioContextRef.current.destination);
         
+        // Apply initial calibration state
+        if (calibrationEngineRef.current) {
+            calibrationEngineRef.current.loadProfile(calibrationState.profile);
+            calibrationEngineRef.current.setAmount(calibrationState.amount);
+            calibrationEngineRef.current.setBypass(calibrationState.bypass);
+        }
+
         startVisualizer();
     }
-    
-    // Sync calibration state
+
+    return () => {
+        // Cleanup on close or unmount
+        stopVisualizer();
+        
+        // CRITICAL: Stop audio and cleanup source
+        if (audioElementRef.current) {
+            audioElementRef.current.pause();
+            audioElementRef.current.src = "";
+            audioElementRef.current.load();
+            audioElementRef.current = null;
+        }
+        
+        if (sourceNodeRef.current) {
+            sourceNodeRef.current.disconnect();
+            sourceNodeRef.current = null;
+        }
+
+        if (calibrationEngineRef.current) {
+            calibrationEngineRef.current.dispose();
+            calibrationEngineRef.current = null;
+        }
+
+        if (audioContextRef.current) {
+            try {
+                audioContextRef.current.close();
+            } catch (e) {
+                console.warn("Error closing AudioContext", e);
+            }
+            audioContextRef.current = null;
+        }
+        
+        setIsPlaying(false);
+        isPlayingRef.current = false;
+        setFileName(null);
+        setAudioBuffer(null);
+        peakDataRef.current = null;
+    }
+  }, [isOpen]);
+
+  // Separate effect for Calibration Updates
+  useEffect(() => {
     if (calibrationEngineRef.current) {
         calibrationEngineRef.current.loadProfile(calibrationState.profile);
         calibrationEngineRef.current.setAmount(calibrationState.amount);
         calibrationEngineRef.current.setBypass(calibrationState.bypass);
     }
-
-    return () => {
-        if (!isOpen) {
-            stopVisualizer();
-            
-            // CRITICAL: Stop audio and cleanup source
-            if (audioElementRef.current) {
-                audioElementRef.current.pause();
-                audioElementRef.current.src = "";
-                audioElementRef.current.load();
-                audioElementRef.current = null;
-            }
-            
-            if (sourceNodeRef.current) {
-                sourceNodeRef.current.disconnect();
-                sourceNodeRef.current = null;
-            }
-
-            if (calibrationEngineRef.current) {
-                calibrationEngineRef.current.dispose();
-                calibrationEngineRef.current = null;
-            }
-
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-                audioContextRef.current = null;
-            }
-            
-            setIsPlaying(false);
-            setFileName(null);
-            setAudioBuffer(null);
-            peakDataRef.current = null;
-        }
-    }
-  }, [isOpen, calibrationState]);
+  }, [calibrationState]);
 
   // Update smoothing in real-time
   useEffect(() => {
@@ -257,8 +264,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
       audioElementRef.current.src = url;
       setFileName(file.name);
       
-      // Need AudioBuffer only for Waveform display, MediaElement is used for playback
-      // We decode it separately just for the UI
+      // Decode buffer for visual waveform
       try {
           const arrayBuffer = await file.arrayBuffer();
           const decoded = await audioContextRef.current.decodeAudioData(arrayBuffer);
@@ -282,8 +288,10 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
 
       if (isPlaying) {
           audioElementRef.current.pause();
+          isPlayingRef.current = false;
       } else {
           audioElementRef.current.play();
+          isPlayingRef.current = true;
       }
       setIsPlaying(!isPlaying);
   };
@@ -309,6 +317,11 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
 
   const startVisualizer = () => {
       const draw = () => {
+          // --- SYNC WAVEFORM PROGRESS IN LOOP ---
+          if (isPlayingRef.current && audioElementRef.current) {
+              setCurrentTime(audioElementRef.current.currentTime);
+          }
+
           if (!canvasRef.current) return;
           const canvas = canvasRef.current;
           const ctx = canvas.getContext('2d');
@@ -321,7 +334,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
           ctx.clearRect(0, 0, width, height);
 
           // --- 1. Draw Grid (Logarithmic Scale) ---
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
           ctx.lineWidth = 1;
           ctx.beginPath();
           
@@ -340,15 +353,15 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
               const x = getX(freq);
               ctx.moveTo(x, 0);
               ctx.lineTo(x, height);
-              ctx.fillStyle = 'rgba(255,255,255,0.4)';
-              ctx.font = '10px "Exo 2", sans-serif';
+              ctx.fillStyle = 'rgba(255,255,255,0.6)';
+              ctx.font = '11px "Exo 2", sans-serif';
               ctx.fillText(labels[i], x + 4, height - 6);
           });
           ctx.stroke();
 
           // Draw baseline (0dB equivalent visually)
           ctx.beginPath();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
           ctx.moveTo(0, height / 2);
           ctx.lineTo(width, height / 2);
           ctx.stroke();
@@ -359,9 +372,9 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
           const curveXPositions = targetFreqs.map(f => getX(f));
           
           ctx.beginPath();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)'; // Target color
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; // Target color
           ctx.lineWidth = 3;
-          ctx.setLineDash([5, 5]);
+          ctx.setLineDash([6, 6]);
           
           const currentCurve = activeCurveRef.current;
           
@@ -406,7 +419,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
               ctx.beginPath();
               ctx.strokeStyle = '#0ea5e9'; // Sky Blue (Theme Accent)
               ctx.lineWidth = 2;
-              ctx.fillStyle = 'rgba(14, 165, 233, 0.2)';
+              ctx.fillStyle = 'rgba(14, 165, 233, 0.25)';
               ctx.moveTo(0, height);
               
               for (let x = 0; x < width; x += 2) {
@@ -432,7 +445,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
               // --- Draw Peak Hold Line ---
               if (showPeakHoldRef.current && peakDataRef.current) {
                   ctx.beginPath();
-                  ctx.strokeStyle = 'rgba(14, 255, 255, 0.6)'; // Cyan/Bright
+                  ctx.strokeStyle = 'rgba(14, 255, 255, 0.8)'; // Cyan/Bright
                   ctx.lineWidth = 1;
 
                   let started = false;
@@ -468,7 +481,6 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
 
   // Refs for animation loop
   const activeCurveRef = useRef(selectedGenre.curve);
-  const isPlayingRef = useRef(isPlaying);
   const visualGainRef = useRef(visualGain);
   const showPeakHoldRef = useRef(showPeakHold);
 
@@ -476,10 +488,6 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
       activeCurveRef.current = selectedGenre.curve;
   }, [selectedGenre]);
   
-  useEffect(() => {
-      isPlayingRef.current = isPlaying;
-  }, [isPlaying]);
-
   useEffect(() => {
       visualGainRef.current = visualGain;
   }, [visualGain]);
@@ -526,13 +534,14 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                 onCalibrationChange={onCalibrationChange}
             />
 
-            <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg mb-6 text-sm text-blue-200 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <div>
-                    <strong> Nota del Gurú:</strong> La calibración de auriculares se aplica DESPUÉS del análisis visual.
-                    Lo que ves es el archivo original, lo que escuchas es la versión plana.
-                </div>
-                <div className="text-xs bg-black/40 px-3 py-1 rounded border border-blue-500/30 font-mono">
-                    Integración: {getSmoothingLabel(smoothing)}
+            {/* The Spectrum Canvas */}
+            <div className="relative w-full h-48 md:h-80 bg-black rounded-lg border border-theme-border overflow-hidden shadow-inner mb-4">
+                <canvas ref={canvasRef} width={1024} height={320} className="w-full h-full" />
+                
+                {/* Labels Overlay */}
+                <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm px-3 py-1 rounded border border-white/10 pointer-events-none">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider">Target Curve</p>
+                    <p className="text-sm font-bold text-white">{selectedGenre.name}</p>
                 </div>
             </div>
 
@@ -562,10 +571,12 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                      <label className="text-xs font-bold text-theme-accent-secondary uppercase">2. Carga tu Mezcla y Ajusta</label>
                      
                      {!fileName ? (
-                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer bg-black/20 hover:bg-white/5 transition-colors">
-                            <div className="flex flex-col items-center justify-center">
-                                <SpeakerWaveIcon className="w-8 h-8 text-theme-text-secondary mb-2" />
-                                <p className="text-sm text-theme-text font-semibold">Click para cargar Audio (Max 50MB)</p>
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer bg-black/20 hover:bg-white/5 transition-all group relative overflow-hidden">
+                            <div className="absolute inset-0 bg-theme-accent/5 group-hover:bg-theme-accent/10 transition-colors"></div>
+                            <div className="flex flex-col items-center justify-center relative z-10">
+                                <DownloadIcon className="w-10 h-10 text-theme-accent mb-2 animate-bounce" />
+                                <p className="text-base text-theme-text font-bold">Arrastra o Click para cargar Audio</p>
+                                <p className="text-xs text-theme-text-secondary mt-1">Soporta MP3/WAV (Max 50MB)</p>
                             </div>
                             <input type="file" className="hidden" accept="audio/*" onChange={handleFileUpload} />
                         </label>
@@ -600,7 +611,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                                  </div>
                              </div>
                              <div className="flex justify-end">
-                                <button onClick={() => { setFileName(null); setIsPlaying(false); audioElementRef.current?.pause(); }} className="text-xs text-red-400 hover:text-red-300 underline">Cambiar Archivo</button>
+                                <button onClick={() => { setFileName(null); setIsPlaying(false); isPlayingRef.current = false; audioElementRef.current?.pause(); }} className="text-xs text-red-400 hover:text-red-300 underline">Cambiar Archivo</button>
                              </div>
                         </div>
                      )}
@@ -657,28 +668,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                             Clear Mem
                         </button>
                      </div>
-                     
-                     <p className="text-[10px] text-gray-500 text-center">
-                        Usa "Lento" (6s) para ver el promedio tonal real. Usa "Rápido" (1s) para ver movimiento.
-                     </p>
                 </div>
-            </div>
-
-            {/* The Spectrum Canvas */}
-            <div className="relative w-full h-48 md:h-80 bg-black rounded-lg border border-theme-border overflow-hidden shadow-inner mb-4">
-                <canvas ref={canvasRef} width={1024} height={320} className="w-full h-full" />
-                
-                {/* Labels Overlay */}
-                <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm px-3 py-1 rounded border border-white/10 pointer-events-none">
-                    <p className="text-xs text-gray-400 uppercase tracking-wider">Target Curve</p>
-                    <p className="text-sm font-bold text-white">{selectedGenre.name}</p>
-                </div>
-            </div>
-
-            {/* Description */}
-            <div className="bg-theme-accent/5 border border-theme-accent/20 p-4 rounded-lg">
-                <h4 className="font-bold text-theme-accent mb-1 text-sm uppercase tracking-wide">Análisis de Tonalidad</h4>
-                <p className="text-sm text-theme-text-secondary leading-relaxed">{selectedGenre.description}</p>
             </div>
         </div>
       </div>

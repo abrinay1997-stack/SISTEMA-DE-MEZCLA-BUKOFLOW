@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 
 interface AudioWaveformProps {
     buffer: AudioBuffer | null;
@@ -67,7 +67,7 @@ const AudioWaveform: React.FC<AudioWaveformProps> = ({
         draw();
     }, [buffer, progress, height, color, progressColor]);
 
-    const calculateSeekPosition = (clientX: number) => {
+    const calculateSeekPosition = useCallback((clientX: number) => {
         if (!buffer || !canvasRef.current) return 0;
         const rect = canvasRef.current.getBoundingClientRect();
         const x = clientX - rect.left;
@@ -75,59 +75,68 @@ const AudioWaveform: React.FC<AudioWaveformProps> = ({
         const clampedX = Math.max(0, Math.min(x, rect.width));
         const clickProgress = clampedX / rect.width;
         return clickProgress * buffer.duration;
-    };
+    }, [buffer]);
+
+    const handleGlobalMove = useCallback((e: MouseEvent | TouchEvent) => {
+        if (!isDragging) return;
+        
+        let clientX = 0;
+        if (e instanceof MouseEvent) {
+            clientX = e.clientX;
+        } else if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+        }
+        
+        const time = calculateSeekPosition(clientX);
+        onSeek(time);
+    }, [isDragging, calculateSeekPosition, onSeek]);
+
+    const handleGlobalUp = useCallback(() => {
+        setIsDragging(false);
+    }, []);
+
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener('mousemove', handleGlobalMove);
+            window.addEventListener('mouseup', handleGlobalUp);
+            window.addEventListener('touchmove', handleGlobalMove);
+            window.addEventListener('touchend', handleGlobalUp);
+        } else {
+            window.removeEventListener('mousemove', handleGlobalMove);
+            window.removeEventListener('mouseup', handleGlobalUp);
+            window.removeEventListener('touchmove', handleGlobalMove);
+            window.removeEventListener('touchend', handleGlobalUp);
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleGlobalMove);
+            window.removeEventListener('mouseup', handleGlobalUp);
+            window.removeEventListener('touchmove', handleGlobalMove);
+            window.removeEventListener('touchend', handleGlobalUp);
+        };
+    }, [isDragging, handleGlobalMove, handleGlobalUp]);
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        e.preventDefault(); // Prevent text selection
         setIsDragging(true);
         const time = calculateSeekPosition(e.clientX);
         onSeek(time);
     };
 
-    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (isDragging) {
-            const time = calculateSeekPosition(e.clientX);
-            onSeek(time);
-        }
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    const handleMouseLeave = () => {
-        setIsDragging(false);
-    };
-
-    // Touch events support
     const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        // e.preventDefault(); // Removed to allow scroll if needed, but touch-action: none in CSS handles it
         setIsDragging(true);
         const time = calculateSeekPosition(e.touches[0].clientX);
         onSeek(time);
-    };
-
-    const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        if (isDragging) {
-            const time = calculateSeekPosition(e.touches[0].clientX);
-            onSeek(time);
-        }
-    };
-
-    const handleTouchEnd = () => {
-        setIsDragging(false);
     };
 
     return (
         <canvas 
             ref={canvasRef} 
             className="w-full rounded cursor-crosshair opacity-90 hover:opacity-100 transition-opacity touch-none" 
-            style={{ height: `${height}px` }}
+            style={{ height: `${height}px`, touchAction: 'none' }}
             onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
             onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
         />
     );
 };

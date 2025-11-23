@@ -68,7 +68,7 @@ const SalesModal: React.FC<SalesModalProps> = ({ isOpen, onClose }) => {
             {/* Botón de cierre flotante */}
             <button 
                 onClick={onClose} 
-                className="absolute top-3 right-3 md:top-4 md:right-4 p-2 text-gray-400 hover:text-white transition-colors z-50 bg-black/50 rounded-full md:bg-transparent"
+                className="absolute top-4 right-4 md:top-6 md:right-6 p-2 text-gray-400 hover:text-white transition-colors z-50 bg-black/50 rounded-full md:bg-transparent"
             >
                 <XIcon className="w-6 h-6" />
             </button>

@@ -191,7 +191,7 @@ const MixingView: React.FC<MixingViewProps> = ({
         onCalibrationChange={setCalibrationState}
       />
 
-      <div className="container mx-auto px-4 py-8 md:py-12 flex-grow pb-24 md:pb-12"> {/* Added pb-24 for mobile footer clearance */}
+      <div className="container mx-auto px-4 py-8 md:py-12 flex-grow pb-28 md:pb-12"> {/* Added pb-28 for mobile footer clearance */}
         <header className="flex flex-wrap justify-between items-center mb-8 md:mb-12 relative gap-4">
             <div className="flex-1 order-1">
                 <button onClick={onGoToHub} className="flex items-center gap-2 py-2 px-4 rounded-md font-semibold transition-all duration-300 bg-theme-accent-secondary/20 text-theme-accent-secondary hover:bg-theme-accent-secondary/30">

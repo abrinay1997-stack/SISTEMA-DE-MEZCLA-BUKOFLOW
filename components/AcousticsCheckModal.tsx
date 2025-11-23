@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { XIcon, SpeakerWaveIcon, PlayIcon, LoaderIcon } from './icons';
+import { XIcon, SpeakerWaveIcon, PlayIcon, LoaderIcon, DownloadIcon } from './icons';
 import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
 import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
 import { CalibrationState, HeadphoneProfile } from '../types';
@@ -204,6 +204,9 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
     const gainNodeRef = useRef<GainNode | null>(null);
     
+    // Sync Ref
+    const isPlayingRef = useRef(false);
+    
     // Calibration Engine Ref
     const calibrationEngineRef = useRef<HeadphoneCalibrationEngine | null>(null);
 
@@ -228,6 +231,7 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, []);
 
+    // Setup Audio Context & Calibration Engine - ONLY on open/close
     useEffect(() => {
         if (isOpen && !audioContextRef.current) {
             // Initialize Audio Context
@@ -251,32 +255,46 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
 
             // 2. Master Gain -> Destination (Default)
             gainNodeRef.current.connect(audioContextRef.current.destination);
+            
+            // Apply initial calibration state
+            if (calibrationEngineRef.current) {
+                calibrationEngineRef.current.loadProfile(calibrationState.profile);
+                calibrationEngineRef.current.setAmount(calibrationState.amount);
+                calibrationEngineRef.current.setBypass(calibrationState.bypass);
+            }
         }
-        
-        // Update calibration when props change
+
+        return () => {
+            // Cleanup on unmount or close
+            stopAudio(false);
+            if (audioContextRef.current) {
+                try {
+                    audioContextRef.current.close();
+                } catch (e) {
+                    console.warn("Error closing AudioContext", e);
+                }
+                audioContextRef.current = null;
+            }
+            if (calibrationEngineRef.current) {
+                calibrationEngineRef.current.dispose();
+                calibrationEngineRef.current = null;
+            }
+            setAudioBuffer(null);
+            setFileName(null);
+            setIsPlaying(false);
+            setCurrentTime(0);
+            isPlayingRef.current = false;
+        };
+    }, [isOpen]); // removed calibrationState from dependency to prevent tear down on slider change
+
+    // Separate effect for calibration updates
+    useEffect(() => {
         if (calibrationEngineRef.current) {
             calibrationEngineRef.current.loadProfile(calibrationState.profile);
             calibrationEngineRef.current.setAmount(calibrationState.amount);
             calibrationEngineRef.current.setBypass(calibrationState.bypass);
         }
-
-        return () => {
-            // Cleanup on unmount
-            if (!isOpen) {
-                stopAudio();
-                if (audioContextRef.current) {
-                    audioContextRef.current.close();
-                    audioContextRef.current = null;
-                }
-                if (calibrationEngineRef.current) {
-                    calibrationEngineRef.current.dispose();
-                    calibrationEngineRef.current = null;
-                }
-                setAudioBuffer(null);
-                setFileName(null);
-            }
-        };
-    }, [isOpen, calibrationState]);
+    }, [calibrationState]);
 
     // --- Reverb Impulse Generator ---
     const generateImpulse = (duration: number, decay: number, reverse: boolean = false) => {
@@ -346,11 +364,14 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
         startTimeRef.current = audioContextRef.current.currentTime - offset;
 
         setIsPlaying(true);
+        isPlayingRef.current = true; // Sync Ref
         
         // Apply current environment to the chain immediately
         applyEnvironment(activeEnv);
         
-        requestAnimationFrame(updateTime);
+        // Start loop
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        updateTime();
     };
 
     const stopAudio = (savePosition = true) => {
@@ -363,6 +384,7 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
             pauseTimeRef.current = (audioContextRef.current.currentTime - startTimeRef.current) % duration;
         }
         setIsPlaying(false);
+        isPlayingRef.current = false; // Sync Ref
         if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
 
@@ -372,9 +394,13 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
     };
 
     const updateTime = () => {
-        if (!isPlaying || !audioContextRef.current) return;
+        if (!isPlayingRef.current || !audioContextRef.current) return;
+        
         const elapsed = audioContextRef.current.currentTime - startTimeRef.current;
-        setCurrentTime(elapsed % duration);
+        const newTime = elapsed % duration;
+        
+        setCurrentTime(newTime);
+        
         animationFrameRef.current = requestAnimationFrame(updateTime);
     };
 
@@ -595,15 +621,17 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
                     <div className="flex flex-col gap-4">
                          {!audioBuffer ? (
                             isLoading ? (
-                                <div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-theme-border rounded-lg bg-black/20">
-                                    <LoaderIcon className="w-8 h-8 text-theme-accent mb-2" />
+                                <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg bg-black/20">
+                                    <LoaderIcon className="w-10 h-10 text-theme-accent mb-2" />
                                     <p className="text-sm text-theme-text animate-pulse">Decodificando Audio...</p>
                                 </div>
                             ) : (
-                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-theme-border rounded-lg cursor-pointer bg-black/20 hover:bg-white/5 transition-colors">
-                                    <div className="flex flex-col items-center justify-center">
-                                        <SpeakerWaveIcon className="w-8 h-8 text-theme-text-secondary mb-1" />
-                                        <p className="text-sm text-theme-text font-semibold">Cargar mezcla (MP3/WAV) - Max 50MB</p>
+                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer bg-black/20 hover:bg-white/5 transition-all group relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-theme-accent/5 group-hover:bg-theme-accent/10 transition-colors"></div>
+                                    <div className="flex flex-col items-center justify-center relative z-10">
+                                        <DownloadIcon className="w-10 h-10 text-theme-accent mb-2 animate-bounce" />
+                                        <p className="text-base text-theme-text font-bold">Arrastra o Click para cargar Audio</p>
+                                        <p className="text-xs text-theme-text-secondary mt-1">Soporta MP3/WAV (Max 50MB)</p>
                                     </div>
                                     <input type="file" className="hidden" accept="audio/*" onChange={handleFileUpload} />
                                 </label>
@@ -627,7 +655,7 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
                                          </button>
                                          <div className="flex flex-col truncate">
                                              <span className="font-bold text-sm text-theme-text truncate">{fileName}</span>
-                                             <button onClick={() => { setAudioBuffer(null); setIsPlaying(false); }} className="text-xs text-theme-text-secondary underline hover:text-theme-text text-left">Cambiar archivo</button>
+                                             <button onClick={() => { setAudioBuffer(null); setIsPlaying(false); isPlayingRef.current = false; stopAudio(); }} className="text-xs text-theme-text-secondary underline hover:text-theme-text text-left">Cambiar archivo</button>
                                          </div>
                                      </div>
                                      <div className="text-xs font-mono text-theme-text-secondary">

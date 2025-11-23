@@ -86,6 +86,16 @@ const ResourceCenterModal: React.FC<ResourceCenterModalProps> = ({ isOpen, onClo
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<ResourceCategoryKey | 'all' | 'favorites'>('all');
 
+  // Scroll Lock
+  useEffect(() => {
+    if (isOpen) {
+        document.body.classList.add('modal-open');
+    } else {
+        document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [isOpen]);
+
   const filteredResources = useMemo(() => {
     let resources = [...resourceData];
 
@@ -217,6 +227,16 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
     const [name, setName] = useState('');
     const [icon, setIcon] = useState('default');
 
+    // Scroll Lock
+    useEffect(() => {
+        if (isOpen) {
+            document.body.classList.add('modal-open');
+        } else {
+            document.body.classList.remove('modal-open');
+        }
+        return () => document.body.classList.remove('modal-open');
+    }, [isOpen]);
+
     useEffect(() => {
         if(project) {
             setName(project.name);
@@ -306,6 +326,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     projects, favorites, setProjects, setThemeName, setFavorites
 }) => {
     const importInputRef = useRef<HTMLInputElement>(null);
+
+    // Scroll Lock handled in SettingsModal.tsx
 
     const handleExport = () => {
         const backupData = {

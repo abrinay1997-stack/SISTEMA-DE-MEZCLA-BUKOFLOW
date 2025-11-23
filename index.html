@@ -39,33 +39,45 @@
       
       /* --- Mobile QA Improvements --- */
       
-      /* Slider Thumb Hit Area */
+      /* Slider Thumb Hit Area - High Accessibility */
+      input[type=range] {
+        -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+        width: 100%; /* Specific width is required for Firefox. */
+        background: transparent; /* Otherwise white in Chrome */
+      }
+
       input[type=range]::-webkit-slider-thumb {
         -webkit-appearance: none;
-        height: 24px;
-        width: 24px;
+        height: 28px; /* Larger touch target */
+        width: 28px;
         border-radius: 50%;
         background: #ffffff;
-        margin-top: -10px; /* Adjust based on track height */
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
         cursor: pointer;
+        margin-top: -12px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4); /* Better depth */
+        border: 2px solid var(--theme-bg-secondary); /* Contrast border */
       }
       
       input[type=range]::-moz-range-thumb {
-        height: 24px;
-        width: 24px;
-        border: none;
+        height: 28px;
+        width: 28px;
+        border: 2px solid var(--theme-bg-secondary);
         border-radius: 50%;
         background: #ffffff;
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
         cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       }
 
-      /* Input Track styling adjustment for better alignment */
       input[type=range]::-webkit-slider-runnable-track {
         width: 100%;
-        height: 4px;
+        height: 6px;
         cursor: pointer;
+        background: rgba(255,255,255,0.1);
+        border-radius: 3px;
+      }
+      
+      input[type=range]:focus {
+        outline: none;
       }
 
       /* Safe Area Utilities */
@@ -139,6 +151,22 @@
       }
       .animate-fade-out-up {
         animation: fadeOutUp 0.5s ease-in forwards;
+      }
+      
+      /* Custom Scrollbar for Webkit */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
       }
     </style>
     <script>
