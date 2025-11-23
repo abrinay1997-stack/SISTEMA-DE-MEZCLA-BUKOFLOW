@@ -1,12 +1,15 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { XIcon, ScaleIcon, PlayIcon, TrashIcon, CheckBadgeIcon, SlidersIcon, MagicWandIcon } from './icons';
+import { XIcon, ScaleIcon, PlayIcon, TrashIcon, CheckBadgeIcon, SlidersIcon, MagicWandIcon, LoaderIcon } from './icons';
 import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
 import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
+import { CalibrationState } from '../types';
 
 interface BlindTestModalProps {
   isOpen: boolean;
   onClose: () => void;
+  calibrationState: CalibrationState;
+  onCalibrationChange: (newState: CalibrationState) => void;
 }
 
 type FileData = {
@@ -17,7 +20,7 @@ type FileData = {
 type Channel = 'A' | 'B';
 type BlindChannel = 'X' | 'Y';
 
-const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
+const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibrationState, onCalibrationChange }) => {
     // --- State ---
     const [stage, setStage] = useState<'setup' | 'testing' | 'revealed'>('setup');
     const [fileA, setFileA] = useState<FileData>({ name: '', buffer: null });
@@ -36,6 +39,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
     const [isDragging, setIsDragging] = useState(false); 
     
     const [isLoading, setIsLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     // --- Audio Context & Refs ---
@@ -55,6 +59,16 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
 
     // --- Initialization ---
     useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && audioCtxRef.current?.state === 'suspended') {
+                audioCtxRef.current.resume();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
+
+    useEffect(() => {
         if (isOpen && !audioCtxRef.current) {
             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
             audioCtxRef.current = new AudioContext();
@@ -72,12 +86,19 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
             calibrationEngineRef.current.getOutputNode().connect(audioCtxRef.current.destination);
         }
         
+        // Sync calibration state
+        if (calibrationEngineRef.current) {
+            calibrationEngineRef.current.loadProfile(calibrationState.profile);
+            calibrationEngineRef.current.setAmount(calibrationState.amount);
+            calibrationEngineRef.current.setBypass(calibrationState.bypass);
+        }
+        
         return () => {
              if (!isOpen) {
                 stopAudio();
              }
         };
-    }, [isOpen]);
+    }, [isOpen, calibrationState]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -108,7 +129,14 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
         const file = e.target.files?.[0];
         if (!file || !audioCtxRef.current) return;
         
+        // 50MB Limit
+        if (file.size > 50 * 1024 * 1024) {
+            setError(`El archivo para el canal ${channel} es demasiado grande (>50MB).`);
+            return;
+        }
+
         setIsLoading(true);
+        setLoadingMessage('Decodificando audio...');
         setError(null);
 
         try {
@@ -125,6 +153,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
             setError(`Error al cargar el archivo para el canal ${channel}. Asegúrate de que sea un audio válido.`);
         } finally {
             setIsLoading(false);
+            setLoadingMessage('');
         }
     };
 
@@ -288,6 +317,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
         if (!fileA.buffer || !fileB.buffer) return;
         
         setIsLoading(true);
+        setLoadingMessage('Calculando RMS...');
         
         // Use setTimeout to allow UI to render loading state
         setTimeout(() => {
@@ -315,6 +345,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
                 setError("Error al analizar el volumen.");
             } finally {
                 setIsLoading(false);
+                setLoadingMessage('');
             }
         }, 100);
     };
@@ -360,11 +391,11 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
 
     return (
         <div 
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-fade-in-backdrop"
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4 animate-fade-in-backdrop"
             onClick={onClose}
         >
              <div
-                className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-3xl flex flex-col animate-scale-up max-h-[95vh] overflow-hidden"
+                className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-3xl flex flex-col animate-scale-up max-h-[95vh] overflow-hidden pt-safe pb-safe"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -373,7 +404,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
                         <ScaleIcon className="w-6 h-6" />
                         Comparador A/B Ciego
                     </h2>
-                    <button onClick={onClose} className="p-1 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+                    <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
                         <XIcon className="w-6 h-6" />
                     </button>
                 </div>
@@ -382,13 +413,19 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
                     
                     {/* Correction Module */}
                     <HeadphoneCorrectionControls 
-                        onProfileChange={(p) => calibrationEngineRef.current?.loadProfile(p)}
-                        onAmountChange={(a) => calibrationEngineRef.current?.setAmount(a)}
-                        onBypassChange={(b) => calibrationEngineRef.current?.setBypass(b)}
+                        calibrationState={calibrationState}
+                        onCalibrationChange={onCalibrationChange}
                     />
 
-                    {isLoading && <div className="text-center text-theme-accent p-4 bg-black/40 rounded-lg mb-4"><p className="animate-pulse">Analizando audio...</p></div>}
-                    {error && <div className="text-center text-red-500 bg-red-500/10 p-2 rounded mb-4 text-sm">{error}</div>}
+                    {/* Loading Indicator */}
+                    {isLoading && (
+                        <div className="text-center text-theme-accent p-6 bg-black/40 rounded-lg mb-4 border border-theme-accent/20 flex flex-col items-center">
+                            <LoaderIcon className="w-8 h-8 mb-2 text-theme-accent" />
+                            <p className="font-semibold">{loadingMessage}</p>
+                        </div>
+                    )}
+                    
+                    {error && <div className="text-center text-red-500 bg-red-500/10 p-2 rounded mb-4 text-sm border border-red-500/20">{error}</div>}
 
                     {/* --- STAGE: SETUP --- */}
                     {stage === 'setup' && (
@@ -406,7 +443,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
                                     </h3>
                                     {!fileA.buffer ? (
                                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                                            <span className="text-xs text-theme-text-secondary">Click para cargar</span>
+                                            <span className="text-xs text-theme-text-secondary text-center">Click para cargar <br/>(Max 50MB)</span>
                                             <input type="file" className="hidden" accept="audio/*" onChange={(e) => loadFile(e, 'A')} />
                                         </label>
                                     ) : (
@@ -440,7 +477,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
                                     </h3>
                                     {!fileB.buffer ? (
                                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                                            <span className="text-xs text-theme-text-secondary">Click para cargar</span>
+                                            <span className="text-xs text-theme-text-secondary text-center">Click para cargar <br/>(Max 50MB)</span>
                                             <input type="file" className="hidden" accept="audio/*" onChange={(e) => loadFile(e, 'B')} />
                                         </label>
                                     ) : (
@@ -483,7 +520,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose }) => {
                                 <div className="bg-black/40 p-3 rounded-lg flex items-center gap-3">
                                     <button 
                                         onClick={togglePlay}
-                                        className="w-10 h-10 flex items-center justify-center bg-white text-black rounded-full hover:scale-105 transition-transform"
+                                        className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white text-black rounded-full hover:scale-105 transition-transform"
                                     >
                                         {isPlaying ? <div className="flex gap-1"><div className="w-1 h-3 bg-black"></div><div className="w-1 h-3 bg-black"></div></div> : <PlayIcon className="w-5 h-5 ml-0.5" />}
                                     </button>

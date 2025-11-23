@@ -3,10 +3,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { XIcon, ChartBarIcon, PlayIcon, SpeakerWaveIcon, EyeIcon, ArrowPathIcon, StarFilledIcon } from './icons';
 import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
 import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
+import { CalibrationState } from '../types';
+import AudioWaveform from './AudioWaveform';
 
 interface ReferenceTracksModalProps {
   isOpen: boolean;
   onClose: () => void;
+  calibrationState: CalibrationState;
+  onCalibrationChange: (newState: CalibrationState) => void;
 }
 
 interface GenreProfile {
@@ -99,10 +103,23 @@ const genres: GenreProfile[] = [
   }
 ];
 
-const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onClose }) => {
+const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onClose, calibrationState, onCalibrationChange }) => {
   const [selectedGenreId, setSelectedGenreId] = useState<string>('balanced');
   const [isPlaying, setIsPlaying] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Playback State
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   
   // Controls
   const [visualGain, setVisualGain] = useState<number>(0.8); 
@@ -127,6 +144,17 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
 
   const selectedGenre = genres.find(g => g.id === selectedGenreId) || genres[0];
 
+  // Visibility Handler to resume audio context
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && audioContextRef.current?.state === 'suspended') {
+            audioContextRef.current.resume();
+        }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   useEffect(() => {
     if (isOpen && !audioContextRef.current) {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -144,6 +172,13 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
         audioElementRef.current = new Audio();
         audioElementRef.current.crossOrigin = "anonymous";
         audioElementRef.current.loop = true;
+        
+        // Update state on time update for Waveform
+        audioElementRef.current.ontimeupdate = () => {
+            if (audioElementRef.current) {
+                setCurrentTime(audioElementRef.current.currentTime);
+            }
+        };
 
         sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElementRef.current);
         
@@ -157,28 +192,48 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
         
         startVisualizer();
     }
+    
+    // Sync calibration state
+    if (calibrationEngineRef.current) {
+        calibrationEngineRef.current.loadProfile(calibrationState.profile);
+        calibrationEngineRef.current.setAmount(calibrationState.amount);
+        calibrationEngineRef.current.setBypass(calibrationState.bypass);
+    }
 
     return () => {
         if (!isOpen) {
             stopVisualizer();
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-                audioContextRef.current = null;
-            }
+            
+            // CRITICAL: Stop audio and cleanup source
             if (audioElementRef.current) {
                 audioElementRef.current.pause();
                 audioElementRef.current.src = "";
+                audioElementRef.current.load();
+                audioElementRef.current = null;
             }
+            
+            if (sourceNodeRef.current) {
+                sourceNodeRef.current.disconnect();
+                sourceNodeRef.current = null;
+            }
+
             if (calibrationEngineRef.current) {
                 calibrationEngineRef.current.dispose();
                 calibrationEngineRef.current = null;
             }
+
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+                audioContextRef.current = null;
+            }
+            
             setIsPlaying(false);
             setFileName(null);
+            setAudioBuffer(null);
             peakDataRef.current = null;
         }
     }
-  }, [isOpen]);
+  }, [isOpen, calibrationState]);
 
   // Update smoothing in real-time
   useEffect(() => {
@@ -187,15 +242,34 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
     }
   }, [smoothing]);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
-      if (file && audioElementRef.current) {
-          const url = URL.createObjectURL(file);
-          audioElementRef.current.src = url;
-          setFileName(file.name);
-          if (audioContextRef.current?.state === 'suspended') {
-              audioContextRef.current.resume();
-          }
+      if (!file || !audioElementRef.current || !audioContextRef.current) return;
+      
+      // 50MB Limit
+      if (file.size > 50 * 1024 * 1024) {
+          setError("El archivo es demasiado grande (>50MB).");
+          return;
+      }
+      
+      setError(null);
+      const url = URL.createObjectURL(file);
+      audioElementRef.current.src = url;
+      setFileName(file.name);
+      
+      // Need AudioBuffer only for Waveform display, MediaElement is used for playback
+      // We decode it separately just for the UI
+      try {
+          const arrayBuffer = await file.arrayBuffer();
+          const decoded = await audioContextRef.current.decodeAudioData(arrayBuffer);
+          setAudioBuffer(decoded);
+          setDuration(decoded.duration);
+      } catch(e) {
+          console.error("Error decoding for waveform", e);
+      }
+
+      if (audioContextRef.current?.state === 'suspended') {
+          audioContextRef.current.resume();
       }
   };
 
@@ -212,6 +286,13 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
           audioElementRef.current.play();
       }
       setIsPlaying(!isPlaying);
+  };
+  
+  const handleSeek = (time: number) => {
+      if (audioElementRef.current) {
+          audioElementRef.current.currentTime = time;
+          setCurrentTime(time);
+      }
   };
   
   const stopVisualizer = () => {
@@ -419,11 +500,11 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
 
   return (
     <div 
-        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-fade-in-backdrop"
+        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4 animate-fade-in-backdrop"
         onClick={onClose}
     >
       <div
-        className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-5xl flex flex-col animate-scale-up max-h-[95vh]"
+        className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-5xl flex flex-col animate-scale-up max-h-[95vh] overflow-hidden pt-safe pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -432,18 +513,17 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                 <ChartBarIcon className="w-6 h-6" />
                 Spectrum Target (Raw)
             </h2>
-            <button onClick={onClose} className="p-1 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+            <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
                 <XIcon className="w-6 h-6" />
             </button>
         </div>
 
-        <div className="p-6 overflow-y-auto custom-scrollbar">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
             
             {/* Headphone Correction Module */}
             <HeadphoneCorrectionControls 
-                onProfileChange={(p) => calibrationEngineRef.current?.loadProfile(p)}
-                onAmountChange={(a) => calibrationEngineRef.current?.setAmount(a)}
-                onBypassChange={(b) => calibrationEngineRef.current?.setBypass(b)}
+                calibrationState={calibrationState}
+                onCalibrationChange={onCalibrationChange}
             />
 
             <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg mb-6 text-sm text-blue-200 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -485,25 +565,46 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer bg-black/20 hover:bg-white/5 transition-colors">
                             <div className="flex flex-col items-center justify-center">
                                 <SpeakerWaveIcon className="w-8 h-8 text-theme-text-secondary mb-2" />
-                                <p className="text-sm text-theme-text font-semibold">Click para cargar Audio (WAV/MP3)</p>
+                                <p className="text-sm text-theme-text font-semibold">Click para cargar Audio (Max 50MB)</p>
                             </div>
                             <input type="file" className="hidden" accept="audio/*" onChange={handleFileUpload} />
                         </label>
                      ) : (
-                        <div className="flex items-center gap-3 bg-black/30 p-4 rounded-lg border border-theme-border">
-                             <button 
-                                onClick={togglePlay}
-                                className="w-12 h-12 rounded-full bg-theme-accent text-white flex items-center justify-center hover:scale-105 transition-transform shadow-lg shadow-theme-accent/20"
-                             >
-                                {isPlaying ? <div className="flex gap-1"><div className="w-1.5 h-4 bg-white"></div><div className="w-1.5 h-4 bg-white"></div></div> : <PlayIcon className="w-6 h-6 ml-0.5" />}
-                             </button>
-                             <div className="flex-grow truncate">
-                                 <p className="text-base font-bold truncate text-theme-text">{fileName}</p>
-                                 <p className="text-xs text-theme-text-secondary">{isPlaying ? 'Analizando en tiempo real...' : 'Pausado'}</p>
+                        <div className="flex flex-col gap-2 bg-black/30 p-4 rounded-lg border border-theme-border">
+                             <div className="flex items-center gap-3">
+                                 <button 
+                                    onClick={togglePlay}
+                                    className="w-12 h-12 rounded-full bg-theme-accent text-white flex items-center justify-center hover:scale-105 transition-transform shadow-lg shadow-theme-accent/20"
+                                 >
+                                    {isPlaying ? <div className="flex gap-1"><div className="w-1.5 h-4 bg-white"></div><div className="w-1.5 h-4 bg-white"></div></div> : <PlayIcon className="w-6 h-6 ml-0.5" />}
+                                 </button>
+                                 <div className="flex-grow truncate">
+                                     <div className="flex justify-between items-end mb-1">
+                                        <p className="text-base font-bold truncate text-theme-text">{fileName}</p>
+                                        <p className="text-xs font-mono text-theme-text-secondary">{formatTime(currentTime)} / {formatTime(duration)}</p>
+                                     </div>
+                                     
+                                     {/* Waveform Component Integration */}
+                                     <div className="h-12 bg-black/50 rounded border border-theme-border overflow-hidden">
+                                         {audioBuffer && (
+                                             <AudioWaveform 
+                                                buffer={audioBuffer}
+                                                progress={currentTime}
+                                                onSeek={handleSeek}
+                                                height={48}
+                                                color="#334155"
+                                                progressColor="#0ea5e9"
+                                             />
+                                         )}
+                                     </div>
+                                 </div>
                              </div>
-                             <button onClick={() => { setFileName(null); setIsPlaying(false); audioElementRef.current?.pause(); }} className="text-sm text-red-400 hover:text-red-300 underline">Cambiar Archivo</button>
+                             <div className="flex justify-end">
+                                <button onClick={() => { setFileName(null); setIsPlaying(false); audioElementRef.current?.pause(); }} className="text-xs text-red-400 hover:text-red-300 underline">Cambiar Archivo</button>
+                             </div>
                         </div>
                      )}
+                     {error && <p className="text-red-500 text-sm text-center bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
 
                      {/* Sliders Grid */}
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-black/20 p-3 rounded-lg border border-theme-border/50">
@@ -564,7 +665,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
             </div>
 
             {/* The Spectrum Canvas */}
-            <div className="relative w-full h-80 bg-black rounded-lg border border-theme-border overflow-hidden shadow-inner mb-4">
+            <div className="relative w-full h-48 md:h-80 bg-black rounded-lg border border-theme-border overflow-hidden shadow-inner mb-4">
                 <canvas ref={canvasRef} width={1024} height={320} className="w-full h-full" />
                 
                 {/* Labels Overlay */}

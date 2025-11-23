@@ -1,13 +1,16 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { XIcon, SpeakerWaveIcon, PlayIcon } from './icons';
+import { XIcon, SpeakerWaveIcon, PlayIcon, LoaderIcon } from './icons';
 import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
 import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
-import { HeadphoneProfile } from '../types';
+import { CalibrationState, HeadphoneProfile } from '../types';
+import AudioWaveform from './AudioWaveform';
 
 interface AcousticsCheckModalProps {
   isOpen: boolean;
   onClose: () => void;
+  calibrationState: CalibrationState;
+  onCalibrationChange: (newState: CalibrationState) => void;
 }
 
 // Define simulation types sorted by Quality/Category logic (High Fidelity -> Low Fidelity/Effects)
@@ -184,22 +187,22 @@ const formatTime = (seconds: number) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClose }) => {
+const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClose, calibrationState, onCalibrationChange }) => {
     const [activeEnv, setActiveEnv] = useState<EnvironmentType>('bypass');
     const [isPlaying, setIsPlaying] = useState(false);
     const [fileName, setFileName] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     
     // Player State
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
+    const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
 
     // Audio Context Refs
     const audioContextRef = useRef<AudioContext | null>(null);
-    const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+    const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
     const gainNodeRef = useRef<GainNode | null>(null);
-    const analyserRef = useRef<AnalyserNode | null>(null);
     
     // Calibration Engine Ref
     const calibrationEngineRef = useRef<HeadphoneCalibrationEngine | null>(null);
@@ -210,9 +213,20 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
     const dryGainNodeRef = useRef<GainNode | null>(null);
     const wetGainNodeRef = useRef<GainNode | null>(null);
 
-    const audioElementRef = useRef<HTMLAudioElement | null>(null);
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const startTimeRef = useRef<number>(0);
+    const pauseTimeRef = useRef<number>(0);
     const animationFrameRef = useRef<number | null>(null);
+
+    // Visibility Handler to resume audio context
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && audioContextRef.current?.state === 'suspended') {
+                audioContextRef.current.resume();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
 
     useEffect(() => {
         if (isOpen && !audioContextRef.current) {
@@ -225,67 +239,44 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
 
             // Create shared nodes
             gainNodeRef.current = audioContextRef.current.createGain();
-            analyserRef.current = audioContextRef.current.createAnalyser();
-            analyserRef.current.fftSize = 256; 
-            analyserRef.current.smoothingTimeConstant = 0.85;
 
             // Create Reverb Routing Nodes
             dryGainNodeRef.current = audioContextRef.current.createGain();
             wetGainNodeRef.current = audioContextRef.current.createGain();
             convolverNodeRef.current = audioContextRef.current.createConvolver();
 
-            // Audio Element
-            audioElementRef.current = new Audio();
-            audioElementRef.current.crossOrigin = "anonymous";
-            audioElementRef.current.loop = true; 
-
-            // Listeners for player UI
-            audioElementRef.current.addEventListener('timeupdate', () => {
-                if (!isDragging && audioElementRef.current) {
-                    setCurrentTime(audioElementRef.current.currentTime);
-                }
-            });
-            audioElementRef.current.addEventListener('loadedmetadata', () => {
-                if (audioElementRef.current) {
-                    setDuration(audioElementRef.current.duration);
-                }
-            });
-
-            // Connect Element -> Source Node
-            sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElementRef.current);
-            
-            // --- NEW ROUTING CHAIN ---
-            // 1. Source -> Calibration Engine Input
-            sourceNodeRef.current.connect(calibrationEngineRef.current.getInputNode());
-            
-            // 2. Calibration Engine Output -> Master Gain (Sim Input)
+            // --- ROUTING CHAIN ---
+            // 1. Calibration Engine Output -> Master Gain (Sim Input)
             calibrationEngineRef.current.getOutputNode().connect(gainNodeRef.current);
 
-            // 3. Master Gain -> Analyser -> Destination
-            // Note: The simulation chain (EQ + Reverb) will interrupt 2 & 3 later in applyEnvironment
-            gainNodeRef.current.connect(analyserRef.current);
-            analyserRef.current.connect(audioContextRef.current.destination);
+            // 2. Master Gain -> Destination (Default)
+            gainNodeRef.current.connect(audioContextRef.current.destination);
+        }
+        
+        // Update calibration when props change
+        if (calibrationEngineRef.current) {
+            calibrationEngineRef.current.loadProfile(calibrationState.profile);
+            calibrationEngineRef.current.setAmount(calibrationState.amount);
+            calibrationEngineRef.current.setBypass(calibrationState.bypass);
         }
 
         return () => {
             // Cleanup on unmount
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-                audioContextRef.current = null;
-            }
-            if (animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
-            }
-            if (audioElementRef.current) {
-                audioElementRef.current.pause();
-                audioElementRef.current.src = "";
-            }
-            if (calibrationEngineRef.current) {
-                calibrationEngineRef.current.dispose();
-                calibrationEngineRef.current = null;
+            if (!isOpen) {
+                stopAudio();
+                if (audioContextRef.current) {
+                    audioContextRef.current.close();
+                    audioContextRef.current = null;
+                }
+                if (calibrationEngineRef.current) {
+                    calibrationEngineRef.current.dispose();
+                    calibrationEngineRef.current = null;
+                }
+                setAudioBuffer(null);
+                setFileName(null);
             }
         };
-    }, [isOpen]);
+    }, [isOpen, calibrationState]);
 
     // --- Reverb Impulse Generator ---
     const generateImpulse = (duration: number, decay: number, reverse: boolean = false) => {
@@ -306,46 +297,102 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
     };
 
     // Handle File Upload
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file && audioElementRef.current) {
-            const url = URL.createObjectURL(file);
-            audioElementRef.current.src = url;
+        if (!file || !audioContextRef.current) return;
+
+        // Limit 50MB
+        if (file.size > 50 * 1024 * 1024) {
+            setError("El archivo es demasiado grande (>50MB). Por favor, usa una versión más ligera o corta.");
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+        stopAudio();
+
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const decodedBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+            setAudioBuffer(decodedBuffer);
+            setDuration(decodedBuffer.duration);
             setFileName(file.name);
-            setError(null);
-            if (audioContextRef.current?.state === 'suspended') {
-                audioContextRef.current.resume();
-            }
+            pauseTimeRef.current = 0;
+            setCurrentTime(0);
+        } catch (e) {
+            console.error(e);
+            setError("Error al decodificar el audio. Formato no soportado.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const togglePlay = () => {
-        if (!audioElementRef.current || !fileName) return;
-        
-        if (audioContextRef.current?.state === 'suspended') {
+    const playAudio = () => {
+        if (!audioContextRef.current || !audioBuffer || !calibrationEngineRef.current) return;
+
+        if (audioContextRef.current.state === 'suspended') {
             audioContextRef.current.resume();
         }
 
-        if (isPlaying) {
-            audioElementRef.current.pause();
-        } else {
-            audioElementRef.current.play().catch(e => setError("Error al reproducir. Verifica el formato del archivo."));
-            drawVisualizer();
-        }
-        setIsPlaying(!isPlaying);
+        sourceNodeRef.current = audioContextRef.current.createBufferSource();
+        sourceNodeRef.current.buffer = audioBuffer;
+        sourceNodeRef.current.loop = true;
+
+        // Connect Source -> Calibration Input
+        sourceNodeRef.current.connect(calibrationEngineRef.current.getInputNode());
+
+        const offset = pauseTimeRef.current % duration;
+        sourceNodeRef.current.start(0, offset);
+        startTimeRef.current = audioContextRef.current.currentTime - offset;
+
+        setIsPlaying(true);
+        
+        // Apply current environment to the chain immediately
+        applyEnvironment(activeEnv);
+        
+        requestAnimationFrame(updateTime);
     };
 
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const time = Number(e.target.value);
+    const stopAudio = (savePosition = true) => {
+        if (sourceNodeRef.current) {
+            try { sourceNodeRef.current.stop(); } catch(e) {}
+            sourceNodeRef.current.disconnect();
+            sourceNodeRef.current = null;
+        }
+        if (audioContextRef.current && savePosition) {
+            pauseTimeRef.current = (audioContextRef.current.currentTime - startTimeRef.current) % duration;
+        }
+        setIsPlaying(false);
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+
+    const togglePlay = () => {
+        if (isPlaying) stopAudio();
+        else playAudio();
+    };
+
+    const updateTime = () => {
+        if (!isPlaying || !audioContextRef.current) return;
+        const elapsed = audioContextRef.current.currentTime - startTimeRef.current;
+        setCurrentTime(elapsed % duration);
+        animationFrameRef.current = requestAnimationFrame(updateTime);
+    };
+
+    const handleSeek = (time: number) => {
+        pauseTimeRef.current = time;
         setCurrentTime(time);
-        if (audioElementRef.current) {
-            audioElementRef.current.currentTime = time;
+        if (isPlaying) {
+            stopAudio(false); // Don't save old position, use the seeked time
+            playAudio();
         }
     };
 
     // Apply Environment (EQ + Reverb)
     const applyEnvironment = (env: EnvironmentType) => {
-        if (!audioContextRef.current || !sourceNodeRef.current || !gainNodeRef.current) return;
+        if (!audioContextRef.current || !gainNodeRef.current) {
+             setActiveEnv(env); // Just update state if audio not ready
+             return;
+        }
 
         const ctx = audioContextRef.current;
         const now = ctx.currentTime;
@@ -499,57 +546,18 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
 
             // 3. Route: EQ -> DryGain -> Analyser
             lastEqNode.connect(dryGainNodeRef.current);
-            dryGainNodeRef.current.connect(analyserRef.current);
+            dryGainNodeRef.current.connect(audioContextRef.current.destination);
 
             // 4. Route: EQ -> Convolver -> WetGain -> Analyser
             lastEqNode.connect(convolverNodeRef.current);
             convolverNodeRef.current.connect(wetGainNodeRef.current);
-            wetGainNodeRef.current.connect(analyserRef.current);
+            wetGainNodeRef.current.connect(audioContextRef.current.destination);
         } else {
             // No Reverb: EQ -> Analyser
-            lastEqNode.connect(analyserRef.current!);
+            lastEqNode.connect(audioContextRef.current.destination);
         }
         
         setActiveEnv(env);
-    };
-
-    // Visualizer Logic
-    const drawVisualizer = () => {
-        if (!canvasRef.current || !analyserRef.current) return;
-
-        const canvas = canvasRef.current;
-        const canvasCtx = canvas.getContext('2d');
-        if (!canvasCtx) return;
-
-        const bufferLength = analyserRef.current.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        
-        const draw = () => {
-            animationFrameRef.current = requestAnimationFrame(draw);
-            analyserRef.current!.getByteFrequencyData(dataArray);
-
-            canvasCtx.fillStyle = 'rgba(13, 17, 23, 0.3)';
-            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-            const barWidth = (canvas.width / bufferLength) * 2.5;
-            let barHeight;
-            let x = 0;
-
-            for (let i = 0; i < bufferLength; i++) {
-                barHeight = dataArray[i] * 0.6;
-
-                const r = 50 + (barHeight); 
-                const g = 50;
-                const b = 255 - (barHeight * 0.5);
-
-                canvasCtx.fillStyle = `rgb(${r},${g},${b})`;
-                canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-                x += barWidth + 1;
-            }
-        };
-
-        draw();
     };
 
 
@@ -557,11 +565,11 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
 
     return (
         <div 
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-fade-in-backdrop"
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4 animate-fade-in-backdrop"
             onClick={onClose}
         >
             <div
-                className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-accent-lg w-full max-w-5xl flex flex-col animate-scale-up overflow-hidden max-h-[95vh]"
+                className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-accent-lg w-full max-w-5xl flex flex-col animate-scale-up overflow-hidden max-h-[95vh] pt-safe pb-safe"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -570,102 +578,103 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
                         <SpeakerWaveIcon className="w-6 h-6" />
                         Simulador de Entornos
                     </h2>
-                    <button onClick={onClose} className="p-1 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+                    <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
                         <XIcon className="w-6 h-6" />
                     </button>
                 </div>
 
                 <div className="p-4 sm:p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
                     
-                    {/* Headphone Correction Module */}
+                    {/* Headphone Correction Module (Controlled) */}
                     <HeadphoneCorrectionControls 
-                        onProfileChange={(p) => calibrationEngineRef.current?.loadProfile(p)}
-                        onAmountChange={(a) => calibrationEngineRef.current?.setAmount(a)}
-                        onBypassChange={(b) => calibrationEngineRef.current?.setBypass(b)}
+                        calibrationState={calibrationState}
+                        onCalibrationChange={onCalibrationChange}
                     />
 
                     {/* File Upload / Player Section */}
                     <div className="flex flex-col gap-4">
-                         {!fileName ? (
-                            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-theme-border rounded-lg cursor-pointer bg-black/20 hover:bg-white/5 transition-colors">
-                                <div className="flex flex-col items-center justify-center">
-                                    <SpeakerWaveIcon className="w-8 h-8 text-theme-text-secondary mb-1" />
-                                    <p className="text-sm text-theme-text font-semibold">Cargar mezcla (MP3/WAV)</p>
+                         {!audioBuffer ? (
+                            isLoading ? (
+                                <div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-theme-border rounded-lg bg-black/20">
+                                    <LoaderIcon className="w-8 h-8 text-theme-accent mb-2" />
+                                    <p className="text-sm text-theme-text animate-pulse">Decodificando Audio...</p>
                                 </div>
-                                <input type="file" className="hidden" accept="audio/*" onChange={handleFileUpload} />
-                            </label>
+                            ) : (
+                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-theme-border rounded-lg cursor-pointer bg-black/20 hover:bg-white/5 transition-colors">
+                                    <div className="flex flex-col items-center justify-center">
+                                        <SpeakerWaveIcon className="w-8 h-8 text-theme-text-secondary mb-1" />
+                                        <p className="text-sm text-theme-text font-semibold">Cargar mezcla (MP3/WAV) - Max 50MB</p>
+                                    </div>
+                                    <input type="file" className="hidden" accept="audio/*" onChange={handleFileUpload} />
+                                </label>
+                            )
                          ) : (
-                             <div className="w-full flex items-center justify-between gap-4 bg-black/30 p-3 rounded-lg border border-theme-border/50">
-                                 <div className="flex items-center gap-3 overflow-hidden">
-                                     <button 
-                                        onClick={togglePlay}
-                                        className="flex-shrink-0 w-10 h-10 rounded-full bg-theme-accent text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-                                     >
-                                        {isPlaying ? (
-                                            <div className="flex gap-0.5">
-                                                <div className="w-1 h-3 bg-white rounded-sm"></div>
-                                                <div className="w-1 h-3 bg-white rounded-sm"></div>
-                                            </div>
-                                        ) : (
-                                            <PlayIcon className="w-4 h-4 ml-0.5" />
-                                        )}
-                                     </button>
-                                     <div className="flex flex-col truncate">
-                                         <span className="font-bold text-sm text-theme-text truncate">{fileName}</span>
-                                         <button onClick={() => { setFileName(null); setIsPlaying(false); audioElementRef.current?.pause(); }} className="text-xs text-theme-text-secondary underline hover:text-theme-text text-left">Cambiar archivo</button>
+                             <div className="w-full flex flex-col gap-2 bg-black/30 p-3 rounded-lg border border-theme-border/50">
+                                 <div className="flex items-center justify-between gap-4 mb-2">
+                                     <div className="flex items-center gap-3 overflow-hidden">
+                                         <button 
+                                            onClick={togglePlay}
+                                            className="flex-shrink-0 w-10 h-10 rounded-full bg-theme-accent text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+                                         >
+                                            {isPlaying ? (
+                                                <div className="flex gap-0.5">
+                                                    <div className="w-1 h-3 bg-white rounded-sm"></div>
+                                                    <div className="w-1 h-3 bg-white rounded-sm"></div>
+                                                </div>
+                                            ) : (
+                                                <PlayIcon className="w-4 h-4 ml-0.5" />
+                                            )}
+                                         </button>
+                                         <div className="flex flex-col truncate">
+                                             <span className="font-bold text-sm text-theme-text truncate">{fileName}</span>
+                                             <button onClick={() => { setAudioBuffer(null); setIsPlaying(false); }} className="text-xs text-theme-text-secondary underline hover:text-theme-text text-left">Cambiar archivo</button>
+                                         </div>
+                                     </div>
+                                     <div className="text-xs font-mono text-theme-text-secondary">
+                                         {formatTime(currentTime)} / {formatTime(duration)}
                                      </div>
                                  </div>
                                  
-                                 {/* Progress Bar */}
-                                 <div className="flex-grow flex items-center gap-3 max-w-md">
-                                     <span className="text-xs font-mono text-theme-text-secondary w-10 text-right">{formatTime(currentTime)}</span>
-                                     <input 
-                                        type="range" 
-                                        min="0" 
-                                        max={duration || 100} 
-                                        value={currentTime} 
-                                        onChange={handleSeek}
-                                        onMouseDown={() => setIsDragging(true)}
-                                        onMouseUp={() => setIsDragging(false)}
-                                        onTouchStart={() => setIsDragging(true)}
-                                        onTouchEnd={() => setIsDragging(false)}
-                                        className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-theme-accent"
+                                 {/* Waveform Player */}
+                                 <div className="w-full bg-black/50 rounded h-16 border border-theme-border overflow-hidden relative">
+                                     <AudioWaveform 
+                                        buffer={audioBuffer}
+                                        progress={currentTime}
+                                        onSeek={handleSeek}
+                                        height={64}
+                                        color="#334155"
+                                        progressColor="#0ea5e9"
                                      />
-                                     <span className="text-xs font-mono text-theme-text-secondary w-10">{formatTime(duration)}</span>
+                                     <div className="absolute top-2 right-2 pointer-events-none flex flex-col items-end gap-1">
+                                        <div className="text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
+                                            {environments[activeEnv].name}
+                                        </div>
+                                        {environments[activeEnv].reverb && (
+                                            <div className="text-[9px] text-theme-accent-secondary bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
+                                                Spatial Sim ON
+                                            </div>
+                                        )}
+                                     </div>
                                  </div>
                              </div>
                          )}
-                         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                    </div>
-
-                    {/* Visualizer */}
-                    <div className="w-full h-32 bg-black/50 rounded-lg border border-theme-border overflow-hidden relative shadow-inner">
-                         <canvas ref={canvasRef} width="800" height="128" className="w-full h-full" />
-                         <div className="absolute top-2 right-2 flex flex-col items-end pointer-events-none">
-                            <div className="text-xs font-bold text-theme-accent bg-black/60 px-2 py-1 rounded mb-1 backdrop-blur-sm">
-                                {environments[activeEnv].name}
-                            </div>
-                            <div className="text-[10px] text-theme-text-secondary bg-black/60 px-2 py-1 rounded backdrop-blur-sm">
-                                Output Vol: {Math.round(environments[activeEnv].gainCorrection * 100)}%
-                                {environments[activeEnv].reverb && ` | Spatial Sim: ON`}
-                            </div>
-                         </div>
+                         {error && <p className="text-red-500 text-sm text-center bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
                     </div>
 
                     {/* Environment Selectors */}
                     <div className="flex-grow overflow-y-auto">
                         <h3 className="text-sm font-bold text-theme-text-secondary uppercase tracking-wider mb-3 sticky top-0 bg-theme-bg-secondary py-2 z-10">Selecciona un Entorno:</h3>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 pb-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 pb-2">
                             {(Object.keys(environments) as EnvironmentType[]).map(env => (
                                 <button
                                     key={env}
                                     onClick={() => applyEnvironment(env)}
-                                    disabled={!fileName}
-                                    className={`p-1.5 rounded-md text-[0.65rem] leading-tight font-semibold border transition-all duration-200 flex flex-col items-center justify-center gap-1 h-16 text-center relative overflow-hidden group
+                                    disabled={!audioBuffer}
+                                    className={`p-2 rounded-md text-xs leading-tight font-semibold border transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[4.5rem] text-center relative overflow-hidden group
                                         ${activeEnv === env 
                                             ? 'bg-theme-accent/20 border-theme-accent text-theme-accent shadow-[0_0_10px_rgba(var(--theme-accent-rgb),0.3)]' 
                                             : 'bg-black/20 border-theme-border text-theme-text-secondary hover:bg-white/5 hover:text-theme-text hover:border-theme-accent-secondary'
-                                        } ${!fileName ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        } ${!audioBuffer ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                     <span className="relative z-10 group-hover:scale-105 transition-transform">{environments[env].name}</span>
                                     {activeEnv === env && <div className="absolute inset-0 bg-theme-accent/5 animate-pulse z-0"></div>}

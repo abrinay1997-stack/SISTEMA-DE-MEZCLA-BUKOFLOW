@@ -4,7 +4,7 @@ import { Step } from './types';
 // --- SECURITY CONSTANTS ---
 // Si cambias estas claves, todos los usuarios con claves antiguas
 // serán deslogueados automáticamente al recargar la página.
-export const VALID_ACCESS_KEYS = ['1997', 'avalon'];
+export const VALID_ACCESS_KEYS = ['abrinay', 'k4g', 'johnny', 'mrbombo', 'atfat', 'avalon'];
 
 export const MIXING_STEPS: Step[] = [
   // Step 1

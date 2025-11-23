@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { XIcon, CalculatorIcon, ClockIcon } from './icons';
 import type { Project } from '../types';
@@ -139,7 +140,7 @@ const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({ isOpen,
         onClick={onClose}
     >
       <div
-        className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-xl flex flex-col animate-scale-up"
+        className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-xl flex flex-col animate-scale-up pt-safe pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -148,7 +149,7 @@ const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({ isOpen,
             <CalculatorIcon className="w-6 h-6" />
             Proyección de Entrega
           </h2>
-          <button onClick={onClose} className="p-1 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+          <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
             <XIcon className="w-6 h-6" />
           </button>
         </div>
@@ -204,7 +205,9 @@ const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({ isOpen,
                 <div>
                     <label className="block mb-2 text-sm font-semibold text-theme-text-secondary">Horas de trabajo / día</label>
                     <input 
-                        type="number" 
+                        type="number"
+                        inputMode="decimal"
+                        pattern="[0-9]*"
                         value={dailyWorkHours}
                         onChange={(e) => setDailyWorkHours(Number(e.target.value))}
                         min="1" max="24"

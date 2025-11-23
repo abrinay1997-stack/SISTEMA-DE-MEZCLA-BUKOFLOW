@@ -225,6 +225,12 @@ export interface HeadphoneProfile {
     filters: CorrectionFilter[];
 }
 
+export interface CalibrationState {
+    profile: HeadphoneProfile | null;
+    amount: number;
+    bypass: boolean;
+}
+
 //--- Resource Center Types ---//
 export interface Resource {
   id: string;

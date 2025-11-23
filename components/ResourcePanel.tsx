@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { resourceData } from '../data/resourceData';
 import type { Resource, Step } from '../types';
@@ -99,12 +100,12 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentS
     <div className={`fixed inset-0 z-40 lg:z-50 transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
         <div 
-            className={`relative h-full transition-transform duration-300 ease-in-out bg-theme-bg-secondary w-full max-w-md flex flex-col border-l border-theme-border-secondary ml-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+            className={`relative h-full transition-transform duration-300 ease-in-out bg-theme-bg-secondary w-full max-w-md flex flex-col border-l border-theme-border-secondary ml-auto pt-safe pb-safe ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
             onClick={(e) => e.stopPropagation()}
         >
             <header className="flex-shrink-0 flex justify-between items-center p-4 border-b border-theme-border">
                 <h2 className="text-lg font-bold text-theme-accent">Recursos de Ayuda</h2>
-                <button onClick={onClose} className="p-1 rounded-full hover:bg-white/10">
+                <button onClick={onClose} className="p-4 rounded-full hover:bg-white/10">
                     <XIcon className="w-6 h-6 text-theme-text-secondary"/>
                 </button>
             </header>
@@ -128,7 +129,7 @@ const ResourcePanel: React.FC<ResourcePanelProps> = ({ isOpen, onClose, currentS
                 />
             </div>
 
-            <main className="flex-grow overflow-y-auto p-4 space-y-6">
+            <main className="flex-grow overflow-y-auto p-4 space-y-6 custom-scrollbar">
                 {currentStep && relevantResources.length > 0 && (
                     <section>
                         <h3 className="font-semibold text-theme-accent-secondary mb-3">Recomendado para: <span className="text-theme-text">{currentStep.title}</span></h3>

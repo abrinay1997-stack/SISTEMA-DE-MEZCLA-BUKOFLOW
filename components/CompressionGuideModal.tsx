@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { compressionData, compressionTooltips } from '../data/compressionData';
 import { XIcon, ChevronDownIcon } from './icons';
 import type { CompressorType, CompressorPluginCategory } from '../types';
@@ -7,10 +8,10 @@ type TabType = 'asistente' | 'tipos' | 'instrumentos' | 'generos' | 'listas';
 
 const TABS: { id: TabType, label: string }[] = [
     { id: 'asistente', label: 'Asistente' },
-    { id: 'tipos', label: 'Tipos de Compresor' },
+    { id: 'tipos', label: 'Tipos' },
     { id: 'instrumentos', label: 'Instrumentos' },
     { id: 'generos', label: 'Géneros' },
-    { id: 'listas', label: 'Lista de Plugins' },
+    { id: 'listas', label: 'Lista' },
 ];
 
 interface CompressionGuideModalProps {
@@ -26,7 +27,7 @@ interface TooltipProps {
 const Tooltip: React.FC<TooltipProps> = ({ text, children }) => (
   <span className="group relative">
     {children}
-    <span className="absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-md border border-white/10 bg-theme-bg px-3 py-2 text-left text-sm text-theme-text opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+    <span className="absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-md border border-white/10 bg-theme-bg px-3 py-2 text-left text-sm text-theme-text opacity-0 shadow-lg transition-opacity group-hover:opacity-100 pointer-events-none">
       {text}
     </span>
   </span>
@@ -66,6 +67,16 @@ const CompressionGuideModal: React.FC<CompressionGuideModalProps> = ({ isOpen, o
 
   const [selectedInstrument, setSelectedInstrument] = useState<string>('');
   const [selectedGoal, setSelectedGoal] = useState<string>('');
+
+  // Scroll Lock Effect
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [isOpen]);
 
   const handleClearSearch = () => {
     setSearchTerm('');
@@ -153,14 +164,14 @@ const CompressionGuideModal: React.FC<CompressionGuideModalProps> = ({ isOpen, o
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-black/20 rounded-lg border border-theme-border">
                             <div>
                                 <label className="block mb-2 text-sm font-bold text-theme-text">1. ¿Qué estás comprimiendo?</label>
-                                <select value={selectedInstrument} onChange={e => setSelectedInstrument(e.target.value)} className="w-full p-2 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-theme-accent">
+                                <select value={selectedInstrument} onChange={e => setSelectedInstrument(e.target.value)} className="w-full p-3 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-theme-accent">
                                     <option value="">Selecciona un instrumento...</option>
                                     {instrumentOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block mb-2 text-sm font-bold text-theme-text">2. ¿Qué objetivo buscas?</label>
-                                <select value={selectedGoal} onChange={e => setSelectedGoal(e.target.value)} className="w-full p-2 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-theme-accent">
+                                <select value={selectedGoal} onChange={e => setSelectedGoal(e.target.value)} className="w-full p-3 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-theme-accent">
                                     {Object.entries(goalOptions).map(([key, value]) => <option key={key} value={key}>{value}</option>)}
                                 </select>
                             </div>
@@ -217,57 +228,94 @@ const CompressionGuideModal: React.FC<CompressionGuideModalProps> = ({ isOpen, o
                 </div>
             );
         case 'instrumentos':
+             return (
+                <div>
+                    {/* Mobile Cards */}
+                    <div className="md:hidden space-y-4">
+                        {filteredData.instrumentos.map(item => (
+                            <div key={item.instrumento} className="bg-black/20 p-4 rounded-lg border border-theme-border">
+                                <h3 className="font-bold text-lg text-theme-accent mb-3 border-b border-theme-border/30 pb-2">{item.instrumento}</h3>
+                                <div className="space-y-2 text-sm">
+                                    <p><span className="text-theme-accent font-semibold">🥇 1ª Opción:</span> {item.opcion1}</p>
+                                    <p><span className="text-theme-accent font-semibold">🥈 2ª Opción:</span> {item.opcion2}</p>
+                                    <p><span className="text-theme-accent font-semibold">🥉 3ª Opción:</span> {item.opcion3}</p>
+                                    <div className="mt-2 p-2 bg-red-500/10 rounded border border-red-500/20">
+                                        <p><span className="text-red-400 font-semibold">❌ Evitar:</span> {item.evitar}</p>
+                                    </div>
+                                    <div className="mt-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                                        <p><span className="text-blue-300 font-semibold">💡 Notas:</span> {applyTooltips(item.notas)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop Table */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full min-w-[1000px] text-sm text-left text-theme-text table-auto">
+                            <thead className="bg-white/5 text-xs text-theme-accent uppercase">
+                                <tr>
+                                    <th className="px-4 py-3 w-1/4">Instrumento/Bus</th>
+                                    <th className="px-4 py-3">🥇 1ª Opción</th>
+                                    <th className="px-4 py-3">🥈 2ª Opción</th>
+                                    <th className="px-4 py-3">🥉 3ª Opción</th>
+                                    <th className="px-4 py-3">❌ Evitar</th>
+                                    <th className="px-4 py-3 w-1/4">💡 Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredData.instrumentos.map(item => (
+                                     <tr key={item.instrumento} className="border-b border-theme-border-secondary hover:bg-white/5">
+                                        <td className="px-4 py-3 font-semibold">{item.instrumento}</td>
+                                        <td className="px-4 py-3">{item.opcion1}</td>
+                                        <td className="px-4 py-3">{item.opcion2}</td>
+                                        <td className="px-4 py-3">{item.opcion3}</td>
+                                        <td className="px-4 py-3">{item.evitar}</td>
+                                        <td className="px-4 py-3">{applyTooltips(item.notas)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
         case 'generos':
-            return (
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1000px] text-sm text-left text-theme-text md:table-auto table-fixed">
-                        {activeTab === 'instrumentos' && (
-                           <>
-                                <thead className="bg-white/5 text-xs text-theme-accent uppercase hidden md:table-header-group">
-                                    <tr>
-                                        <th className="px-4 py-3 w-1/4">Instrumento/Bus</th>
-                                        <th className="px-4 py-3">🥇 1ª Opción</th>
-                                        <th className="px-4 py-3">🥈 2ª Opción</th>
-                                        <th className="px-4 py-3">🥉 3ª Opción</th>
-                                        <th className="px-4 py-3">❌ Evitar</th>
-                                        <th className="px-4 py-3 w-1/4">💡 Notas</th>
+             return (
+                <div>
+                    {/* Mobile Cards */}
+                    <div className="md:hidden space-y-4">
+                        {filteredData.generos.map(item => (
+                            <div key={item.genero} className="bg-black/20 p-4 rounded-lg border border-theme-border">
+                                <h3 className="font-bold text-lg text-theme-accent mb-3 border-b border-theme-border/30 pb-2">{item.genero}</h3>
+                                <div className="space-y-2 text-sm">
+                                    <p><strong className="text-theme-accent">Compresores:</strong> {applyTooltips(item.compresores)}</p>
+                                    <p><strong className="text-theme-accent">Enfoque:</strong> {applyTooltips(item.enfoque)}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop Table */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full min-w-[800px] text-sm text-left text-theme-text">
+                            <thead className="bg-white/5 text-xs text-theme-accent uppercase">
+                                <tr>
+                                    <th className="px-4 py-3">Género</th>
+                                    <th className="px-4 py-3">Compresores Predominantes</th>
+                                    <th className="px-4 py-3">Enfoque</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredData.generos.map(item => (
+                                    <tr key={item.genero} className="border-b border-theme-border-secondary hover:bg-white/5">
+                                        <td className="px-4 py-3 font-semibold">{item.genero}</td>
+                                        <td className="px-4 py-3">{applyTooltips(item.compresores)}</td>
+                                        <td className="px-4 py-3">{applyTooltips(item.enfoque)}</td>
                                     </tr>
-                                </thead>
-                                <tbody className="block md:table-row-group">
-                                    {filteredData.instrumentos.map(item => (
-                                         <tr key={item.instrumento} className="block md:table-row mb-4 md:mb-0 border md:border-b border-theme-border-secondary rounded-lg md:rounded-none">
-                                            <td className="p-3 block md:table-cell font-semibold border-b md:border-none border-theme-border-secondary"><span className="md:hidden font-bold mr-2 text-theme-accent">Instrumento: </span>{item.instrumento}</td>
-                                            <td className="p-3 block md:table-cell border-b md:border-none border-theme-border-secondary"><span className="md:hidden font-bold mr-2 text-theme-accent">🥇 1ª Opción: </span>{item.opcion1}</td>
-                                            <td className="p-3 block md:table-cell border-b md:border-none border-theme-border-secondary"><span className="md:hidden font-bold mr-2 text-theme-accent">🥈 2ª Opción: </span>{item.opcion2}</td>
-                                            <td className="p-3 block md:table-cell border-b md:border-none border-theme-border-secondary"><span className="md:hidden font-bold mr-2 text-theme-accent">🥉 3ª Opción: </span>{item.opcion3}</td>
-                                            <td className="p-3 block md:table-cell border-b md:border-none border-theme-border-secondary"><span className="md:hidden font-bold mr-2 text-theme-accent">❌ Evitar: </span>{item.evitar}</td>
-                                            <td className="p-3 block md:table-cell"><span className="md:hidden font-bold mr-2 text-theme-accent">💡 Notas: </span>{applyTooltips(item.notas)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                           </>
-                        )}
-                         {activeTab === 'generos' && (
-                           <>
-                                <thead className="bg-white/5 text-xs text-theme-accent uppercase hidden md:table-header-group">
-                                    <tr>
-                                        <th className="px-4 py-3">Género</th>
-                                        <th className="px-4 py-3">Compresores Predominantes</th>
-                                        <th className="px-4 py-3">Enfoque</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="block md:table-row-group">
-                                    {filteredData.generos.map(item => (
-                                        <tr key={item.genero} className="block md:table-row mb-4 md:mb-0 border md:border-b border-theme-border-secondary rounded-lg md:rounded-none">
-                                            <td className="p-3 block md:table-cell font-semibold border-b md:border-none border-theme-border-secondary"><span className="md:hidden font-bold mr-2 text-theme-accent">Género: </span>{item.genero}</td>
-                                            <td className="p-3 block md:table-cell border-b md:border-none border-theme-border-secondary"><span className="md:hidden font-bold mr-2 text-theme-accent">Compresores: </span>{applyTooltips(item.compresores)}</td>
-                                            <td className="p-3 block md:table-cell"><span className="md:hidden font-bold mr-2 text-theme-accent">Enfoque: </span>{applyTooltips(item.enfoque)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                           </>
-                        )}
-                    </table>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             );
         case 'listas':
@@ -313,7 +361,7 @@ const CompressionGuideModal: React.FC<CompressionGuideModalProps> = ({ isOpen, o
         onClick={onClose}
     >
       <div
-        className="bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-secondary-lg w-full h-full max-w-7xl flex flex-col animate-scale-up"
+        className="bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-secondary-lg w-full h-full max-w-7xl flex flex-col animate-scale-up pt-safe pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex-shrink-0 p-4 text-center border-b border-theme-border relative">
@@ -321,7 +369,7 @@ const CompressionGuideModal: React.FC<CompressionGuideModalProps> = ({ isOpen, o
             Guía Pro de Compresión
           </h1>
           <p className="text-theme-accent-secondary/80 text-sm">Navega por las pestañas para explorar cada sección</p>
-           <button onClick={onClose} className="absolute top-2 right-2 p-2 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+           <button onClick={onClose} className="absolute top-2 right-2 p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
             <XIcon className="w-6 h-6" />
           </button>
         </header>
@@ -336,7 +384,7 @@ const CompressionGuideModal: React.FC<CompressionGuideModalProps> = ({ isOpen, o
                     className="w-full pl-4 pr-10 py-2 text-lg bg-theme-bg border-2 border-theme-border-secondary rounded-full text-theme-text placeholder-theme-text-secondary focus:outline-none focus:ring-2 focus:ring-theme-accent-secondary"
                 />
                 {searchTerm && (
-                     <button onClick={handleClearSearch} className="absolute top-1/2 right-3 -translate-y-1/2 p-1 rounded-full text-theme-text-secondary hover:bg-white/10">
+                     <button onClick={handleClearSearch} className="absolute top-1/2 right-3 -translate-y-1/2 p-2 rounded-full text-theme-text-secondary hover:bg-white/10">
                         <XIcon className="w-5 h-5"/>
                     </button>
                 )}
@@ -354,8 +402,8 @@ const CompressionGuideModal: React.FC<CompressionGuideModalProps> = ({ isOpen, o
             </div>
         </div>
         
-        <main className="flex-grow p-4 overflow-auto">
-            <div className="w-full h-full">
+        <main className="flex-grow p-4 overflow-auto custom-scrollbar">
+            <div className="w-full h-full pb-10">
                {renderContent()}
             </div>
         </main>

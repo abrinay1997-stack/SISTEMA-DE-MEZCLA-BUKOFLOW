@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import type { Project, SubStepFeedback } from './types';
+import type { Project, SubStepFeedback, CalibrationState } from './types';
 import { themes, ThemeName } from './themes';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { VALID_ACCESS_KEYS } from './constants';
@@ -15,19 +15,15 @@ import SaturationGuideModal from './components/SaturationGuideModal';
 import GlobalSearchModal from './components/GlobalSearchModal';
 
 const App: React.FC = () => {
-  // Security Update: Store the actual token (password) used, not just a boolean.
-  // This allows us to invalidate sessions if we change VALID_ACCESS_KEYS in constants.ts
+  // Security
   const [sessionToken, setSessionToken] = useLocalStorage<string | null>('sessionToken', null);
   
-  // Backward compatibility migration: check if old 'isAuthenticated' exists and clear it
   useEffect(() => {
       if (localStorage.getItem('isAuthenticated')) {
           localStorage.removeItem('isAuthenticated');
       }
   }, []);
 
-  // Active Session Validation: Force logout if key changes
-  // Si la clave guardada en el navegador ya no está en la lista de claves permitidas, cerramos la sesión.
   useEffect(() => {
       if (sessionToken && !VALID_ACCESS_KEYS.includes(sessionToken)) {
           setSessionToken(null);
@@ -38,12 +34,20 @@ const App: React.FC = () => {
       return sessionToken !== null && VALID_ACCESS_KEYS.includes(sessionToken);
   }, [sessionToken]);
 
+  // Data
   const [projects, setProjects] = useLocalStorage<Project[]>('mixingProjects', []);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [themeName, setThemeName] = useLocalStorage<ThemeName>('app-theme', 'bukoflow-dark-orange');
   const [favorites, setFavorites] = useLocalStorage<Set<string>>('resourceFavorites', new Set());
   
   const [initialStepIndex, setInitialStepIndex] = useState<number | null>(null);
+
+  // Global Calibration State
+  const [calibrationState, setCalibrationState] = useState<CalibrationState>({
+      profile: null,
+      amount: 100,
+      bypass: false
+  });
 
   useEffect(() => {
     const theme = themes[themeName];
@@ -55,6 +59,7 @@ const App: React.FC = () => {
 
   const [confirmAction, setConfirmAction] = useState<{ action: (() => void) | null; title: string; message: string }>({ action: null, title: '', message: '' });
 
+  // Modals
   const [isEQGuideOpen, setIsEQGuideOpen] = useState(false);
   const [isCompressionGuideOpen, setIsCompressionGuideOpen] = useState(false);
   const [isReverbGuideOpen, setIsReverbGuideOpen] = useState(false);
@@ -161,6 +166,8 @@ const App: React.FC = () => {
         onToggleFavorite={handleToggleFavorite}
         initialStepIndex={initialStepIndex}
         onClearInitialStep={() => setInitialStepIndex(null)}
+        calibrationState={calibrationState}
+        setCalibrationState={setCalibrationState}
         {...guideHandlers}
     /> :
     <ProjectHub
@@ -180,6 +187,8 @@ const App: React.FC = () => {
       setProjects={setProjects}
       setThemeName={setThemeName}
       setFavorites={setFavorites}
+      calibrationState={calibrationState}
+      setCalibrationState={setCalibrationState}
       {...guideHandlers}
     />;
 

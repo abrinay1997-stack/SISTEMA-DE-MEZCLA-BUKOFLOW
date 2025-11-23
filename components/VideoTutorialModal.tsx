@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { XIcon } from './icons';
 
@@ -37,16 +38,16 @@ const VideoTutorialModal: React.FC<VideoTutorialModalProps> = ({ isOpen, onClose
 
   return (
     <div 
-        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-fade-in-backdrop"
+        className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4 animate-fade-in-backdrop"
         onClick={onClose}
     >
       <div
-        className="relative bg-theme-bg backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-4xl flex flex-col animate-scale-up"
+        className="relative bg-theme-bg backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-4xl flex flex-col animate-scale-up pt-safe pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b border-theme-border-secondary">
           <h2 className="text-md font-bold text-theme-accent-secondary truncate pr-8">Tutorial: <span className="text-theme-text">{title}</span></h2>
-          <button onClick={onClose} className="p-1 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+          <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
             <XIcon className="w-6 h-6" />
           </button>
         </div>

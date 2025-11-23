@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MIXING_STEPS } from '../constants';
 import type { Project, Step } from '../types';
@@ -35,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStepIndex, onSelectStep, proje
                   <li key={step.id}>
                     <button
                       onClick={() => onSelectStep(step.id - 1)}
-                      className={`w-full text-left p-2.5 rounded-md transition-colors text-sm flex items-center gap-3 ${isActive ? 'bg-theme-accent-secondary/20 text-theme-accent-secondary font-semibold' : 'text-theme-text-secondary hover:bg-white/10 hover:text-theme-text'}`}
+                      className={`w-full text-left p-3.5 rounded-md transition-colors text-sm flex items-center gap-3 ${isActive ? 'bg-theme-accent-secondary/20 text-theme-accent-secondary font-semibold' : 'text-theme-text-secondary hover:bg-white/10 hover:text-theme-text'}`}
                     >
                       <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
                         {isCompleted ? <CheckCircleIcon className="w-5 h-5 text-theme-success" /> : <span className="w-2 h-2 rounded-full bg-theme-accent-secondary/50"></span>}

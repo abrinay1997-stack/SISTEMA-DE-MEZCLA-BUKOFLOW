@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import type { Project, Resource, SubStepFeedback } from '../types';
+import type { Project, Resource, SubStepFeedback, CalibrationState } from '../types';
 import { resourceData, resourceCategories } from '../data/resourceData';
 import { themes, ThemeName } from '../themes';
 import { 
     LogoIcon, StarIcon, StarFilledIcon, TrashIcon, PlusIcon, DotsVerticalIcon, XIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, CheckBadgeIcon, PencilIcon,
     WaveformIcon, UserVoiceIcon, GuitarPickIcon, PianoIcon, DrumIcon, HeadphonesIcon, WaveSineIcon,
-    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon, ClockIcon, MetronomeIcon, SpeakerWaveIcon, ScaleIcon, ChartBarIcon, HomeIcon
+    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon, ClockIcon, MetronomeIcon, SpeakerWaveIcon, ScaleIcon, ChartBarIcon, HomeIcon, HamburgerIcon
 } from './icons';
 import ProgressBar from './ProgressBar';
 import { MIXING_STEPS } from '../constants';
@@ -465,6 +465,8 @@ interface ProjectHubProps {
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   setThemeName: React.Dispatch<React.SetStateAction<ThemeName>>;
   setFavorites: React.Dispatch<React.SetStateAction<Set<string>>>;
+  calibrationState: CalibrationState;
+  setCalibrationState: React.Dispatch<React.SetStateAction<CalibrationState>>;
 }
 
 const ProjectHub: React.FC<ProjectHubProps> = ({ 
@@ -487,7 +489,9 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     onSelectProject,
     setProjects,
     setThemeName,
-    setFavorites
+    setFavorites,
+    calibrationState,
+    setCalibrationState
 }) => {
   const [newProjectName, setNewProjectName] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -496,7 +500,8 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
   const [isBPMCalculatorOpen, setIsBPMCalculatorOpen] = useState(false);
   const [isAcousticsCheckOpen, setIsAcousticsCheckOpen] = useState(false);
   const [isBlindTestOpen, setIsBlindTestOpen] = useState(false);
-  const [isReferenceTracksOpen, setIsReferenceTracksOpen] = useState(false); // New State
+  const [isReferenceTracksOpen, setIsReferenceTracksOpen] = useState(false); 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   
@@ -558,35 +563,47 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <a 
-                href="https://tienda.bukoflow.com/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                aria-label="Ir a la Tienda"
-            >
-                <HomeIcon className="w-7 h-7" />
-            </a>
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center gap-2">
+                <a 
+                    href="https://tienda.bukoflow.com/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
+                    aria-label="Ir a la Tienda"
+                >
+                    <HomeIcon className="w-7 h-7" />
+                </a>
+                <button 
+                    onClick={onOpenSearch}
+                    className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
+                    aria-label="Búsqueda Global"
+                >
+                    <SearchIcon className="w-7 h-7" />
+                </button>
+                <button 
+                    onClick={() => setIsResourceCenterOpen(true)}
+                    className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
+                    aria-label="Centro de Recursos"
+                >
+                    <CollectionIcon className="w-7 h-7" />
+                </button>
+                <button 
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
+                    aria-label="Configuración"
+                >
+                    <DotsVerticalIcon className="w-7 h-7" />
+                </button>
+            </div>
+
+            {/* Mobile Menu Toggle */}
             <button 
-                onClick={onOpenSearch}
-                className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                aria-label="Búsqueda Global"
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="md:hidden p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
+                aria-label="Menú Principal"
             >
-                <SearchIcon className="w-7 h-7" />
-            </button>
-            <button 
-                onClick={() => setIsResourceCenterOpen(true)}
-                className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                aria-label="Centro de Recursos"
-            >
-                <CollectionIcon className="w-7 h-7" />
-            </button>
-            <button 
-                onClick={() => setIsSettingsOpen(true)}
-                className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                aria-label="Configuración"
-            >
-                <DotsVerticalIcon className="w-7 h-7" />
+                <HamburgerIcon className="w-7 h-7" />
             </button>
           </div>
         </header>
@@ -598,7 +615,7 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
                     placeholder="Nombre de la nueva mezcla..."
-                    className="flex-grow bg-theme-bg border-2 border-theme-border-secondary text-theme-text rounded-lg focus:ring-theme-accent-secondary focus:border-theme-accent-secondary p-2.5"
+                    className="flex-grow bg-theme-bg border-2 border-theme-border-secondary text-theme-text text-base rounded-lg focus:ring-theme-accent-secondary focus:border-theme-accent-secondary p-2.5"
                 />
                 <button type="submit" className="flex items-center gap-2 text-white bg-gradient-to-r from-theme-accent to-theme-accent-secondary hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-theme-accent-secondary font-medium rounded-lg px-5 py-2.5">
                     <PlusIcon className="w-5 h-5" />
@@ -705,7 +722,7 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
                                     )}
                                </div>
                            </div>
-                           <div className="flex items-center gap-1">
+                           <div className="flex items-center gap-5 md:gap-1">
                                <button 
                                  onClick={(e) => { e.stopPropagation(); setEditingProject(project); }}
                                  className="p-2 rounded-full hover:bg-white/10 transition-colors"
@@ -744,6 +761,67 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
          <p>© 2025 | BUKOFLOW LLC</p>
       </footer>
     </div>
+
+    {/* Mobile Menu Overlay */}
+    {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] bg-theme-bg/95 backdrop-blur-xl flex flex-col p-6 md:hidden animate-fade-in-backdrop">
+            <div className="flex justify-between items-center mb-8 border-b border-theme-border/50 pb-4">
+                <span className="text-lg font-bold text-theme-accent-secondary uppercase tracking-widest">Menú</span>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-full bg-white/10 text-theme-text hover:bg-white/20">
+                    <XIcon className="w-8 h-8" />
+                </button>
+            </div>
+            <nav className="flex flex-col gap-4">
+                 <a 
+                    href="https://tienda.bukoflow.com/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-theme-accent/10 border border-white/5 hover:border-theme-accent/50 transition-all group"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                >
+                    <div className="p-2 rounded-lg bg-black/30 text-theme-accent group-hover:text-white transition-colors">
+                        <HomeIcon className="w-6 h-6" />
+                    </div>
+                    <span className="text-lg font-semibold text-theme-text">Tienda Oficial</span>
+                </a>
+                
+                <button 
+                    onClick={() => { onOpenSearch(); setIsMobileMenuOpen(false); }}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-theme-accent/10 border border-white/5 hover:border-theme-accent/50 transition-all group text-left"
+                >
+                    <div className="p-2 rounded-lg bg-black/30 text-theme-accent group-hover:text-white transition-colors">
+                        <SearchIcon className="w-6 h-6" />
+                    </div>
+                    <span className="text-lg font-semibold text-theme-text">Búsqueda Global</span>
+                </button>
+
+                <button 
+                    onClick={() => { setIsResourceCenterOpen(true); setIsMobileMenuOpen(false); }}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-theme-accent/10 border border-white/5 hover:border-theme-accent/50 transition-all group text-left"
+                >
+                    <div className="p-2 rounded-lg bg-black/30 text-theme-accent group-hover:text-white transition-colors">
+                        <CollectionIcon className="w-6 h-6" />
+                    </div>
+                    <span className="text-lg font-semibold text-theme-text">Centro de Recursos</span>
+                </button>
+
+                <button 
+                    onClick={() => { setIsSettingsOpen(true); setIsMobileMenuOpen(false); }}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-theme-accent/10 border border-white/5 hover:border-theme-accent/50 transition-all group text-left"
+                >
+                    <div className="p-2 rounded-lg bg-black/30 text-theme-accent group-hover:text-white transition-colors">
+                        <DotsVerticalIcon className="w-6 h-6" />
+                    </div>
+                    <span className="text-lg font-semibold text-theme-text">Configuración</span>
+                </button>
+            </nav>
+            
+            <div className="mt-auto pt-8 text-center">
+                <p className="text-theme-text-secondary text-sm">BUKOFLOW Audio Tools</p>
+            </div>
+        </div>
+    )}
+
     <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -788,14 +866,20 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     <AcousticsCheckModal
         isOpen={isAcousticsCheckOpen}
         onClose={() => setIsAcousticsCheckOpen(false)}
+        calibrationState={calibrationState}
+        onCalibrationChange={setCalibrationState}
     />
     <BlindTestModal
         isOpen={isBlindTestOpen}
         onClose={() => setIsBlindTestOpen(false)}
+        calibrationState={calibrationState}
+        onCalibrationChange={setCalibrationState}
     />
      <ReferenceTracksModal
         isOpen={isReferenceTracksOpen}
         onClose={() => setIsReferenceTracksOpen(false)}
+        calibrationState={calibrationState}
+        onCalibrationChange={setCalibrationState}
     />
     </>
   );

@@ -1,23 +1,19 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { headphoneProfiles } from '../data/headphoneData';
-import { HeadphoneProfile } from '../types';
+import { HeadphoneProfile, CalibrationState } from '../types';
 import { HeadphonesIcon, CheckBadgeIcon, XIcon, SlidersIcon } from './icons';
 
 interface HeadphoneCorrectionControlsProps {
-    onProfileChange: (profile: HeadphoneProfile | null) => void;
-    onAmountChange: (amount: number) => void;
-    onBypassChange: (bypass: boolean) => void;
+    calibrationState: CalibrationState;
+    onCalibrationChange: (newState: CalibrationState) => void;
 }
 
 const HeadphoneCorrectionControls: React.FC<HeadphoneCorrectionControlsProps> = ({ 
-    onProfileChange, 
-    onAmountChange, 
-    onBypassChange 
+    calibrationState,
+    onCalibrationChange
 }) => {
-    const [selectedProfileName, setSelectedProfileName] = useState<string>('');
-    const [amount, setAmount] = useState<number>(100);
-    const [bypass, setBypass] = useState<boolean>(false);
+    const { profile, amount, bypass } = calibrationState;
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
 
@@ -28,30 +24,24 @@ const HeadphoneCorrectionControls: React.FC<HeadphoneCorrectionControlsProps> = 
         );
     }, [searchTerm]);
 
-    const handleSelectProfile = (profile: HeadphoneProfile) => {
-        setSelectedProfileName(profile.name);
-        onProfileChange(profile);
+    const handleSelectProfile = (newProfile: HeadphoneProfile) => {
+        onCalibrationChange({ ...calibrationState, profile: newProfile });
         setIsDropdownOpen(false);
-        setSearchTerm(''); // Clear search but keep selection text
+        setSearchTerm(''); 
     };
 
     const handleClearProfile = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setSelectedProfileName('');
-        onProfileChange(null);
+        onCalibrationChange({ ...calibrationState, profile: null });
         setSearchTerm('');
     };
 
     const handleAmountChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = Number(e.target.value);
-        setAmount(val);
-        onAmountChange(val);
+        onCalibrationChange({ ...calibrationState, amount: Number(e.target.value) });
     };
 
     const toggleBypass = () => {
-        const newState = !bypass;
-        setBypass(newState);
-        onBypassChange(newState);
+        onCalibrationChange({ ...calibrationState, bypass: !bypass });
     };
 
     return (
@@ -76,10 +66,10 @@ const HeadphoneCorrectionControls: React.FC<HeadphoneCorrectionControlsProps> = 
                         className="flex items-center bg-black/40 border border-theme-border rounded-md px-3 py-2 cursor-pointer hover:border-theme-accent transition-colors"
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     >
-                        <span className={`flex-grow text-sm ${selectedProfileName ? 'text-white font-semibold' : 'text-gray-500'}`}>
-                            {selectedProfileName || 'Seleccionar Modelo de Auriculares...'}
+                        <span className={`flex-grow text-sm ${profile ? 'text-white font-semibold' : 'text-gray-500'}`}>
+                            {profile ? profile.name : 'Seleccionar Modelo de Auriculares...'}
                         </span>
-                        {selectedProfileName ? (
+                        {profile ? (
                             <button onClick={handleClearProfile} className="p-1 hover:text-red-400 text-gray-500"><XIcon className="w-4 h-4"/></button>
                         ) : (
                             <SlidersIcon className="w-4 h-4 text-gray-500" />
@@ -99,13 +89,13 @@ const HeadphoneCorrectionControls: React.FC<HeadphoneCorrectionControlsProps> = 
                                     onClick={(e) => e.stopPropagation()}
                                 />
                             </div>
-                            {filteredProfiles.map(profile => (
+                            {filteredProfiles.map(p => (
                                 <div 
-                                    key={profile.name}
+                                    key={p.name}
                                     className="px-3 py-2 text-sm text-gray-300 hover:bg-theme-accent/20 hover:text-white cursor-pointer transition-colors"
-                                    onClick={() => handleSelectProfile(profile)}
+                                    onClick={() => handleSelectProfile(p)}
                                 >
-                                    {profile.name}
+                                    {p.name}
                                 </div>
                             ))}
                             {filteredProfiles.length === 0 && (
@@ -128,7 +118,7 @@ const HeadphoneCorrectionControls: React.FC<HeadphoneCorrectionControlsProps> = 
                             min="0" max="100" 
                             value={amount} 
                             onChange={handleAmountChangeLocal}
-                            disabled={bypass || !selectedProfileName}
+                            disabled={bypass || !profile}
                             className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${bypass ? 'bg-gray-800' : 'bg-gray-700 accent-theme-accent-secondary'}`}
                         />
                     </div>
@@ -136,12 +126,12 @@ const HeadphoneCorrectionControls: React.FC<HeadphoneCorrectionControlsProps> = 
                     {/* Bypass Button */}
                     <button
                         onClick={toggleBypass}
-                        disabled={!selectedProfileName}
+                        disabled={!profile}
                         className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all shadow-lg
                             ${bypass 
                                 ? 'bg-transparent border-gray-600 text-gray-600' 
                                 : 'bg-theme-accent text-white border-theme-accent shadow-[0_0_10px_rgba(var(--theme-accent-rgb),0.4)]'
-                            } ${!selectedProfileName ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${!profile ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title="Bypass Correction"
                     >
                         <CheckBadgeIcon className="w-5 h-5" />

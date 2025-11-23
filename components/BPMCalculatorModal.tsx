@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { XIcon, MetronomeIcon } from './icons';
 
@@ -9,7 +10,7 @@ interface BPMCalculatorModalProps {
 type NoteType = 'lineal' | 'tresillo' | 'punteada';
 
 const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose }) => {
-  const [bpm, setBpm] = useState<number>(120);
+  const [bpm, setBpm] = useState<number | ''>(120);
   const [noteType, setNoteType] = useState<NoteType>('lineal');
   const [taps, setTaps] = useState<number[]>([]);
   const [tapText, setTapText] = useState<string>('Tap');
@@ -19,7 +20,7 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
   const [results, setResults] = useState<{ name: string, key: string, durationS: string, durationMs: string, frequency: string }[]>([]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && typeof bpm === 'number') {
       calculate(bpm, noteType);
     }
   }, [isOpen, bpm, noteType]);
@@ -70,7 +71,6 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
         });
     }
     
-    // Sort to keep consistent order if needed, though iteration usually preserves insertion order for non-integer keys
     setResults(newResults);
   };
 
@@ -79,7 +79,7 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
     let newTaps = [...taps];
 
     if (newTaps.length > 0 && (now - newTaps[newTaps.length - 1]) > 2000) {
-        newTaps = []; // Reset if paused too long
+        newTaps = []; 
     }
 
     newTaps.push(now);
@@ -100,7 +100,6 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
         }
     }
     
-    // Reset text after delay
     setTimeout(() => setTapText('Tap'), 200);
   };
 
@@ -108,6 +107,15 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
       setTaps([]);
       setBpm(120);
       setTapText('Tap');
+  };
+
+  const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      if (val === '') {
+          setBpm('');
+      } else {
+          setBpm(Number(val));
+      }
   };
 
   if (!isOpen) return null;
@@ -118,7 +126,7 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
         onClick={onClose}
     >
       <div
-        className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-2xl flex flex-col animate-scale-up max-h-[90vh]"
+        className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-2xl flex flex-col animate-scale-up max-h-[90vh] pt-safe pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -127,7 +135,7 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
             <MetronomeIcon className="w-6 h-6" />
             Calculadora BPM
           </h2>
-          <button onClick={onClose} className="p-1 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+          <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
             <XIcon className="w-6 h-6" />
           </button>
         </div>
@@ -143,9 +151,12 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
                         <div className="flex gap-2">
                             <input 
                                 type="number" 
+                                inputMode="decimal"
+                                pattern="[0-9]*"
                                 value={bpm}
-                                onChange={(e) => setBpm(Math.max(1, Number(e.target.value)))}
-                                className="w-full p-2.5 bg-theme-bg border border-theme-border rounded-lg text-theme-text focus:ring-2 focus:ring-theme-accent text-center font-mono text-lg"
+                                onChange={handleBpmChange}
+                                placeholder="Escribe BPM..."
+                                className="w-full p-3 bg-black/30 border-2 border-theme-border rounded-lg text-theme-text focus:ring-2 focus:ring-theme-accent focus:border-theme-accent text-center font-mono text-xl font-bold outline-none transition-all"
                             />
                         </div>
                     </div>

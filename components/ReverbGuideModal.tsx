@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { reverbData, reverbTooltips } from '../data/reverbData';
 import { XIcon, ChevronDownIcon } from './icons';
 import type { ReverbType, ReverbPlugin } from '../types';
@@ -18,7 +19,7 @@ interface TooltipProps {
 const Tooltip: React.FC<TooltipProps> = ({ text, children }) => (
   <span className="group relative">
     {children}
-    <span className="absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-md border border-white/10 bg-theme-bg px-3 py-2 text-left text-sm text-theme-text opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+    <span className="absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-md border border-white/10 bg-theme-bg px-3 py-2 text-left text-sm text-theme-text opacity-0 shadow-lg transition-opacity group-hover:opacity-100 pointer-events-none">
       {text}
     </span>
   </span>
@@ -60,6 +61,15 @@ const ReverbGuideModal: React.FC<ReverbGuideModalProps> = ({ isOpen, onClose }) 
   const [selectedInstrument, setSelectedInstrument] = useState<string>('');
   const [selectedGoal, setSelectedGoal] = useState<string>('');
 
+  // Scroll Lock Effect
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [isOpen]);
 
   const handleClear = () => {
     setSearchTerm('');
@@ -159,7 +169,7 @@ const ReverbGuideModal: React.FC<ReverbGuideModalProps> = ({ isOpen, onClose }) 
         onClick={onClose}
     >
       <div
-        className="bg-theme-bg-secondary backdrop-blur-md border border-purple-500/50 rounded-lg shadow-[0_0_30px_rgba(168,85,247,0.3)] w-full h-full max-w-7xl flex flex-col animate-scale-up"
+        className="bg-theme-bg-secondary backdrop-blur-md border border-purple-500/50 rounded-lg shadow-[0_0_30px_rgba(168,85,247,0.3)] w-full h-full max-w-7xl flex flex-col animate-scale-up pt-safe pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex-shrink-0 p-4 text-center border-b border-purple-500/30 relative">
@@ -167,7 +177,7 @@ const ReverbGuideModal: React.FC<ReverbGuideModalProps> = ({ isOpen, onClose }) 
             Guía Pro de Reverb
           </h1>
           <p className="text-purple-200/80 text-sm">Tipos, Espacios y Funciones</p>
-           <button onClick={onClose} className="absolute top-2 right-2 p-2 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
+           <button onClick={onClose} className="absolute top-2 right-2 p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
             <XIcon className="w-6 h-6" />
           </button>
         </header>
@@ -196,8 +206,8 @@ const ReverbGuideModal: React.FC<ReverbGuideModalProps> = ({ isOpen, onClose }) 
             </div>
         </div>
         
-        <main className="flex-grow p-4 overflow-auto">
-            <div className="w-full h-full">
+        <main className="flex-grow p-4 overflow-auto custom-scrollbar">
+            <div className="w-full h-full pb-10">
                 <div className="text-xl font-bold text-purple-300 mb-4 px-2">
                     {activeFilter === 'asistente' && 'Asistente Interactivo de Reverb'}
                     {activeFilter === 'tipos' && 'Características de Reverbs por Tipo'}
@@ -210,14 +220,14 @@ const ReverbGuideModal: React.FC<ReverbGuideModalProps> = ({ isOpen, onClose }) 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-black/20 rounded-lg border border-purple-500/30">
                             <div>
                                 <label className="block mb-2 text-sm font-bold text-theme-text">1. ¿Qué quieres procesar?</label>
-                                <select value={selectedInstrument} onChange={e => setSelectedInstrument(e.target.value)} className="w-full p-2 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-purple-500">
+                                <select value={selectedInstrument} onChange={e => setSelectedInstrument(e.target.value)} className="w-full p-3 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-purple-500">
                                     <option value="">Selecciona un instrumento...</option>
                                     {instrumentOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block mb-2 text-sm font-bold text-theme-text">2. ¿Qué objetivo buscas?</label>
-                                <select value={selectedGoal} onChange={e => setSelectedGoal(e.target.value)} className="w-full p-2 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-purple-500">
+                                <select value={selectedGoal} onChange={e => setSelectedGoal(e.target.value)} className="w-full p-3 bg-theme-bg border border-theme-border-secondary rounded-md focus:ring-2 focus:ring-purple-500">
                                     {Object.entries(goalOptions).map(([key, value]) => <option key={key} value={key}>{value}</option>)}
                                 </select>
                             </div>
@@ -289,55 +299,91 @@ const ReverbGuideModal: React.FC<ReverbGuideModalProps> = ({ isOpen, onClose }) 
                         ) : <p className="col-span-full text-center text-theme-text-secondary mt-8">No se encontraron resultados para "{searchTerm}".</p>}
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1000px] text-sm text-left text-theme-text md:table-auto table-fixed">
-                            {activeFilter === 'usos' && (
-                               <>
-                                    <thead className="bg-white/5 text-xs text-purple-200 uppercase hidden md:table-header-group">
-                                        <tr>
-                                            <th className="px-4 py-3 w-1/4">Instrumento/Fuente</th>
-                                            <th className="px-4 py-3">🥇 1ª Opción</th>
-                                            <th className="px-4 py-3">🥈 2ª Opción</th>
-                                            <th className="px-4 py-3">🥉 3ª Opción</th>
-                                            <th className="px-4 py-3 w-1/3">💡 Notas</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="block md:table-row-group">
-                                        {filteredData.usos.map(item => (
-                                            <tr key={item.instrumento} className="block md:table-row mb-4 md:mb-0 border md:border-b border-purple-500/20 rounded-lg md:rounded-none">
-                                                <td className="p-3 block md:table-cell font-semibold border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">Instrumento: </span>{item.instrumento}</td>
-                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">🥇 1ª Opción: </span>{item.opcion1}</td>
-                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">🥈 2ª Opción: </span>{item.opcion2}</td>
-                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">🥉 3ª Opción: </span>{item.opcion3}</td>
-                                                <td className="p-3 block md:table-cell"><span className="md:hidden font-bold mr-2 text-purple-300">💡 Notas: </span>{item.notas}</td>
+                    <div>
+                        {/* Mobile Cards */}
+                        {activeFilter === 'usos' && (
+                            <div className="md:hidden space-y-4">
+                                {filteredData.usos.map(item => (
+                                    <div key={item.instrumento} className="bg-black/20 p-4 rounded-lg border border-purple-500/30">
+                                        <h3 className="font-bold text-lg text-purple-300 mb-3 border-b border-purple-500/20 pb-2">{item.instrumento}</h3>
+                                        <div className="space-y-2 text-sm">
+                                            <p><span className="text-purple-200 font-semibold">🥇 1ª Opción:</span> {item.opcion1}</p>
+                                            <p><span className="text-purple-200 font-semibold">🥈 2ª Opción:</span> {item.opcion2}</p>
+                                            <p><span className="text-purple-200 font-semibold">🥉 3ª Opción:</span> {item.opcion3}</p>
+                                            <div className="mt-2 p-2 bg-purple-500/10 rounded border border-purple-500/20">
+                                                <p><span className="text-purple-300 font-semibold">💡 Notas:</span> {item.notas}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {activeFilter === 'diseno' && (
+                            <div className="md:hidden space-y-4">
+                                {filteredData.diseno.map(item => (
+                                    <div key={item.objetivo} className="bg-black/20 p-4 rounded-lg border border-purple-500/30">
+                                        <h3 className="font-bold text-lg text-purple-300 mb-3 border-b border-purple-500/20 pb-2">{item.objetivo}</h3>
+                                        <div className="space-y-2 text-sm">
+                                            <p><strong className="text-purple-200">Tipo Sugerido:</strong> {item.tipoReverb}</p>
+                                            <p><strong className="text-purple-200">Parámetros:</strong> {applyTooltips(item.parametrosClave)}</p>
+                                            <p><strong className="text-purple-200">Resultado:</strong> {item.resultado}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Desktop Tables */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full min-w-[1000px] text-sm text-left text-theme-text table-auto">
+                                {activeFilter === 'usos' && (
+                                   <>
+                                        <thead className="bg-white/5 text-xs text-purple-200 uppercase">
+                                            <tr>
+                                                <th className="px-4 py-3 w-1/4">Instrumento/Fuente</th>
+                                                <th className="px-4 py-3">🥇 1ª Opción</th>
+                                                <th className="px-4 py-3">🥈 2ª Opción</th>
+                                                <th className="px-4 py-3">🥉 3ª Opción</th>
+                                                <th className="px-4 py-3 w-1/3">💡 Notas</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                               </>
-                            )}
-                             {activeFilter === 'diseno' && (
-                               <>
-                                    <thead className="bg-white/5 text-xs text-purple-200 uppercase hidden md:table-header-group">
-                                        <tr>
-                                            <th className="px-4 py-3">Objetivo Creativo</th>
-                                            <th className="px-4 py-3">Tipo de Reverb Sugerido</th>
-                                            <th className="px-4 py-3">Parámetros Clave</th>
-                                            <th className="px-4 py-3">Resultado Sonoro</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="block md:table-row-group">
-                                        {filteredData.diseno.map(item => (
-                                            <tr key={item.objetivo} className="block md:table-row mb-4 md:mb-0 border md:border-b border-purple-500/20 rounded-lg md:rounded-none">
-                                                <td className="p-3 block md:table-cell font-semibold border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">Objetivo: </span>{item.objetivo}</td>
-                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">Tipo Sugerido: </span>{item.tipoReverb}</td>
-                                                <td className="p-3 block md:table-cell border-b md:border-none border-purple-500/20"><span className="md:hidden font-bold mr-2 text-purple-300">Parámetros: </span>{applyTooltips(item.parametrosClave)}</td>
-                                                <td className="p-3 block md:table-cell"><span className="md:hidden font-bold mr-2 text-purple-300">Resultado: </span>{item.resultado}</td>
+                                        </thead>
+                                        <tbody>
+                                            {filteredData.usos.map(item => (
+                                                <tr key={item.instrumento} className="border-b border-purple-500/20 hover:bg-white/5">
+                                                    <td className="px-4 py-3 font-semibold">{item.instrumento}</td>
+                                                    <td className="px-4 py-3">{item.opcion1}</td>
+                                                    <td className="px-4 py-3">{item.opcion2}</td>
+                                                    <td className="px-4 py-3">{item.opcion3}</td>
+                                                    <td className="px-4 py-3">{item.notas}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                   </>
+                                )}
+                                 {activeFilter === 'diseno' && (
+                                   <>
+                                        <thead className="bg-white/5 text-xs text-purple-200 uppercase">
+                                            <tr>
+                                                <th className="px-4 py-3">Objetivo Creativo</th>
+                                                <th className="px-4 py-3">Tipo de Reverb Sugerido</th>
+                                                <th className="px-4 py-3">Parámetros Clave</th>
+                                                <th className="px-4 py-3">Resultado Sonoro</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                               </>
-                            )}
-                        </table>
+                                        </thead>
+                                        <tbody>
+                                            {filteredData.diseno.map(item => (
+                                                <tr key={item.objetivo} className="border-b border-purple-500/20 hover:bg-white/5">
+                                                    <td className="px-4 py-3 font-semibold">{item.objetivo}</td>
+                                                    <td className="px-4 py-3">{item.tipoReverb}</td>
+                                                    <td className="px-4 py-3">{applyTooltips(item.parametrosClave)}</td>
+                                                    <td className="px-4 py-3">{item.resultado}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                   </>
+                                )}
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>

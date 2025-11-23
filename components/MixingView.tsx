@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { MIXING_STEPS } from '../constants';
-import type { Project, SubStepFeedback } from '../types';
+import type { Project, SubStepFeedback, CalibrationState } from '../types';
 import StepView from './StepCard';
 import ProgressBar from './ProgressBar';
 import Sidebar from './Sidebar';
@@ -29,6 +29,8 @@ interface MixingViewProps {
     onToggleFavorite: (id: string) => void;
     initialStepIndex: number | null;
     onClearInitialStep: () => void;
+    calibrationState: CalibrationState;
+    setCalibrationState: React.Dispatch<React.SetStateAction<CalibrationState>>;
 }
 
 const MixingView: React.FC<MixingViewProps> = ({ 
@@ -42,7 +44,9 @@ const MixingView: React.FC<MixingViewProps> = ({
     favorites,
     onToggleFavorite,
     initialStepIndex,
-    onClearInitialStep
+    onClearInitialStep,
+    calibrationState,
+    setCalibrationState
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(initialStepIndex ?? project.lastStepIndex ?? 0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -171,17 +175,23 @@ const MixingView: React.FC<MixingViewProps> = ({
       <AcousticsCheckModal
         isOpen={isAcousticsCheckOpen}
         onClose={() => setIsAcousticsCheckOpen(false)}
+        calibrationState={calibrationState}
+        onCalibrationChange={setCalibrationState}
       />
       <BlindTestModal
         isOpen={isBlindTestOpen}
         onClose={() => setIsBlindTestOpen(false)}
+        calibrationState={calibrationState}
+        onCalibrationChange={setCalibrationState}
       />
       <ReferenceTracksModal
         isOpen={isReferenceTracksOpen}
         onClose={() => setIsReferenceTracksOpen(false)}
+        calibrationState={calibrationState}
+        onCalibrationChange={setCalibrationState}
       />
 
-      <div className="container mx-auto px-4 py-8 md:py-12 flex-grow">
+      <div className="container mx-auto px-4 py-8 md:py-12 flex-grow pb-24 md:pb-12"> {/* Added pb-24 for mobile footer clearance */}
         <header className="flex flex-wrap justify-between items-center mb-8 md:mb-12 relative gap-4">
             <div className="flex-1 order-1">
                 <button onClick={onGoToHub} className="flex items-center gap-2 py-2 px-4 rounded-md font-semibold transition-all duration-300 bg-theme-accent-secondary/20 text-theme-accent-secondary hover:bg-theme-accent-secondary/30">
@@ -263,21 +273,26 @@ const MixingView: React.FC<MixingViewProps> = ({
                                 </div>
                             )}
                         </div>
-                        <div className="flex justify-between items-center w-full max-w-4xl mt-4">
+                        
+                        {/* Sticky Navigation Footer for Mobile, Normal for Desktop */}
+                        <div className="fixed bottom-0 left-0 right-0 p-4 bg-theme-bg-secondary/95 backdrop-blur border-t border-theme-border z-40 md:relative md:bg-transparent md:border-none md:p-0 md:z-auto flex justify-between items-center w-full max-w-4xl mt-4 pb-safe">
                             <button
                                 onClick={goToPrevStep}
                                 disabled={currentStepIndex === 0}
-                                className="py-2 px-6 rounded-md font-semibold transition-all duration-300 bg-theme-accent-secondary/20 text-theme-accent-secondary hover:enabled:bg-theme-accent-secondary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="py-3 px-6 rounded-md font-semibold transition-all duration-300 bg-theme-accent-secondary/20 text-theme-accent-secondary hover:enabled:bg-theme-accent-secondary/30 disabled:opacity-50 disabled:cursor-not-allowed flex-1 md:flex-none mr-2 md:mr-0"
                             >
                                 ‹ Anterior
                             </button>
-                            <div className="text-sm text-theme-text-secondary font-medium">
+                            <div className="text-sm text-theme-text-secondary font-medium hidden md:block">
                                 Paso {currentStepIndex + 1} de {MIXING_STEPS.length}
+                            </div>
+                            <div className="text-xs text-theme-text-secondary font-bold md:hidden">
+                                {currentStepIndex + 1}/{MIXING_STEPS.length}
                             </div>
                             <button
                                 onClick={goToNextStep}
                                 disabled={currentStepIndex === MIXING_STEPS.length - 1}
-                                className="py-2 px-6 rounded-md font-semibold transition-all duration-300 bg-theme-accent/20 text-theme-accent hover:enabled:bg-theme-accent/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="py-3 px-6 rounded-md font-semibold transition-all duration-300 bg-theme-accent/20 text-theme-accent hover:enabled:bg-theme-accent/30 disabled:opacity-50 disabled:cursor-not-allowed flex-1 md:flex-none ml-2 md:ml-0"
                             >
                                 Siguiente ›
                             </button>
@@ -287,7 +302,7 @@ const MixingView: React.FC<MixingViewProps> = ({
             </main>
         </div>
       </div>
-      <footer className="mt-auto py-6 text-center text-theme-text-secondary text-sm w-full">
+      <footer className="hidden md:block mt-auto py-6 text-center text-theme-text-secondary text-sm w-full">
          <p>© 2025 | BUKOFLOW LLC</p>
       </footer>
     </div>
