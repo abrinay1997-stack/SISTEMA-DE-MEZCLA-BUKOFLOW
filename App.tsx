@@ -26,6 +26,14 @@ const App: React.FC = () => {
       }
   }, []);
 
+  // Active Session Validation: Force logout if key changes
+  // Si la clave guardada en el navegador ya no está en la lista de claves permitidas, cerramos la sesión.
+  useEffect(() => {
+      if (sessionToken && !VALID_ACCESS_KEYS.includes(sessionToken)) {
+          setSessionToken(null);
+      }
+  }, [sessionToken, setSessionToken]);
+
   const isAuthenticated = useMemo(() => {
       return sessionToken !== null && VALID_ACCESS_KEYS.includes(sessionToken);
   }, [sessionToken]);
