@@ -343,6 +343,4 @@ export const headphoneProfiles: HeadphoneProfile[] = [
             { type: "HSC", fc: 10000, gain: -5.5, q: 0.70 }
         ]
     }
-    // Note: List truncated for brevity but framework supports all models provided in text.
-    // I have prioritized the most common models from the provided list.
 ];

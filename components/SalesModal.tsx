@@ -19,7 +19,7 @@ const SalesModal: React.FC<SalesModalProps> = ({ isOpen, onClose }) => {
     {
         icon: <HeadphonesIcon className="w-5 h-5" />,
         title: "Headphone Calibration Engine",
-        desc: "Corrección de respuesta de frecuencia para +300 modelos de auriculares (Flat Response)."
+        desc: "Corrección de respuesta de frecuencia para modelos profecionales de auriculares (Flat Response)."
     },
     {
       icon: <ChartBarIcon className="w-5 h-5" />,
