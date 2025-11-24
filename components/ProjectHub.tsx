@@ -630,153 +630,164 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
           </div>
         </header>
 
-        <div className="max-w-3xl mx-auto mb-8">
-            <form onSubmit={handleAddProject} className="flex gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-accent-secondary">
-                <input
-                    type="text"
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    placeholder="Nombre de la nueva mezcla..."
-                    className="flex-grow bg-theme-bg border-2 border-theme-border-secondary text-theme-text text-base rounded-lg focus:ring-theme-accent-secondary focus:border-theme-accent-secondary p-2.5"
-                />
-                <button type="submit" className="flex items-center gap-2 text-white bg-gradient-to-r from-theme-accent to-theme-accent-secondary hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-theme-accent-secondary font-medium rounded-lg px-5 py-2.5">
-                    <PlusIcon className="w-5 h-5" />
-                    <span className="hidden sm:inline">Crear</span>
-                </button>
-            </form>
-        </div>
-        
-        <div className="max-w-3xl mx-auto mb-12">
-            <h2 className="text-xl font-bold text-theme-accent-secondary mb-4 text-center">Guías Profesionales</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <button
-                    onClick={onOpenEQGuide}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border-secondary text-theme-accent hover:bg-theme-accent/20 hover:shadow-lg hover:shadow-accent transform hover:-translate-y-1"
-                >
-                    <BookOpenIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Ecualización</span>
-                </button>
-                 <button
-                    onClick={onOpenCompressionGuide}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border text-theme-accent-secondary hover:bg-theme-accent-secondary/20 hover:shadow-lg hover:shadow-accent-secondary transform hover:-translate-y-1"
-                >
-                    <SlidersIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Compresión</span>
-                </button>
-                <button
-                    onClick={onOpenReverbGuide}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-purple-500/30 text-purple-300 hover:bg-purple-500/20 hover:shadow-lg hover:shadow-purple-500/20 transform hover:-translate-y-1"
-                >
-                    <ReverbIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Reverb</span>
-                </button>
-                <button
-                    onClick={onOpenSaturationGuide}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:shadow-lg hover:shadow-amber-500/20 transform hover:-translate-y-1"
-                >
-                    <SaturationIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Saturación</span>
-                </button>
-                
-                <button
-                    onClick={() => setIsEstimatorOpen(true)}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-success/30 text-theme-success hover:bg-theme-success/20 hover:shadow-lg hover:shadow-theme-success/20 transform hover:-translate-y-1"
-                >
-                    <ClockIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Proyección Entrega</span>
-                </button>
-
-                <button
-                    onClick={() => setIsBPMCalculatorOpen(true)}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-pink-500/30 text-pink-300 hover:bg-pink-500/20 hover:shadow-lg hover:shadow-pink-500/20 transform hover:-translate-y-1"
-                >
-                    <MetronomeIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Calculadora BPM</span>
-                </button>
-
-                <button
-                    onClick={() => setIsAcousticsCheckOpen(true)}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/20 transform hover:-translate-y-1"
-                >
-                    <SpeakerWaveIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Simulador Entornos</span>
-                </button>
-
-                <button
-                    onClick={() => setIsBlindTestOpen(true)}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-orange-500/30 text-orange-300 hover:bg-orange-500/20 hover:shadow-lg hover:shadow-orange-500/20 transform hover:-translate-y-1"
-                >
-                    <ScaleIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Comparador A/B</span>
-                </button>
-                
-                <button
-                    onClick={() => setIsReferenceTracksOpen(true)}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/20 transform hover:-translate-y-1"
-                >
-                    <ChartBarIcon className="w-8 h-8" />
-                    <span className="text-sm text-center">Caja Referencias</span>
-                </button>
-            </div>
-        </div>
-
-        <main className="max-w-3xl mx-auto grid grid-cols-1 gap-4">
-            {sortedProjects.length > 0 ? (
-                sortedProjects.map(project => {
-                    const progress = calculateProgress(project);
-                    const isCompleted = progress >= 100;
-                    return (
-                        <div 
-                           key={project.id} 
-                           className={`group flex items-center gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border rounded-lg hover:bg-theme-accent-secondary/10 transition-all duration-300 transform hover:-translate-y-1 ${isCompleted ? 'border-theme-success/40' : 'border-theme-border/20'}`}
-                        >
-                           <div className="flex-grow cursor-pointer flex items-center gap-4" onClick={() => onSelectProject(project.id)}>
-                               <ProjectIcon icon={project.icon} className="w-8 h-8 text-theme-accent-secondary flex-shrink-0" />
-                               <div className="flex-grow">
-                                   <h3 className={`font-bold text-lg ${project.isPriority ? 'text-theme-priority' : 'text-theme-text'}`}>{project.name}</h3>
-                                   {isCompleted ? (
-                                        <div className="flex items-center gap-2 mt-1 h-4">
-                                            <CheckBadgeIcon className="w-6 h-6 text-theme-success" />
-                                            <span className="text-theme-success font-semibold text-sm">Completado</span>
-                                        </div>
-                                    ) : (
-                                        <ProgressBar progress={progress} />
-                                    )}
-                               </div>
-                           </div>
-                           <div className="flex items-center gap-5 md:gap-1">
-                               <button 
-                                 onClick={(e) => { e.stopPropagation(); setEditingProject(project); }}
-                                 className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                                 aria-label="Editar"
-                                >
-                                  <PencilIcon className="w-5 h-5 text-theme-text-secondary group-hover:text-theme-accent" />
-                                </button>
-                                <button 
-                                 onClick={(e) => { e.stopPropagation(); onTogglePriority(project.id); }}
-                                 className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                                 aria-label="Priorizar"
-                                >
-                                  {project.isPriority ? <StarFilledIcon className="w-6 h-6 text-theme-priority" /> : <StarIcon className="w-6 h-6 text-theme-text-secondary group-hover:text-theme-priority" />}
-                                </button>
-                                <button 
-                                 onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
-                                 className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                                 aria-label="Eliminar"
-                                >
-                                   <TrashIcon className="w-6 h-6 text-theme-text-secondary group-hover:text-theme-danger" />
-                                </button>
-                           </div>
-                        </div>
-                    )
-                })
-            ) : (
-                <div className="text-center py-12 px-4 bg-theme-bg-secondary rounded-lg border border-dashed border-theme-border">
-                    <h3 className="text-xl text-theme-accent-secondary">No hay proyectos todavía.</h3>
-                    <p className="text-theme-text-secondary mt-2">Crea tu primer proyecto de mezcla para empezar la ruta.</p>
+        {/* DASHBOARD GRID LAYOUT */}
+        <div className="grid lg:grid-cols-12 gap-8 items-start">
+            
+            {/* COLUMNA PRINCIPAL: PROYECTOS (Izquierda en Desktop / Arriba en Móvil) */}
+            <div className="lg:col-span-8 w-full order-1">
+                <div className="mb-8">
+                    <form onSubmit={handleAddProject} className="flex gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-accent-secondary">
+                        <input
+                            type="text"
+                            value={newProjectName}
+                            onChange={(e) => setNewProjectName(e.target.value)}
+                            placeholder="Nombre de la nueva mezcla..."
+                            className="flex-grow bg-theme-bg border-2 border-theme-border-secondary text-theme-text text-base rounded-lg focus:ring-theme-accent-secondary focus:border-theme-accent-secondary p-2.5"
+                        />
+                        <button type="submit" className="flex items-center gap-2 text-white bg-gradient-to-r from-theme-accent to-theme-accent-secondary hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-theme-accent-secondary font-medium rounded-lg px-5 py-2.5">
+                            <PlusIcon className="w-5 h-5" />
+                            <span className="hidden sm:inline">Crear</span>
+                        </button>
+                    </form>
                 </div>
-            )}
-        </main>
+
+                <div className="grid grid-cols-1 gap-4">
+                    {sortedProjects.length > 0 ? (
+                        sortedProjects.map(project => {
+                            const progress = calculateProgress(project);
+                            const isCompleted = progress >= 100;
+                            return (
+                                <div 
+                                key={project.id} 
+                                className={`group flex items-center gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border rounded-lg hover:bg-theme-accent-secondary/10 transition-all duration-300 transform hover:-translate-y-1 ${isCompleted ? 'border-theme-success/40' : 'border-theme-border/20'}`}
+                                >
+                                <div className="flex-grow cursor-pointer flex items-center gap-4" onClick={() => onSelectProject(project.id)}>
+                                    <ProjectIcon icon={project.icon} className="w-8 h-8 text-theme-accent-secondary flex-shrink-0" />
+                                    <div className="flex-grow">
+                                        <h3 className={`font-bold text-lg ${project.isPriority ? 'text-theme-priority' : 'text-theme-text'}`}>{project.name}</h3>
+                                        {isCompleted ? (
+                                                <div className="flex items-center gap-2 mt-1 h-4">
+                                                    <CheckBadgeIcon className="w-6 h-6 text-theme-success" />
+                                                    <span className="text-theme-success font-semibold text-sm">Completado</span>
+                                                </div>
+                                            ) : (
+                                                <ProgressBar progress={progress} />
+                                            )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-5 md:gap-1">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setEditingProject(project); }}
+                                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                        aria-label="Editar"
+                                        >
+                                        <PencilIcon className="w-5 h-5 text-theme-text-secondary group-hover:text-theme-accent" />
+                                        </button>
+                                        <button 
+                                        onClick={(e) => { e.stopPropagation(); onTogglePriority(project.id); }}
+                                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                        aria-label="Priorizar"
+                                        >
+                                        {project.isPriority ? <StarFilledIcon className="w-6 h-6 text-theme-priority" /> : <StarIcon className="w-6 h-6 text-theme-text-secondary group-hover:text-theme-priority" />}
+                                        </button>
+                                        <button 
+                                        onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
+                                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                        aria-label="Eliminar"
+                                        >
+                                        <TrashIcon className="w-6 h-6 text-theme-text-secondary group-hover:text-theme-danger" />
+                                        </button>
+                                </div>
+                                </div>
+                            )
+                        })
+                    ) : (
+                        <div className="text-center py-12 px-4 bg-theme-bg-secondary rounded-lg border border-dashed border-theme-border">
+                            <h3 className="text-xl text-theme-accent-secondary">No hay proyectos todavía.</h3>
+                            <p className="text-theme-text-secondary mt-2">Crea tu primer proyecto de mezcla para empezar la ruta.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* COLUMNA LATERAL: HERRAMIENTAS (Derecha en Desktop / Abajo en Móvil) */}
+            <div className="lg:col-span-4 w-full order-2">
+                <div className="lg:sticky lg:top-8">
+                    <h2 className="text-lg font-bold text-theme-accent-secondary mb-4 uppercase tracking-wider text-center lg:text-left">Quick Tools</h2>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={onOpenEQGuide}
+                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border-secondary text-theme-accent hover:bg-theme-accent/20 hover:shadow-lg hover:shadow-accent transform hover:-translate-y-1"
+                        >
+                            <BookOpenIcon className="w-6 h-6" />
+                            <span className="text-xs text-center">EQ Guide</span>
+                        </button>
+                        <button
+                            onClick={onOpenCompressionGuide}
+                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border text-theme-accent-secondary hover:bg-theme-accent-secondary/20 hover:shadow-lg hover:shadow-accent-secondary transform hover:-translate-y-1"
+                        >
+                            <SlidersIcon className="w-6 h-6" />
+                            <span className="text-xs text-center">Comp. Guide</span>
+                        </button>
+                        <button
+                            onClick={onOpenReverbGuide}
+                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-purple-500/30 text-purple-300 hover:bg-purple-500/20 hover:shadow-lg hover:shadow-purple-500/20 transform hover:-translate-y-1"
+                        >
+                            <ReverbIcon className="w-6 h-6" />
+                            <span className="text-xs text-center">Reverb Guide</span>
+                        </button>
+                        <button
+                            onClick={onOpenSaturationGuide}
+                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:shadow-lg hover:shadow-amber-500/20 transform hover:-translate-y-1"
+                        >
+                            <SaturationIcon className="w-6 h-6" />
+                            <span className="text-xs text-center">Sat. Guide</span>
+                        </button>
+                        
+                        <button
+                            onClick={() => setIsEstimatorOpen(true)}
+                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-success/30 text-theme-success hover:bg-theme-success/20 hover:shadow-lg hover:shadow-theme-success/20 transform hover:-translate-y-1"
+                        >
+                            <ClockIcon className="w-6 h-6" />
+                            <span className="text-xs text-center">Estimator</span>
+                        </button>
+
+                        <button
+                            onClick={() => setIsBPMCalculatorOpen(true)}
+                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-pink-500/30 text-pink-300 hover:bg-pink-500/20 hover:shadow-lg hover:shadow-pink-500/20 transform hover:-translate-y-1"
+                        >
+                            <MetronomeIcon className="w-6 h-6" />
+                            <span className="text-xs text-center">BPM Calc</span>
+                        </button>
+
+                        <button
+                            onClick={() => setIsAcousticsCheckOpen(true)}
+                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/20 transform hover:-translate-y-1"
+                        >
+                            <SpeakerWaveIcon className="w-6 h-6" />
+                            <span className="text-xs text-center">Simulador</span>
+                        </button>
+
+                        <button
+                            onClick={() => setIsBlindTestOpen(true)}
+                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-orange-500/30 text-orange-300 hover:bg-orange-500/20 hover:shadow-lg hover:shadow-orange-500/20 transform hover:-translate-y-1"
+                        >
+                            <ScaleIcon className="w-6 h-6" />
+                            <span className="text-xs text-center">A/B Test</span>
+                        </button>
+                        
+                        <button
+                            onClick={() => setIsReferenceTracksOpen(true)}
+                            className="col-span-2 flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/20 transform hover:-translate-y-1"
+                        >
+                            <ChartBarIcon className="w-6 h-6" />
+                            <span className="text-xs text-center">Spectrum Target (Raw)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
       </div>
 
       <footer className="mt-auto py-6 text-center text-theme-text-secondary text-sm w-full">

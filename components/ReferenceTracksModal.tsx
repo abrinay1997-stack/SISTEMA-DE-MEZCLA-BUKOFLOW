@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { XIcon, ChartBarIcon, PlayIcon, SpeakerWaveIcon, EyeIcon, ArrowPathIcon, StarFilledIcon, DownloadIcon } from './icons';
+import { XIcon, ChartBarIcon, PlayIcon, SpeakerWaveIcon, EyeIcon, ArrowPathIcon, StarFilledIcon, DownloadIcon, CheckCircleIcon } from './icons';
 import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
 import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
 import { CalibrationState } from '../types';
@@ -103,6 +103,13 @@ const genres: GenreProfile[] = [
   }
 ];
 
+interface AnalysisResult {
+    band: string;
+    status: 'ok' | 'warning' | 'critical';
+    diff: number; // Positive = too loud, Negative = too quiet
+    message: string;
+}
+
 const formatTime = (seconds: number) => {
     if (!seconds || isNaN(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
@@ -124,7 +131,9 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   // Controls
   const [visualGain, setVisualGain] = useState<number>(0.8); 
   const [smoothing, setSmoothing] = useState<number>(0.96); 
-  const [showPeakHold, setShowPeakHold] = useState(true);
+  
+  // Analysis State
+  const [analysis, setAnalysis] = useState<AnalysisResult[]>([]);
 
   // Audio Context Refs
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -141,9 +150,13 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   // Canvas Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const analysisIntervalRef = useRef<number | null>(null);
   
-  // Peak Data Ref
+  // Data Refs (Persistent across renders)
   const peakDataRef = useRef<Float32Array | null>(null);
+  
+  // Mouse Interaction Ref
+  const mousePosRef = useRef<{x: number, y: number} | null>(null);
 
   const selectedGenre = genres.find(g => g.id === selectedGenreId) || genres[0];
 
@@ -192,11 +205,15 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
         }
 
         startVisualizer();
+        
+        // Start Analysis Loop (Throttle to 500ms)
+        analysisIntervalRef.current = window.setInterval(runAnalysis, 500);
     }
 
     return () => {
         // Cleanup on close or unmount
         stopVisualizer();
+        if (analysisIntervalRef.current) clearInterval(analysisIntervalRef.current);
         
         // CRITICAL: Stop audio and cleanup source
         if (audioElementRef.current) {
@@ -230,6 +247,8 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
         setFileName(null);
         setAudioBuffer(null);
         peakDataRef.current = null;
+        mousePosRef.current = null;
+        setAnalysis([]);
     }
   }, [isOpen]);
 
@@ -315,6 +334,105 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
     }
   };
 
+  // Mouse Events for Canvas
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      // Normalize to canvas internal resolution
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      mousePosRef.current = {
+          x: (e.clientX - rect.left) * scaleX,
+          y: (e.clientY - rect.top) * scaleY
+      };
+  };
+
+  const handleCanvasMouseLeave = () => {
+      mousePosRef.current = null;
+  };
+
+  // --- Analysis Logic (Diagnostics) ---
+  const getFreqIndex = (freq: number, sampleRate: number, bufferLength: number) => {
+      return Math.floor(freq * (bufferLength * 2) / sampleRate);
+  };
+
+  const calculateBandAverage = (data: Float32Array, startFreq: number, endFreq: number, sampleRate: number) => {
+      const startBin = getFreqIndex(startFreq, sampleRate, data.length);
+      const endBin = getFreqIndex(endFreq, sampleRate, data.length);
+      let sum = 0;
+      let count = 0;
+      
+      for (let i = startBin; i <= endBin && i < data.length; i++) {
+          sum += data[i] / 255; // Normalize to 0-1
+          count++;
+      }
+      return count > 0 ? sum / count : 0;
+  };
+
+  const runAnalysis = () => {
+      if (!isPlayingRef.current || !peakDataRef.current || !audioContextRef.current) {
+          if (analysis.length > 0 && !isPlayingRef.current) setAnalysis([]);
+          return;
+      }
+
+      const peakData = peakDataRef.current;
+      const sampleRate = audioContextRef.current.sampleRate;
+      const curve = activeCurveRef.current; // [Sub, Bass, LowMid, Mid, HighMid, Presence, Air]
+
+      // 1. Define Bands
+      const bands = [
+          { name: 'Sub (20-60Hz)', start: 20, end: 60, targetVal: curve[0] },
+          { name: 'Bass (60-250Hz)', start: 60, end: 250, targetVal: curve[1] },
+          { name: 'Mids (250-2k)', start: 250, end: 2000, targetVal: (curve[2] + curve[3])/2 }, // Anchor point
+          { name: 'High Mids (2k-8k)', start: 2000, end: 8000, targetVal: (curve[4] + curve[5])/2 },
+          { name: 'Air (8k-20k)', start: 8000, end: 20000, targetVal: curve[6] }
+      ];
+
+      // 2. Calculate Averages
+      const userLevels = bands.map(b => calculateBandAverage(peakData, b.start, b.end, sampleRate));
+
+      // 3. Check if audio is too low (silence detection)
+      if (userLevels[2] < 0.1) {
+          setAnalysis([]);
+          return; 
+      }
+
+      // 4. Normalization (Auto-Gain Offset) based on Mids (Index 2)
+      // We align the User's Mid Level to the Target's Mid Level to ignore absolute volume
+      const userMid = userLevels[2];
+      const targetMid = bands[2].targetVal;
+      const offset = targetMid - userMid;
+
+      const results: AnalysisResult[] = bands.map((band, i) => {
+          const userValNormalized = userLevels[i] + offset;
+          const diff = userValNormalized - band.targetVal; // Positive = User is louder
+          
+          // Thresholds (approx 0.07 is roughly 5-6dB in this linear normalized scale)
+          let status: 'ok' | 'warning' | 'critical' = 'ok';
+          const absDiff = Math.abs(diff);
+          
+          if (absDiff > 0.15) status = 'critical';
+          else if (absDiff > 0.07) status = 'warning';
+
+          let message = 'Balanceado';
+          if (status !== 'ok') {
+              message = diff > 0 ? 'Exceso' : 'Falta';
+          }
+
+          return {
+              band: band.name.split(' ')[0], // Short name
+              status,
+              diff,
+              message
+          };
+      });
+
+      setAnalysis(results);
+  };
+
+
   const startVisualizer = () => {
       const draw = () => {
           // --- SYNC WAVEFORM PROGRESS IN LOOP ---
@@ -396,54 +514,58 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
           ctx.setLineDash([]);
 
 
-          // --- 3. Draw Real-Time Audio (Raw - No Tilt) ---
-          if (analyserRef.current && isPlayingRef.current && audioContextRef.current) {
+          // --- 3. Audio Data Processing ---
+          if (analyserRef.current && audioContextRef.current) {
               const bufferLength = analyserRef.current.frequencyBinCount;
-              const dataArray = new Uint8Array(bufferLength);
-              analyserRef.current.getByteFrequencyData(dataArray);
               const sampleRate = audioContextRef.current.sampleRate;
 
-              // Initialize Peak Data Buffer if needed
+              // Ensure Peak Buffer exists
               if (!peakDataRef.current || peakDataRef.current.length !== bufferLength) {
                   peakDataRef.current = new Float32Array(bufferLength);
               }
 
-              // Calculate Data for Peak Storage
-              for (let i = 0; i < bufferLength; i++) {
-                 if (dataArray[i] > peakDataRef.current[i]) {
-                     peakDataRef.current[i] = dataArray[i];
-                 }
-              }
-
-              // --- Draw Filled Spectrum ---
-              ctx.beginPath();
-              ctx.strokeStyle = '#0ea5e9'; // Sky Blue (Theme Accent)
-              ctx.lineWidth = 2;
-              ctx.fillStyle = 'rgba(14, 165, 233, 0.25)';
-              ctx.moveTo(0, height);
+              const dataArray = new Uint8Array(bufferLength);
               
-              for (let x = 0; x < width; x += 2) {
-                  const freq = Math.pow(10, (x / scale) + minLog);
-                  const binIndex = Math.floor(freq * (bufferLength * 2) / sampleRate);
-                  if (binIndex >= bufferLength) break;
-
-                  const rawValue = dataArray[binIndex] / 255; // 0.0 to 1.0
+              // If playing, get real data. If not, we might want to show silence or last snapshot
+              if (isPlayingRef.current) {
+                  analyserRef.current.getByteFrequencyData(dataArray);
                   
-                  // Apply Visual Gain ONLY (No Tilt)
-                  let finalValue = rawValue * visualGainRef.current;
-                  
-                  // Clamp
-                  finalValue = Math.min(Math.max(finalValue, 0), 1);
-                  
-                  const y = height - (finalValue * height);
-                  ctx.lineTo(x, y);
+                  // Update Peaks
+                  for (let i = 0; i < bufferLength; i++) {
+                     if (dataArray[i] > peakDataRef.current[i]) {
+                         peakDataRef.current[i] = dataArray[i];
+                     }
+                  }
               }
-              ctx.lineTo(width, height); 
-              ctx.fill();
-              ctx.stroke();
 
-              // --- Draw Peak Hold Line ---
-              if (showPeakHoldRef.current && peakDataRef.current) {
+              // --- 3B. Draw Real-time Spectrum ---
+              if (isPlayingRef.current) {
+                  ctx.beginPath();
+                  ctx.strokeStyle = '#0ea5e9'; // Sky Blue (Theme Accent)
+                  ctx.lineWidth = 2;
+                  ctx.fillStyle = 'rgba(14, 165, 233, 0.25)';
+                  ctx.moveTo(0, height);
+                  
+                  for (let x = 0; x < width; x += 2) {
+                      const freq = Math.pow(10, (x / scale) + minLog);
+                      const binIndex = Math.floor(freq * (bufferLength * 2) / sampleRate);
+                      if (binIndex >= bufferLength) break;
+
+                      const rawValue = dataArray[binIndex] / 255; // 0.0 to 1.0
+                      
+                      let finalValue = rawValue * visualGainRef.current;
+                      finalValue = Math.min(Math.max(finalValue, 0), 1);
+                      
+                      const y = height - (finalValue * height);
+                      ctx.lineTo(x, y);
+                  }
+                  ctx.lineTo(width, height); 
+                  ctx.fill();
+                  ctx.stroke();
+              }
+
+              // --- 3C. Draw Peak Hold Line (Cyan - Persistent - ALWAYS ON) ---
+              if (peakDataRef.current) {
                   ctx.beginPath();
                   ctx.strokeStyle = 'rgba(14, 255, 255, 0.8)'; // Cyan/Bright
                   ctx.lineWidth = 1;
@@ -472,6 +594,62 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                   }
                   ctx.stroke();
               }
+
+              // --- 4. INSPECTOR (Crosshair) ---
+              if (mousePosRef.current) {
+                  const { x, y } = mousePosRef.current;
+                  
+                  // Calculate Freq from X
+                  const freq = Math.pow(10, (x / scale) + minLog);
+                  
+                  // Get dB value at this freq
+                  const binIndex = Math.floor(freq * (bufferLength * 2) / sampleRate);
+                  let dbValue = -100; // Default silence
+                  
+                  if (binIndex < bufferLength) {
+                      // Prioritize Realtime, fall back to Peak
+                      if (isPlayingRef.current) {
+                          const normalized = dataArray[binIndex] / 255;
+                          dbValue = -100 + (normalized * 70); // approx range
+                      } else if (peakDataRef.current) {
+                          const normalized = peakDataRef.current[binIndex] / 255;
+                          dbValue = -100 + (normalized * 70);
+                      }
+                  }
+
+                  // Draw Crosshair Lines
+                  ctx.beginPath();
+                  ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                  ctx.lineWidth = 1;
+                  ctx.setLineDash([4, 4]);
+                  ctx.moveTo(x, 0);
+                  ctx.lineTo(x, height);
+                  ctx.moveTo(0, y); 
+                  ctx.lineTo(width, y);
+                  ctx.stroke();
+                  ctx.setLineDash([]);
+
+                  // Draw Tooltip
+                  const text = `${Math.round(freq)} Hz | ${dbValue.toFixed(1)} dB`;
+                  const textWidth = ctx.measureText(text).width + 20;
+                  const textX = x + 10 > width - textWidth ? x - textWidth - 10 : x + 10;
+                  const textY = y - 30 < 0 ? y + 20 : y - 30;
+
+                  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                  ctx.fillRect(textX, textY, textWidth, 24);
+                  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                  ctx.strokeRect(textX, textY, textWidth, 24);
+                  
+                  ctx.fillStyle = '#ffffff';
+                  ctx.font = 'bold 12px monospace';
+                  ctx.fillText(text, textX + 10, textY + 16);
+                  
+                  // Draw small circle at cursor intersection
+                  ctx.beginPath();
+                  ctx.fillStyle = '#ffffff';
+                  ctx.arc(x, y, 3, 0, Math.PI * 2);
+                  ctx.fill();
+              }
           }
 
           animationFrameRef.current = requestAnimationFrame(draw);
@@ -482,7 +660,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   // Refs for animation loop
   const activeCurveRef = useRef(selectedGenre.curve);
   const visualGainRef = useRef(visualGain);
-  const showPeakHoldRef = useRef(showPeakHold);
+  const showPeakHoldRef = useRef(true); // Always true now
 
   useEffect(() => {
       activeCurveRef.current = selectedGenre.curve;
@@ -491,10 +669,6 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   useEffect(() => {
       visualGainRef.current = visualGain;
   }, [visualGain]);
-  
-  useEffect(() => {
-      showPeakHoldRef.current = showPeakHold;
-  }, [showPeakHold]);
   
   // Display Logic for Smoothing Time
   const getSmoothingLabel = (val: number) => {
@@ -535,7 +709,13 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
             />
 
             {/* The Spectrum Canvas */}
-            <div className="relative w-full h-48 md:h-80 bg-black rounded-lg border border-theme-border overflow-hidden shadow-inner mb-4">
+            <div 
+                className="relative w-full h-48 md:h-80 bg-black rounded-lg border border-theme-border overflow-hidden shadow-inner mb-4 cursor-crosshair group"
+                onClick={clearPeaks}
+                onMouseMove={handleCanvasMouseMove}
+                onMouseLeave={handleCanvasMouseLeave}
+                title="Click para resetear los picos"
+            >
                 <canvas ref={canvasRef} width={1024} height={320} className="w-full h-full" />
                 
                 {/* Labels Overlay */}
@@ -543,7 +723,43 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                     <p className="text-xs text-gray-400 uppercase tracking-wider">Target Curve</p>
                     <p className="text-sm font-bold text-white">{selectedGenre.name}</p>
                 </div>
+
+                {/* Tap to Reset Overlay (Fade in on hover when not inspecting too closely) */}
+                <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none hidden md:block">
+                    <span className="text-[10px] text-gray-500">Click para Resetear Peak Hold</span>
+                </div>
             </div>
+
+            {/* Analysis Report Banner (Diagnostic) */}
+            {analysis.length > 0 && (
+                <div className="mb-6 p-3 bg-black/40 rounded-lg border border-theme-border grid grid-cols-5 gap-2 animate-fade-in-step">
+                    {analysis.map((res, idx) => {
+                        let color = 'text-theme-success';
+                        let border = 'border-theme-success/30 bg-theme-success/10';
+                        let icon = <CheckCircleIcon className="w-4 h-4" />;
+                        
+                        if (res.status === 'warning') {
+                            color = 'text-theme-priority';
+                            border = 'border-theme-priority/30 bg-theme-priority/10';
+                            icon = res.diff > 0 ? <span className="font-bold">⬆️</span> : <span className="font-bold">⬇️</span>;
+                        } else if (res.status === 'critical') {
+                            color = 'text-theme-danger';
+                            border = 'border-theme-danger/30 bg-theme-danger/10';
+                            icon = res.diff > 0 ? <span className="font-bold text-lg">⬆️</span> : <span className="font-bold text-lg">⬇️</span>;
+                        }
+
+                        return (
+                            <div key={idx} className={`flex flex-col items-center justify-center p-2 rounded text-center border ${border}`}>
+                                <span className="text-[10px] text-theme-text-secondary uppercase font-bold">{res.band}</span>
+                                <div className={`flex items-center gap-1 mt-1 ${color}`}>
+                                    {icon}
+                                    <span className="text-xs font-bold">{res.message}</span>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
 
             {/* Controls: Genre & File */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -611,7 +827,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                                  </div>
                              </div>
                              <div className="flex justify-end">
-                                <button onClick={() => { setFileName(null); setIsPlaying(false); isPlayingRef.current = false; audioElementRef.current?.pause(); }} className="text-xs text-red-400 hover:text-red-300 underline">Cambiar Archivo</button>
+                                <button onClick={() => { setFileName(null); setIsPlaying(false); isPlayingRef.current = false; audioElementRef.current?.pause(); setAnalysis([]); }} className="text-xs text-red-400 hover:text-red-300 underline">Cambiar Archivo</button>
                              </div>
                         </div>
                      )}
@@ -649,24 +865,6 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                                 title="Izquierda: Rápido (1s) | Derecha: Lento (6s)"
                             />
                          </div>
-                     </div>
-                     
-                     {/* Peak Hold Controls */}
-                     <div className="flex gap-4 justify-center">
-                        <button 
-                            onClick={() => setShowPeakHold(!showPeakHold)}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${showPeakHold ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50' : 'bg-black/20 text-gray-500 border-gray-700'}`}
-                        >
-                            <EyeIcon className="w-4 h-4" />
-                            Peak Hold: {showPeakHold ? 'ON' : 'OFF'}
-                        </button>
-                        <button 
-                            onClick={clearPeaks}
-                            className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white transition-all active:scale-95"
-                        >
-                            <ArrowPathIcon className="w-4 h-4" />
-                            Clear Mem
-                        </button>
                      </div>
                 </div>
             </div>
