@@ -30,6 +30,12 @@ const genres: GenreProfile[] = [
     curve: [0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4] 
   },
   { 
+    id: 'acapella_rap', 
+    name: 'Acapella de Rap', 
+    description: 'Voz solista aislada. Pico fundamental en 250Hz, valle en 4.7kHz y roll-off agresivo en agudos.',
+    curve: [0.65, 0.90, 0.90, 0.78, 0.62, 0.55, 0.30] 
+  },
+  { 
     id: 'trap_cinematic', 
     name: 'Beat Trap Cinematic', 
     description: 'Curva oscura y profunda. Sub-graves extremos (+45dB) y caída dramática en agudos (>12kHz) para atmósfera pesada.',
@@ -105,6 +111,7 @@ const genres: GenreProfile[] = [
 
 interface AnalysisResult {
     band: string;
+    range: string;
     status: 'ok' | 'warning' | 'critical';
     diff: number; // Positive = too loud, Negative = too quiet
     message: string;
@@ -381,29 +388,32 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
       const sampleRate = audioContextRef.current.sampleRate;
       const curve = activeCurveRef.current; // [Sub, Bass, LowMid, Mid, HighMid, Presence, Air]
 
-      // 1. Define Bands
+      // 1. Define Bands (Updated mapping)
       const bands = [
-          { name: 'Sub (20-60Hz)', start: 20, end: 60, targetVal: curve[0] },
-          { name: 'Bass (60-250Hz)', start: 60, end: 250, targetVal: curve[1] },
-          { name: 'Mids (250-2k)', start: 250, end: 2000, targetVal: (curve[2] + curve[3])/2 }, // Anchor point
-          { name: 'High Mids (2k-8k)', start: 2000, end: 8000, targetVal: (curve[4] + curve[5])/2 },
-          { name: 'Air (8k-20k)', start: 8000, end: 20000, targetVal: curve[6] }
+          { label: 'Sub', range: '40-100Hz', start: 40, end: 100, targetVal: curve[0] },
+          { label: 'Bass', range: '100-300Hz', start: 100, end: 300, targetVal: curve[1] },
+          { label: 'LowMid', range: '300-1k', start: 300, end: 1000, targetVal: curve[2] },
+          { label: 'Mid', range: '1k-3k', start: 1000, end: 3000, targetVal: curve[3] },
+          { label: 'HighMid', range: '3k-8k', start: 3000, end: 8000, targetVal: curve[4] },
+          { label: 'Presence', range: '8k-15k', start: 8000, end: 15000, targetVal: curve[5] },
+          { label: 'Air', range: '15k+', start: 15000, end: 20000, targetVal: curve[6] }
       ];
 
       // 2. Calculate Averages
       const userLevels = bands.map(b => calculateBandAverage(peakData, b.start, b.end, sampleRate));
 
-      // 3. Check if audio is too low (silence detection)
-      if (userLevels[2] < 0.1) {
+      // 3. Check silence (Index 2+3 average for mid energy check)
+      const midEnergy = (userLevels[2] + userLevels[3]) / 2;
+      if (midEnergy < 0.1) {
           setAnalysis([]);
           return; 
       }
 
-      // 4. Normalization (Auto-Gain Offset) based on Mids (Index 2)
-      // We align the User's Mid Level to the Target's Mid Level to ignore absolute volume
-      const userMid = userLevels[2];
-      const targetMid = bands[2].targetVal;
-      const offset = targetMid - userMid;
+      // 4. Normalization (Auto-Gain Offset) based on Average of LowMid and Mid
+      // We align the User's Body/Mid Level to the Target's Body/Mid Level
+      const userAnchor = (userLevels[2] + userLevels[3]) / 2;
+      const targetAnchor = (bands[2].targetVal + bands[3].targetVal) / 2;
+      const offset = targetAnchor - userAnchor;
 
       const results: AnalysisResult[] = bands.map((band, i) => {
           const userValNormalized = userLevels[i] + offset;
@@ -416,13 +426,14 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
           if (absDiff > 0.15) status = 'critical';
           else if (absDiff > 0.07) status = 'warning';
 
-          let message = 'Balanceado';
+          let message = 'OK';
           if (status !== 'ok') {
               message = diff > 0 ? 'Exceso' : 'Falta';
           }
 
           return {
-              band: band.name.split(' ')[0], // Short name
+              band: band.label,
+              range: band.range,
               status,
               diff,
               message
@@ -732,7 +743,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
 
             {/* Analysis Report Banner (Diagnostic) */}
             {analysis.length > 0 && (
-                <div className="mb-6 p-3 bg-black/40 rounded-lg border border-theme-border grid grid-cols-5 gap-2 animate-fade-in-step">
+                <div className="mb-6 p-3 bg-black/40 rounded-lg border border-theme-border grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 animate-fade-in-step">
                     {analysis.map((res, idx) => {
                         let color = 'text-theme-success';
                         let border = 'border-theme-success/30 bg-theme-success/10';
@@ -749,9 +760,10 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                         }
 
                         return (
-                            <div key={idx} className={`flex flex-col items-center justify-center p-2 rounded text-center border ${border}`}>
+                            <div key={idx} className={`flex flex-col items-center justify-center p-2 rounded text-center border ${border} min-h-[80px]`}>
                                 <span className="text-[10px] text-theme-text-secondary uppercase font-bold">{res.band}</span>
-                                <div className={`flex items-center gap-1 mt-1 ${color}`}>
+                                <span className="text-[9px] text-theme-text-secondary/70 mb-1">{res.range}</span>
+                                <div className={`flex items-center gap-1 ${color}`}>
                                     {icon}
                                     <span className="text-xs font-bold">{res.message}</span>
                                 </div>
@@ -775,7 +787,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                             >
                                 <span className="flex items-center gap-2">
                                     {g.name}
-                                    {(g.id === 'trap_cinematic' || g.id === 'urban' || g.id === 'modern_rap') && <StarFilledIcon className="w-3 h-3 text-theme-priority" />}
+                                    {(g.id === 'trap_cinematic' || g.id === 'urban' || g.id === 'modern_rap' || g.id === 'acapella_rap') && <StarFilledIcon className="w-3 h-3 text-theme-priority" />}
                                 </span>
                             </button>
                         ))}
