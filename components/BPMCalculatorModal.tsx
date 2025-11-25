@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { XIcon, MetronomeIcon } from './icons';
+import React, { useState, useEffect, useRef } from 'react';
+import { XIcon, MetronomeIcon, ArrowPathIcon, ClockIcon } from './icons';
 
 interface BPMCalculatorModalProps {
   isOpen: boolean;
@@ -13,17 +13,43 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
   const [bpm, setBpm] = useState<number | ''>(120);
   const [noteType, setNoteType] = useState<NoteType>('lineal');
   const [taps, setTaps] = useState<number[]>([]);
-  const [tapText, setTapText] = useState<string>('Tap');
-  const [animationKey, setAnimationKey] = useState<number>(0);
+  const [tapText, setTapText] = useState<string>('TAP TEMPO');
+  const [beatFlash, setBeatFlash] = useState(false);
 
   // Results
   const [results, setResults] = useState<{ name: string, key: string, durationS: string, durationMs: string, frequency: string }[]>([]);
 
+  // Metronome Interval Ref
+  const intervalRef = useRef<number | null>(null);
+
+  // Calculation Effect
   useEffect(() => {
-    if (isOpen && typeof bpm === 'number') {
+    if (isOpen && typeof bpm === 'number' && bpm > 0) {
       calculate(bpm, noteType);
+      startMetronome(bpm);
+    } else {
+        stopMetronome();
     }
+    return () => stopMetronome();
   }, [isOpen, bpm, noteType]);
+
+  const startMetronome = (currentBpm: number) => {
+      stopMetronome();
+      const msPerBeat = 60000 / currentBpm;
+      
+      intervalRef.current = window.setInterval(() => {
+          setBeatFlash(true);
+          setTimeout(() => setBeatFlash(false), 100); // Short flash
+      }, msPerBeat);
+  };
+
+  const stopMetronome = () => {
+      if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+      }
+      setBeatFlash(false);
+  };
 
   const calculate = (currentBpm: number, currentType: NoteType) => {
     if (isNaN(currentBpm) || currentBpm <= 0) return;
@@ -34,8 +60,8 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
     
     const nombresNotas: Record<NoteType, Record<string, string>> = {
         'lineal': { '1/1': 'Redonda', '1/2': 'Blanca', '1/4': 'Negra', '1/8': 'Corchea', '1/16': 'Semicorchea', '1/32': 'Fusa', '1/64': 'Semifusa' },
-        'tresillo': { '1/4T': 'Negra de Tresillo', '1/8T': 'Corchea de Tresillo', '1/16T': 'Semicorchea de Tresillo', '1/32T': 'Fusa de Tresillo' },
-        'punteada': { '1/2.': 'Blanca con Puntillo', '1/4.': 'Negra con Puntillo', '1/8.': 'Corchea con Puntillo', '1/16.': 'Semicorchea con Puntillo' }
+        'tresillo': { '1/4T': 'Negra Tresillo', '1/8T': 'Corchea Tresillo', '1/16T': 'Semi Tresillo', '1/32T': 'Fusa Tresillo' },
+        'punteada': { '1/2.': 'Blanca Puntillo', '1/4.': 'Negra Puntillo', '1/8.': 'Corchea Puntillo', '1/16.': 'Semi Puntillo' }
     };
 
     const duraciones: Record<string, number> = {};
@@ -84,8 +110,7 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
 
     newTaps.push(now);
     setTaps(newTaps);
-    setTapText('Tapping...');
-    setAnimationKey(prev => prev + 1);
+    setTapText('Detecting...');
 
     if (newTaps.length > 1) {
         const intervals = [];
@@ -100,13 +125,13 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
         }
     }
     
-    setTimeout(() => setTapText('Tap'), 200);
+    setTimeout(() => setTapText('TAP TEMPO'), 200);
   };
 
   const handleReset = () => {
       setTaps([]);
       setBpm(120);
-      setTapText('Tap');
+      setTapText('TAP TEMPO');
   };
 
   const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,101 +147,135 @@ const BPMCalculatorModal: React.FC<BPMCalculatorModalProps> = ({ isOpen, onClose
 
   return (
     <div 
-        className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4 animate-fade-in-backdrop"
+        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4 animate-fade-in-backdrop"
         onClick={onClose}
     >
       <div
-        className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-2xl flex flex-col animate-scale-up max-h-[90vh] pt-safe pb-safe"
+        className="relative bg-[#0a0a0a] backdrop-blur-xl border border-theme-border-secondary rounded-lg shadow-2xl w-full max-w-4xl flex flex-col animate-scale-up overflow-hidden max-h-[95vh] pt-safe pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-theme-border-secondary">
-          <h2 className="text-xl font-bold text-theme-accent flex items-center gap-2">
-            <MetronomeIcon className="w-6 h-6" />
-            Calculadora BPM
-          </h2>
-          <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
-            <XIcon className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 space-y-6 overflow-y-auto">
-            
-            {/* Controls */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <div>
-                        <label className="block mb-2 text-sm font-semibold text-theme-text-secondary">BPM (Beats Per Minute) 🎵</label>
-                        <div className="flex gap-2">
-                            <input 
-                                type="number" 
-                                inputMode="decimal"
-                                pattern="[0-9]*"
-                                value={bpm}
-                                onChange={handleBpmChange}
-                                placeholder="Escribe BPM..."
-                                className="w-full p-3 bg-black/30 border-2 border-theme-border rounded-lg text-theme-text focus:ring-2 focus:ring-theme-accent focus:border-theme-accent text-center font-mono text-xl font-bold outline-none transition-all"
-                            />
-                        </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                        <button 
-                            key={animationKey}
-                            onClick={handleTap}
-                            className="flex-grow py-3 bg-gradient-to-r from-theme-accent to-theme-accent-secondary text-white font-bold rounded-lg shadow-lg hover:opacity-90 transition-all active:scale-95"
-                        >
-                            {tapText}
-                        </button>
-                        <button 
-                            onClick={handleReset}
-                            className="px-4 py-3 bg-theme-danger/20 text-theme-danger border border-theme-danger/50 font-bold rounded-lg hover:bg-theme-danger/30 transition-all"
-                        >
-                            Reset
-                        </button>
-                    </div>
-                    <p className="text-center text-xs text-theme-text-secondary">{taps.length} taps registrados</p>
+        {/* --- Header & Toolbar --- */}
+        <div className="flex flex-col border-b border-theme-border-secondary/50 z-20 relative">
+            {/* Top Bar */}
+            <div className="flex justify-between items-center p-3 bg-[#111]">
+                <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-bold text-theme-accent flex items-center gap-2">
+                        <MetronomeIcon className="w-5 h-5" />
+                        <span className="hidden sm:inline">TIME SYNC CALCULATOR</span>
+                    </h2>
                 </div>
-
-                <div>
-                     <label className="block mb-2 text-sm font-semibold text-theme-text-secondary">Tipo de Compás 🎼</label>
-                     <div className="flex flex-col gap-2">
-                        {(['lineal', 'tresillo', 'punteada'] as NoteType[]).map(type => (
-                            <button
-                                key={type}
-                                onClick={() => setNoteType(type)}
-                                className={`py-2 px-4 rounded-md text-sm font-semibold border transition-all text-left ${noteType === type ? 'border-theme-accent bg-theme-accent/20 text-theme-accent' : 'border-theme-border text-theme-text-secondary hover:bg-white/5'}`}
-                            >
-                                {type.charAt(0).toUpperCase() + type.slice(1)}
-                            </button>
-                        ))}
-                     </div>
+                
+                <div className="flex items-center gap-2">
+                    <button onClick={onClose} className="p-2 rounded text-gray-400 hover:bg-white/10 hover:text-white transition">
+                        <XIcon className="w-5 h-5" />
+                    </button>
                 </div>
             </div>
 
-            {/* Results Table */}
-            <div className="border rounded-lg border-theme-border overflow-hidden bg-black/20">
-                <table className="w-full text-sm text-left text-theme-text">
-                    <thead className="bg-white/5 text-xs text-theme-accent uppercase">
-                        <tr>
-                            <th className="px-4 py-3">Nota</th>
-                            <th className="px-4 py-3 text-center">Seg (s)</th>
-                            <th className="px-4 py-3 text-center">Ms</th>
-                            <th className="px-4 py-3 text-center">Hz</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {results.map((row, index) => (
-                            <tr key={index} className="border-b border-theme-border/50 hover:bg-white/5">
-                                <td className="px-4 py-3 font-medium">{row.name} <span className="text-theme-text-secondary text-xs">({row.key})</span></td>
-                                <td className="px-4 py-3 text-center font-mono text-theme-accent-secondary">{row.durationS}</td>
-                                <td className="px-4 py-3 text-center font-mono">{row.durationMs}</td>
-                                <td className="px-4 py-3 text-center font-mono text-theme-text-secondary">{row.frequency}</td>
+            {/* Sub-Toolbar (Note Type & Reset) */}
+            <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-[#0f0f0f] text-xs border-t border-black/50">
+                <div className="flex bg-black/40 rounded-lg p-1 border border-white/5">
+                    {(['lineal', 'tresillo', 'punteada'] as NoteType[]).map(type => (
+                        <button
+                            key={type}
+                            onClick={() => setNoteType(type)}
+                            className={`px-3 py-1 rounded-md font-bold transition-all uppercase ${noteType === type ? 'bg-theme-accent text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            {type}
+                        </button>
+                    ))}
+                </div>
+
+                <button 
+                    onClick={handleReset}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/5 transition-colors"
+                >
+                    <ArrowPathIcon className="w-3 h-3" />
+                    RESET
+                </button>
+            </div>
+        </div>
+
+        {/* --- Main Dashboard Area --- */}
+        <div className="flex-grow p-4 lg:p-6 flex flex-col md:flex-row gap-6 bg-[#050505] overflow-y-auto custom-scrollbar z-0 relative">
+            
+            {/* Left Panel: The Machine */}
+            <div className="md:w-1/3 flex flex-col gap-6">
+                
+                {/* BPM Display */}
+                <div className="bg-[#111] border border-gray-800 rounded-xl p-6 flex flex-col items-center justify-center relative overflow-hidden shadow-inner">
+                    {/* Visual Metronome LED */}
+                    <div className={`absolute top-4 right-4 w-3 h-3 rounded-full transition-all duration-75 ${beatFlash ? 'bg-theme-accent shadow-[0_0_15px_var(--theme-accent)] scale-125' : 'bg-[#222]'}`}></div>
+                    
+                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Current Tempo</p>
+                    <div className="relative z-10 text-center">
+                        <input 
+                            type="number"
+                            value={bpm}
+                            onChange={handleBpmChange}
+                            className="bg-transparent text-6xl font-mono font-bold text-center text-white outline-none w-full appearance-none m-0 p-0"
+                        />
+                        <span className="text-xl text-gray-600 font-medium block mt-1">BPM</span>
+                    </div>
+                </div>
+
+                {/* Tap Pad */}
+                <button
+                    onMouseDown={handleTap}
+                    onTouchStart={(e) => { e.preventDefault(); handleTap(); }}
+                    className="group relative h-32 rounded-xl bg-[#151515] border-2 border-gray-800 active:border-theme-accent active:scale-[0.98] transition-all flex flex-col items-center justify-center overflow-hidden shadow-lg"
+                >
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--theme-accent),transparent_70%)] opacity-0 group-active:opacity-20 transition-opacity duration-100"></div>
+                    <div className="z-10 flex flex-col items-center">
+                        <span className="text-2xl font-black text-gray-300 group-active:text-theme-accent tracking-widest">{tapText}</span>
+                        <span className="text-[9px] text-gray-600 uppercase font-bold mt-1">Click or Spacebar</span>
+                    </div>
+                </button>
+
+                {/* Stats */}
+                <div className="flex justify-between px-4 py-2 bg-black/20 rounded border border-white/5">
+                    <span className="text-xs text-gray-500 font-bold">TAPS</span>
+                    <span className="text-xs text-theme-accent font-mono">{taps.length}</span>
+                </div>
+
+            </div>
+
+            {/* Right Panel: The Data Grid */}
+            <div className="md:w-2/3 bg-[#111] border border-gray-800 rounded-xl overflow-hidden flex flex-col">
+                <div className="p-3 border-b border-gray-800 bg-[#151515] flex justify-between items-center">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Time & Frequency Map</h3>
+                    <div className="flex items-center gap-1 text-[10px] text-gray-600">
+                        <ClockIcon className="w-3 h-3" />
+                        <span>Synced</span>
+                    </div>
+                </div>
+                
+                <div className="overflow-y-auto custom-scrollbar flex-grow">
+                    <table className="w-full text-left">
+                        <thead className="bg-[#0a0a0a] text-[10px] text-gray-500 uppercase sticky top-0 z-10">
+                            <tr>
+                                <th className="px-4 py-3 font-bold">Note</th>
+                                <th className="px-4 py-3 font-bold text-right">Duration (ms)</th>
+                                <th className="px-4 py-3 font-bold text-right">Freq (Hz)</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="text-sm font-mono">
+                            {results.map((row, index) => (
+                                <tr key={index} className="border-b border-gray-800/50 hover:bg-white/5 transition-colors">
+                                    <td className="px-4 py-3 font-medium text-gray-300 font-sans">
+                                        {row.name} <span className="text-gray-600 text-xs ml-1">({row.key})</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-theme-accent-secondary font-bold">
+                                        {row.durationMs} <span className="text-gray-600 text-[10px] font-normal">ms</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-theme-accent">
+                                        {row.frequency} <span className="text-gray-600 text-[10px] font-normal">Hz</span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </div>

@@ -14,8 +14,9 @@ import BPMCalculatorModal from './BPMCalculatorModal';
 import AcousticsCheckModal from './AcousticsCheckModal';
 import BlindTestModal from './BlindTestModal';
 import FatigueMonitor from './FatigueMonitor';
-import ReferenceTracksModal from './ReferenceTracksModal'; // Import
-import { LogoIcon, ArrowLeftIcon, HamburgerIcon, QuestionMarkCircleIcon, ChartBarIcon } from './icons'; // Import Icon
+import ReferenceTracksModal from './ReferenceTracksModal'; 
+import LufsMeterModal from './LufsMeterModal'; // Import
+import { LogoIcon, ArrowLeftIcon, HamburgerIcon, QuestionMarkCircleIcon, ChartBarIcon, SpeedometerIcon } from './icons';
 
 interface MixingViewProps {
     project: Project;
@@ -59,7 +60,8 @@ const MixingView: React.FC<MixingViewProps> = ({
   const [isBPMCalculatorOpen, setIsBPMCalculatorOpen] = useState(false);
   const [isAcousticsCheckOpen, setIsAcousticsCheckOpen] = useState(false);
   const [isBlindTestOpen, setIsBlindTestOpen] = useState(false);
-  const [isReferenceTracksOpen, setIsReferenceTracksOpen] = useState(false); // New State
+  const [isReferenceTracksOpen, setIsReferenceTracksOpen] = useState(false);
+  const [isLufsMeterOpen, setIsLufsMeterOpen] = useState(false); // New State
 
   useEffect(() => {
     if (initialStepIndex !== null) {
@@ -190,6 +192,12 @@ const MixingView: React.FC<MixingViewProps> = ({
         calibrationState={calibrationState}
         onCalibrationChange={setCalibrationState}
       />
+      <LufsMeterModal
+        isOpen={isLufsMeterOpen}
+        onClose={() => setIsLufsMeterOpen(false)}
+        calibrationState={calibrationState}
+        onCalibrationChange={setCalibrationState}
+      />
 
       <div className="container mx-auto px-4 py-8 md:py-12 flex-grow pb-28 md:pb-12"> {/* Added pb-28 for mobile footer clearance */}
         <header className="flex flex-wrap justify-between items-center mb-8 md:mb-12 relative gap-4">
@@ -269,6 +277,18 @@ const MixingView: React.FC<MixingViewProps> = ({
                                     >
                                         <ChartBarIcon className="w-6 h-6" />
                                         Caja de Referencias (Spectrum Target)
+                                    </button>
+                                </div>
+                            )}
+                            {/* Inject LUFS Meter Button for mastering steps */}
+                            {(currentStepData.id === 12 || currentStepData.id === 14) && (
+                                <div className="mt-2 w-full">
+                                    <button
+                                        onClick={() => setIsLufsMeterOpen(true)}
+                                        className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold transition-all duration-300 bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:shadow-lg hover:shadow-yellow-500/30 transform hover:-translate-y-1"
+                                    >
+                                        <SpeedometerIcon className="w-6 h-6" />
+                                        Medidor LUFS Real (EBU R128)
                                     </button>
                                 </div>
                             )}

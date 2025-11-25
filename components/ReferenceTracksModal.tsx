@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { XIcon, ChartBarIcon, PlayIcon, SpeakerWaveIcon, EyeIcon, ArrowPathIcon, StarFilledIcon, DownloadIcon, CheckCircleIcon } from './icons';
+import { XIcon, ChartBarIcon, PlayIcon, SpeakerWaveIcon, EyeIcon, ArrowPathIcon, StarFilledIcon, DownloadIcon, CheckCircleIcon, SlidersIcon, LoaderIcon } from './icons';
 import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
 import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
 import { CalibrationState } from '../types';
@@ -32,79 +31,79 @@ const genres: GenreProfile[] = [
   { 
     id: 'acapella_rap', 
     name: 'Acapella de Rap', 
-    description: 'Voz solista aislada. Pico fundamental en 250Hz, valle en 4.7kHz y roll-off agresivo en agudos.',
+    description: 'Voz solista aislada. Pico fundamental en 250Hz, valle en 4.7kHz.',
     curve: [0.65, 0.90, 0.90, 0.78, 0.62, 0.55, 0.30] 
   },
   { 
     id: 'trap_cinematic', 
     name: 'Beat Trap Cinematic', 
-    description: 'Curva oscura y profunda. Sub-graves extremos (+45dB) y caída dramática en agudos (>12kHz) para atmósfera pesada.',
+    description: 'Sub-graves extremos (+45dB) y caída dramática en agudos.',
     curve: [0.95, 0.82, 0.72, 0.60, 0.50, 0.42, 0.25] 
   },
   { 
     id: 'urban', 
     name: 'Reggaeton / Urbano', 
-    description: 'Curva precisa Top Chart. Sub-grave profundo (+39dB pico), medios claros y roll-off suave en agudos.',
+    description: 'Sub-grave profundo (+39dB pico), medios claros.',
     curve: [0.88, 0.80, 0.75, 0.62, 0.53, 0.44, 0.20] 
   },
   { 
     id: 'modern_rap', 
     name: 'Rap Moderno', 
-    description: 'Grave dominante (+41dB), medios claros para voz y agudos controlados/oscuros.',
+    description: 'Grave dominante, medios claros para voz y agudos controlados.',
     curve: [0.91, 0.85, 0.76, 0.67, 0.53, 0.44, 0.22] 
   },
   { 
     id: 'hiphop', 
     name: 'Hip Hop / Trap Moderno', 
-    description: 'Sub-graves masivos (808s) dominantes, medios levemente socavados y agudos nítidos.',
+    description: 'Sub-graves masivos (808s) dominantes, agudos nítidos.',
     curve: [0.9, 0.8, 0.5, 0.45, 0.5, 0.6, 0.6] 
   },
   { 
     id: 'pop', 
     name: 'Pop Mainstream', 
-    description: 'Curva "Sonrisa" moderna. Graves sólidos, medios claros y un brillo "Air" pulido.',
+    description: 'Curva "Sonrisa" moderna. Graves sólidos, brillo "Air" pulido.',
     curve: [0.75, 0.7, 0.55, 0.55, 0.6, 0.65, 0.6] 
   },
   { 
     id: 'edm', 
     name: 'EDM / House / Techno', 
-    description: 'Pared de sonido. Energía constante y muy comprimida en todo el espectro.',
+    description: 'Pared de sonido. Energía constante y muy comprimida.',
     curve: [0.85, 0.8, 0.65, 0.6, 0.65, 0.7, 0.65] 
   },
   { 
     id: 'rock', 
     name: 'Rock / Metal', 
-    description: 'Enfoque en medios-graves y medios-agudos (Guitarras). Menos sub-grave profundo.',
+    description: 'Enfoque en medios-graves y medios-agudos (Guitarras).',
     curve: [0.6, 0.7, 0.7, 0.75, 0.7, 0.6, 0.45] 
   },
   { 
     id: 'salsa', 
     name: 'Salsa / Merengue / Tropical', 
-    description: 'Graves percusivos (no Sub), Medios-Agudos muy prominentes (Metales, Piano).',
+    description: 'Graves percusivos, Medios-Agudos muy prominentes.',
     curve: [0.5, 0.75, 0.65, 0.7, 0.8, 0.75, 0.5] 
   },
   { 
     id: 'afrobeats', 
     name: 'Afrobeats / Dancehall', 
-    description: 'Cálido y profundo. Sub-grave suave, medios cálidos, agudos suaves.',
+    description: 'Cálido y profundo. Sub-grave suave, medios cálidos.',
     curve: [0.8, 0.75, 0.65, 0.6, 0.5, 0.45, 0.4] 
   },
   { 
     id: 'cinematic', 
     name: 'Cinemático / Trailer', 
-    description: 'Curva descendente dramática. Sub-graves tectónicos para impacto.',
+    description: 'Curva descendente dramática. Sub-graves tectónicos.',
     curve: [0.95, 0.85, 0.6, 0.5, 0.4, 0.45, 0.5] 
   },
   { 
     id: 'symphonic', 
     name: 'Orquestal / Sinfónico', 
-    description: 'Dinámica natural. Riqueza en graves-medios (Cellos/Contrabajos).',
+    description: 'Dinámica natural. Riqueza en graves-medios.',
     curve: [0.6, 0.65, 0.7, 0.6, 0.5, 0.4, 0.3] 
   },
   { 
     id: 'jazz', 
     name: 'Jazz / Acústico', 
-    description: 'Lo más natural posible. Medios orgánicos, caída natural en agudos.',
+    description: 'Lo más natural posible. Medios orgánicos.',
     curve: [0.5, 0.6, 0.65, 0.6, 0.5, 0.4, 0.3] 
   }
 ];
@@ -129,6 +128,8 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   const [isPlaying, setIsPlaying] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isCalibrationOpen, setIsCalibrationOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Playback State
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
@@ -274,6 +275,20 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
         analyserRef.current.smoothingTimeConstant = smoothing;
     }
   }, [smoothing]);
+  
+  // Function to reset file state without destroying the context
+  const handleResetFile = () => {
+      if (audioElementRef.current) {
+          audioElementRef.current.pause();
+          audioElementRef.current.currentTime = 0;
+      }
+      setIsPlaying(false);
+      isPlayingRef.current = false;
+      setFileName(null);
+      setAudioBuffer(null);
+      setAnalysis([]);
+      clearPeaks();
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
@@ -285,7 +300,10 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
           return;
       }
       
+      setIsLoading(true);
       setError(null);
+      handleResetFile();
+
       const url = URL.createObjectURL(file);
       audioElementRef.current.src = url;
       setFileName(file.name);
@@ -298,6 +316,8 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
           setDuration(decoded.duration);
       } catch(e) {
           console.error("Error decoding for waveform", e);
+      } finally {
+          setIsLoading(false);
       }
 
       if (audioContextRef.current?.state === 'suspended') {
@@ -462,8 +482,15 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
           // Clear
           ctx.clearRect(0, 0, width, height);
 
+          // Gradient Background
+          const gradient = ctx.createLinearGradient(0, 0, 0, height);
+          gradient.addColorStop(0, "rgba(20,20,20,0)");
+          gradient.addColorStop(1, "rgba(20,20,20,0.5)");
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0,0, width, height);
+
           // --- 1. Draw Grid (Logarithmic Scale) ---
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
           ctx.lineWidth = 1;
           ctx.beginPath();
           
@@ -482,15 +509,15 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
               const x = getX(freq);
               ctx.moveTo(x, 0);
               ctx.lineTo(x, height);
-              ctx.fillStyle = 'rgba(255,255,255,0.6)';
-              ctx.font = '11px "Exo 2", sans-serif';
+              ctx.fillStyle = 'rgba(255,255,255,0.4)';
+              ctx.font = '10px "Exo 2", sans-serif';
               ctx.fillText(labels[i], x + 4, height - 6);
           });
           ctx.stroke();
 
           // Draw baseline (0dB equivalent visually)
           ctx.beginPath();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
           ctx.moveTo(0, height / 2);
           ctx.lineTo(width, height / 2);
           ctx.stroke();
@@ -501,9 +528,9 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
           const curveXPositions = targetFreqs.map(f => getX(f));
           
           ctx.beginPath();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; // Target color
-          ctx.lineWidth = 3;
-          ctx.setLineDash([6, 6]);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // Target color - thinner
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 4]);
           
           const currentCurve = activeCurveRef.current;
           
@@ -554,7 +581,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                   ctx.beginPath();
                   ctx.strokeStyle = '#0ea5e9'; // Sky Blue (Theme Accent)
                   ctx.lineWidth = 2;
-                  ctx.fillStyle = 'rgba(14, 165, 233, 0.25)';
+                  ctx.fillStyle = 'rgba(14, 165, 233, 0.15)';
                   ctx.moveTo(0, height);
                   
                   for (let x = 0; x < width; x += 2) {
@@ -652,7 +679,7 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
                   ctx.strokeRect(textX, textY, textWidth, 24);
                   
                   ctx.fillStyle = '#ffffff';
-                  ctx.font = 'bold 12px monospace';
+                  ctx.font = 'bold 11px monospace';
                   ctx.fillText(text, textX + 10, textY + 16);
                   
                   // Draw small circle at cursor intersection
@@ -683,9 +710,9 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
   
   // Display Logic for Smoothing Time
   const getSmoothingLabel = (val: number) => {
-      if (val <= 0.93) return "Rápido (~1s)";
-      if (val >= 0.99) return "Lento (~6s)";
-      return "Promedio (~3s)";
+      if (val <= 0.93) return "Fast";
+      if (val >= 0.99) return "Slow";
+      return "Avg";
   };
 
 
@@ -697,189 +724,232 @@ const ReferenceTracksModal: React.FC<ReferenceTracksModalProps> = ({ isOpen, onC
         onClick={onClose}
     >
       <div
-        className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-5xl flex flex-col animate-scale-up max-h-[95vh] overflow-hidden pt-safe pb-safe"
+        className="relative bg-[#0a0a0a] backdrop-blur-xl border border-theme-border-secondary rounded-lg shadow-2xl w-full max-w-6xl flex flex-col animate-scale-up overflow-hidden max-h-[95vh] pt-safe pb-safe"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-theme-border-secondary bg-black/20">
-            <h2 className="text-xl font-bold text-theme-accent flex items-center gap-2">
-                <ChartBarIcon className="w-6 h-6" />
-                Spectrum Target (Raw)
-            </h2>
-            <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
-                <XIcon className="w-6 h-6" />
-            </button>
+        {/* --- Header & Toolbar --- */}
+        <div className="flex flex-col border-b border-theme-border-secondary/50 z-50 relative">
+            {/* Top Bar */}
+            <div className="flex justify-between items-center p-3 bg-[#111]">
+                <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-bold text-theme-accent flex items-center gap-2">
+                        <ChartBarIcon className="w-5 h-5" />
+                        <span className="hidden sm:inline">SPECTRUM TARGET</span>
+                    </h2>
+                    {/* Compact File Controls */}
+                    {!fileName ? (
+                        <label className="cursor-pointer flex items-center gap-2 px-3 py-1 rounded bg-theme-accent/10 hover:bg-theme-accent/20 text-xs text-theme-accent transition-colors border border-theme-accent/30">
+                            <DownloadIcon className="w-3 h-3" />
+                            <span>Cargar Audio</span>
+                            <input type="file" className="hidden" accept="audio/*" onChange={handleFileUpload} />
+                        </label>
+                    ) : (
+                        <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                            <span className="text-xs text-gray-300 truncate max-w-[150px]">{fileName}</span>
+                            <button onClick={() => { 
+                                setFileName(null); 
+                                setIsPlaying(false); 
+                                isPlayingRef.current = false; 
+                                audioElementRef.current?.pause(); 
+                                setAnalysis([]); 
+                                setAudioBuffer(null);
+                                clearPeaks();
+                            }} className="text-gray-500 hover:text-red-400">
+                                <XIcon className="w-3 h-3" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={clearPeaks} 
+                        className="p-2 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                        title="Reset Peaks"
+                    >
+                        <ArrowPathIcon className="w-4 h-4" />
+                    </button>
+                    <button onClick={onClose} className="p-2 rounded text-gray-400 hover:bg-white/10 hover:text-white transition">
+                        <XIcon className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+
+            {/* Sub-Toolbar */}
+            <div className="flex flex-wrap items-center gap-4 p-3 bg-[#0f0f0f] text-xs border-t border-black/50">
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-500 font-bold uppercase tracking-wider">Target:</span>
+                    <select
+                        value={selectedGenreId}
+                        onChange={(e) => setSelectedGenreId(e.target.value)}
+                        className="bg-[#1a1a1a] border border-gray-700 text-gray-300 rounded px-2 py-1 focus:border-theme-accent outline-none max-w-[180px] truncate"
+                    >
+                        {genres.map(g => (
+                            <option key={g.id} value={g.id}>
+                                {g.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="w-px h-4 bg-gray-700 mx-2 hidden sm:block"></div>
+
+                <div className="flex items-center gap-2 flex-grow">
+                    <button 
+                        onClick={() => setIsCalibrationOpen(!isCalibrationOpen)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${calibrationState.profile ? 'text-green-400 bg-green-400/10' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        <SlidersIcon className="w-3 h-3" />
+                        {calibrationState.profile ? `Cal: ${calibrationState.profile.name}` : 'Calibrar Auriculares'}
+                    </button>
+                </div>
+                
+                {/* Transport */}
+                {fileName && (
+                    <button 
+                        onClick={togglePlay}
+                        className={`px-4 py-1 rounded font-bold flex items-center gap-2 transition-all ${isPlaying ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50' : 'bg-theme-accent/20 text-theme-accent border border-theme-accent/50 hover:bg-theme-accent/30'}`}
+                    >
+                        <PlayIcon className="w-3 h-3" />
+                        {isPlaying ? 'PAUSE' : 'PLAY'}
+                    </button>
+                )}
+            </div>
+            
+            {/* Collapsible Calibration Panel */}
+            {isCalibrationOpen && (
+                <div className="p-4 bg-[#151515] border-t border-gray-800 animate-fade-in-step relative z-50">
+                    <HeadphoneCorrectionControls 
+                        calibrationState={calibrationState}
+                        onCalibrationChange={onCalibrationChange}
+                    />
+                </div>
+            )}
         </div>
 
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
-            
-            {/* Headphone Correction Module */}
-            <HeadphoneCorrectionControls 
-                calibrationState={calibrationState}
-                onCalibrationChange={onCalibrationChange}
-            />
+        {/* --- Waveform Scrubber Area (NEW) --- */}
+        <div className="bg-[#080808] border-b border-theme-border-secondary/30 h-16 relative flex items-center justify-center z-0 w-full overflow-hidden">
+            {audioBuffer ? (
+                <div className="w-full h-full opacity-80 hover:opacity-100 transition-opacity">
+                        <AudioWaveform 
+                        buffer={audioBuffer}
+                        progress={currentTime}
+                        onSeek={handleSeek}
+                        height={64}
+                        color="#1e293b"
+                        progressColor="#0ea5e9"
+                    />
+                </div>
+            ) : (
+                    <div className="text-xs text-gray-600 font-mono uppercase tracking-widest flex items-center gap-2">
+                    {isLoading ? (
+                        <>
+                            <LoaderIcon className="w-4 h-4 animate-spin" />
+                            Decoding...
+                        </>
+                    ) : (
+                        "No Audio Loaded"
+                    )}
+                </div>
+            )}
+                {error && (
+                <div className="absolute inset-0 bg-black/80 flex items-center justify-center text-red-500 text-xs font-bold">
+                    {error}
+                </div>
+            )}
+        </div>
 
-            {/* The Spectrum Canvas */}
+        {/* --- Main Dashboard Area --- */}
+        <div className="flex-grow p-4 lg:p-6 flex flex-col gap-4 bg-[#050505] overflow-y-auto custom-scrollbar z-0 relative">
+            
+            {/* 1. The Spectrum Canvas */}
             <div 
-                className="relative w-full h-48 md:h-80 bg-black rounded-lg border border-theme-border overflow-hidden shadow-inner mb-4 cursor-crosshair group"
+                className="relative w-full h-64 md:h-80 bg-[#080808] rounded-xl border border-gray-800 overflow-hidden shadow-inner cursor-crosshair group"
                 onClick={clearPeaks}
                 onMouseMove={handleCanvasMouseMove}
                 onMouseLeave={handleCanvasMouseLeave}
-                title="Click para resetear los picos"
             >
                 <canvas ref={canvasRef} width={1024} height={320} className="w-full h-full" />
                 
-                {/* Labels Overlay */}
-                <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm px-3 py-1 rounded border border-white/10 pointer-events-none">
-                    <p className="text-xs text-gray-400 uppercase tracking-wider">Target Curve</p>
-                    <p className="text-sm font-bold text-white">{selectedGenre.name}</p>
+                {/* Overlay Labels */}
+                <div className="absolute top-3 left-3 flex flex-col gap-1 pointer-events-none">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Target Curve</span>
+                    <span className="text-sm font-bold text-white bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm border border-white/5">{selectedGenre.name}</span>
                 </div>
-
-                {/* Tap to Reset Overlay (Fade in on hover when not inspecting too closely) */}
-                <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none hidden md:block">
-                    <span className="text-[10px] text-gray-500">Click para Resetear Peak Hold</span>
+                <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden md:block">
+                    <span className="text-[9px] text-gray-600 uppercase font-bold tracking-wider bg-black/80 px-2 py-1 rounded">Click to Reset Peak</span>
                 </div>
             </div>
 
-            {/* Analysis Report Banner (Diagnostic) */}
-            {analysis.length > 0 && (
-                <div className="mb-6 p-3 bg-black/40 rounded-lg border border-theme-border grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 animate-fade-in-step">
-                    {analysis.map((res, idx) => {
-                        let color = 'text-theme-success';
-                        let border = 'border-theme-success/30 bg-theme-success/10';
-                        let icon = <CheckCircleIcon className="w-4 h-4" />;
-                        
-                        if (res.status === 'warning') {
-                            color = 'text-theme-priority';
-                            border = 'border-theme-priority/30 bg-theme-priority/10';
-                            icon = res.diff > 0 ? <span className="font-bold">⬆️</span> : <span className="font-bold">⬇️</span>;
-                        } else if (res.status === 'critical') {
-                            color = 'text-theme-danger';
-                            border = 'border-theme-danger/30 bg-theme-danger/10';
-                            icon = res.diff > 0 ? <span className="font-bold text-lg">⬆️</span> : <span className="font-bold text-lg">⬇️</span>;
-                        }
+            {/* 2. The "Meter Bridge" Analysis (Horizontal) */}
+            <div className="bg-[#111] border border-gray-800 rounded-xl p-4">
+                <div className="flex justify-between items-center mb-3 px-1">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Frequency Balance Diagnostic</h3>
+                    {analysis.length === 0 && isPlaying && <span className="text-[10px] text-gray-600 animate-pulse">Analyzing...</span>}
+                </div>
+                
+                {analysis.length > 0 ? (
+                    <div className="grid grid-cols-7 gap-2">
+                        {analysis.map((res, idx) => {
+                            let colorClass = 'text-gray-400';
+                            let borderClass = 'border-gray-800 bg-[#151515]';
+                            let statusIcon = null;
 
-                        return (
-                            <div key={idx} className={`flex flex-col items-center justify-center p-2 rounded text-center border ${border} min-h-[80px]`}>
-                                <span className="text-[10px] text-theme-text-secondary uppercase font-bold">{res.band}</span>
-                                <span className="text-[9px] text-theme-text-secondary/70 mb-1">{res.range}</span>
-                                <div className={`flex items-center gap-1 ${color}`}>
-                                    {icon}
-                                    <span className="text-xs font-bold">{res.message}</span>
+                            if (res.status === 'ok') {
+                                colorClass = 'text-theme-success';
+                                borderClass = 'border-theme-success/20 bg-theme-success/5';
+                                statusIcon = <CheckCircleIcon className="w-3 h-3" />;
+                            } else if (res.status === 'warning') {
+                                colorClass = 'text-yellow-500';
+                                borderClass = 'border-yellow-500/20 bg-yellow-500/5';
+                                statusIcon = <span className="text-[10px] font-bold">{res.diff > 0 ? 'HIGH' : 'LOW'}</span>;
+                            } else if (res.status === 'critical') {
+                                colorClass = 'text-theme-danger';
+                                borderClass = 'border-theme-danger/20 bg-theme-danger/5';
+                                statusIcon = <span className="text-[10px] font-bold">{res.diff > 0 ? 'TOO LOUD' : 'TOO QUIET'}</span>;
+                            }
+
+                            return (
+                                <div key={idx} className={`flex flex-col items-center justify-center p-2 rounded border ${borderClass} min-h-[60px]`}>
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">{res.band}</span>
+                                    <div className={`flex flex-col items-center mt-1 ${colorClass}`}>
+                                        {statusIcon}
+                                        {res.status !== 'ok' && <span className="text-[9px] font-mono mt-0.5">{res.diff > 0 ? '+' : ''}{Math.round(res.diff * 100)}%</span>}
+                                    </div>
                                 </div>
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
-
-            {/* Controls: Genre & File */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Genre Selector */}
-                <div className="md:col-span-1 flex flex-col gap-2">
-                    <label className="text-xs font-bold text-theme-accent-secondary uppercase">1. Selecciona Género (Target)</label>
-                    <div className="flex flex-col gap-1 max-h-64 overflow-y-auto pr-2 custom-scrollbar bg-black/20 p-2 rounded-lg border border-theme-border">
-                        {genres.map(g => (
-                            <button
-                                key={g.id}
-                                onClick={() => setSelectedGenreId(g.id)}
-                                className={`text-left px-3 py-2 rounded-md text-sm transition-all border flex justify-between items-center ${selectedGenreId === g.id ? 'bg-theme-accent/20 border-theme-accent text-white font-semibold' : 'border-transparent hover:bg-white/5 text-theme-text-secondary'}`}
-                            >
-                                <span className="flex items-center gap-2">
-                                    {g.name}
-                                    {(g.id === 'trap_cinematic' || g.id === 'urban' || g.id === 'modern_rap' || g.id === 'acapella_rap') && <StarFilledIcon className="w-3 h-3 text-theme-priority" />}
-                                </span>
-                            </button>
-                        ))}
+                            )
+                        })}
                     </div>
+                ) : (
+                    <div className="h-[60px] flex items-center justify-center border border-dashed border-gray-800 rounded text-gray-600 text-xs">
+                        Waiting for audio signal...
+                    </div>
+                )}
+            </div>
+
+            {/* 3. Footer Controls (Compact) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-2">
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase w-16">Visual Gain</span>
+                    <input 
+                        type="range" min="0.5" max="1.5" step="0.01"
+                        value={visualGain}
+                        onChange={(e) => setVisualGain(Number(e.target.value))}
+                        className="flex-grow h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-theme-accent"
+                    />
                 </div>
-
-                {/* Player & Viz Controls */}
-                <div className="md:col-span-2 flex flex-col gap-4">
-                     <label className="text-xs font-bold text-theme-accent-secondary uppercase">2. Carga tu Mezcla y Ajusta</label>
-                     
-                     {!fileName ? (
-                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer bg-black/20 hover:bg-white/5 transition-all group relative overflow-hidden">
-                            <div className="absolute inset-0 bg-theme-accent/5 group-hover:bg-theme-accent/10 transition-colors"></div>
-                            <div className="flex flex-col items-center justify-center relative z-10">
-                                <DownloadIcon className="w-10 h-10 text-theme-accent mb-2 animate-bounce" />
-                                <p className="text-base text-theme-text font-bold">Arrastra o Click para cargar Audio</p>
-                                <p className="text-xs text-theme-text-secondary mt-1">Soporta MP3/WAV (Max 50MB)</p>
-                            </div>
-                            <input type="file" className="hidden" accept="audio/*" onChange={handleFileUpload} />
-                        </label>
-                     ) : (
-                        <div className="flex flex-col gap-2 bg-black/30 p-4 rounded-lg border border-theme-border">
-                             <div className="flex items-center gap-3">
-                                 <button 
-                                    onClick={togglePlay}
-                                    className="w-12 h-12 rounded-full bg-theme-accent text-white flex items-center justify-center hover:scale-105 transition-transform shadow-lg shadow-theme-accent/20"
-                                 >
-                                    {isPlaying ? <div className="flex gap-1"><div className="w-1.5 h-4 bg-white"></div><div className="w-1.5 h-4 bg-white"></div></div> : <PlayIcon className="w-6 h-6 ml-0.5" />}
-                                 </button>
-                                 <div className="flex-grow truncate">
-                                     <div className="flex justify-between items-end mb-1">
-                                        <p className="text-base font-bold truncate text-theme-text">{fileName}</p>
-                                        <p className="text-xs font-mono text-theme-text-secondary">{formatTime(currentTime)} / {formatTime(duration)}</p>
-                                     </div>
-                                     
-                                     {/* Waveform Component Integration */}
-                                     <div className="h-12 bg-black/50 rounded border border-theme-border overflow-hidden">
-                                         {audioBuffer && (
-                                             <AudioWaveform 
-                                                buffer={audioBuffer}
-                                                progress={currentTime}
-                                                onSeek={handleSeek}
-                                                height={48}
-                                                color="#334155"
-                                                progressColor="#0ea5e9"
-                                             />
-                                         )}
-                                     </div>
-                                 </div>
-                             </div>
-                             <div className="flex justify-end">
-                                <button onClick={() => { setFileName(null); setIsPlaying(false); isPlayingRef.current = false; audioElementRef.current?.pause(); setAnalysis([]); }} className="text-xs text-red-400 hover:text-red-300 underline">Cambiar Archivo</button>
-                             </div>
-                        </div>
-                     )}
-                     {error && <p className="text-red-500 text-sm text-center bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
-
-                     {/* Sliders Grid */}
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-black/20 p-3 rounded-lg border border-theme-border/50">
-                         {/* Visual Gain Slider */}
-                         <div>
-                            <div className="flex justify-between text-xs text-theme-text-secondary mb-2">
-                                <span>Input Gain (Visual)</span>
-                                <span className="text-theme-accent font-mono">{Math.round(visualGain * 100)}%</span>
-                            </div>
-                            <input 
-                                type="range" min="0.7" max="1.1" step="0.01"
-                                value={visualGain}
-                                onChange={(e) => setVisualGain(Number(e.target.value))}
-                                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-theme-accent"
-                            />
-                         </div>
-                         
-                         {/* Smoothing Slider */}
-                         <div>
-                            <div className="flex justify-between text-xs text-theme-text-secondary mb-2">
-                                <span>Velocidad (Integración)</span>
-                                <span className={`font-mono ${smoothing > 0.95 ? 'text-theme-success' : 'text-theme-priority'}`}>
-                                    {getSmoothingLabel(smoothing)}
-                                </span>
-                            </div>
-                            <input 
-                                type="range" min="0.92" max="0.999" step="0.001"
-                                value={smoothing}
-                                onChange={(e) => setSmoothing(Number(e.target.value))}
-                                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-theme-success"
-                                title="Izquierda: Rápido (1s) | Derecha: Lento (6s)"
-                            />
-                         </div>
-                     </div>
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase w-16">Smoothing</span>
+                    <input 
+                        type="range" min="0.90" max="0.99" step="0.001"
+                        value={smoothing}
+                        onChange={(e) => setSmoothing(Number(e.target.value))}
+                        className="flex-grow h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-theme-success"
+                    />
+                    <span className="text-[9px] font-mono text-gray-400 w-8 text-right">{getSmoothingLabel(smoothing)}</span>
                 </div>
             </div>
+
         </div>
       </div>
     </div>

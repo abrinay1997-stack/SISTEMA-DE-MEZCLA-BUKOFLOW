@@ -1,9 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { XIcon, ScaleIcon, PlayIcon, TrashIcon, CheckBadgeIcon, SlidersIcon, MagicWandIcon, LoaderIcon } from './icons';
+import { XIcon, ScaleIcon, PlayIcon, TrashIcon, CheckBadgeIcon, SlidersIcon, MagicWandIcon, LoaderIcon, ArrowPathIcon, DownloadIcon } from './icons';
 import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
 import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
 import { CalibrationState } from '../types';
+import AudioWaveform from './AudioWaveform';
 
 interface BlindTestModalProps {
   isOpen: boolean;
@@ -19,6 +19,12 @@ type FileData = {
 
 type Channel = 'A' | 'B';
 type BlindChannel = 'X' | 'Y';
+
+const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
 
 const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibrationState, onCalibrationChange }) => {
     // --- State ---
@@ -41,6 +47,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
     const [isLoading, setIsLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [isCalibrationOpen, setIsCalibrationOpen] = useState(false);
 
     // --- Audio Context & Refs ---
     const audioCtxRef = useRef<AudioContext | null>(null);
@@ -136,7 +143,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
         }
 
         setIsLoading(true);
-        setLoadingMessage('Decodificando audio...');
+        setLoadingMessage(`Cargando Canal ${channel}...`);
         setError(null);
 
         try {
@@ -150,7 +157,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
             setDuration(prev => Math.max(prev, audioBuffer.duration));
         } catch (err) {
             console.error(err);
-            setError(`Error al cargar el archivo para el canal ${channel}. Asegúrate de que sea un audio válido.`);
+            setError(`Error al cargar el archivo para el canal ${channel}.`);
         } finally {
             setIsLoading(false);
             setLoadingMessage('');
@@ -228,31 +235,17 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
     };
 
     const updateTime = () => {
-        // Don't update time while dragging to avoid fighting the user
         if (!isPlaying || !audioCtxRef.current || isDragging) return;
-        
         const elapsed = audioCtxRef.current.currentTime - startTimeRef.current;
         setCurrentTime(elapsed % duration);
         animationFrameRef.current = requestAnimationFrame(updateTime);
     };
 
-    // --- Seek Handlers ---
-    const handleSeekStart = () => {
-        setIsDragging(true);
-    };
-
-    const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setCurrentTime(Number(e.target.value));
-    };
-
-    const handleSeekEnd = (e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) => {
-        const newTime = Number((e.target as HTMLInputElement).value);
-        pauseTimeRef.current = newTime;
-        setIsDragging(false);
-        
+    const handleSeek = (time: number) => {
+        pauseTimeRef.current = time;
+        setCurrentTime(time);
         if (isPlaying) {
-            // Restart audio engine at new position
-            stopAudio(false); // false = don't overwrite pauseTimeRef with old time
+            stopAudio(false); 
             playAudio();
         }
     };
@@ -262,7 +255,7 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
         if (!audioCtxRef.current || !gainNodeARef.current || !gainNodeBRef.current) return;
         
         const now = audioCtxRef.current.currentTime;
-        const rampTime = 0.05; // 50ms crossfade for click-free switching
+        const rampTime = 0.05; // 50ms crossfade
 
         let targetGainA = 0;
         let targetGainB = 0;
@@ -274,7 +267,6 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
         } else {
             // In blind/revealed mode, use mapping
             const activeRealChannel = mapping[activeBlindChannel]; // 'A' or 'B'
-            
             if (activeRealChannel === 'A') targetGainA = gainA;
             else targetGainB = gainB;
         }
@@ -283,7 +275,6 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
         gainNodeBRef.current.gain.setTargetAtTime(targetGainB, now, rampTime);
     };
 
-    // Effect to update gains whenever relevant state changes
     useEffect(() => {
         if (isPlaying) {
             updateGains();
@@ -291,82 +282,101 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
     }, [activeBlindChannel, gainA, gainB, stage, isPlaying]);
 
 
-    // --- Auto-Match Logic ---
-    const calculateRMS = (buffer: AudioBuffer): number => {
-        let sumSquares = 0;
-        const numChannels = buffer.numberOfChannels;
+    // --- Auto-Match Logic (LUFS/K-Weighted) ---
+    const calculateIntegratedLUFS = async (buffer: AudioBuffer): Promise<number> => {
+        const OfflineCtx = window.OfflineAudioContext || (window as any).webkitOfflineAudioContext;
+        const offlineCtx = new OfflineCtx(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+        const source = offlineCtx.createBufferSource();
+        source.buffer = buffer;
+
+        const filter1 = offlineCtx.createBiquadFilter();
+        filter1.type = 'highshelf';
+        filter1.frequency.value = 1500;
+        filter1.gain.value = 4.0;
+        filter1.Q.value = 1.0; 
+
+        const filter2 = offlineCtx.createBiquadFilter();
+        filter2.type = 'highpass';
+        filter2.frequency.value = 38; 
+        filter2.Q.value = 1.0;
+
+        source.connect(filter1);
+        filter1.connect(filter2);
+        filter2.connect(offlineCtx.destination);
+        source.start(0);
+
+        const renderedBuffer = await offlineCtx.startRendering();
+        let totalSum = 0;
+        let totalSamples = 0;
+        const channels = renderedBuffer.numberOfChannels;
         
-        // Analyze first 45 seconds to be reasonably fast but accurate
-        const maxSamples = Math.min(buffer.length, buffer.sampleRate * 45);
-        
-        // Skip samples for performance (downsampling)
-        const step = 32; 
-        
-        for (let c = 0; c < numChannels; c++) {
-            const data = buffer.getChannelData(c);
-            for (let i = 0; i < maxSamples; i += step) {
-                sumSquares += data[i] * data[i];
+        for (let c = 0; c < channels; c++) {
+            const data = renderedBuffer.getChannelData(c);
+            for (let i = 0; i < data.length; i++) {
+                const square = data[i] * data[i];
+                if (square > 0.0000001) { 
+                    totalSum += square;
+                    totalSamples++;
+                }
             }
         }
-        
-        const totalSamplesProcessed = (maxSamples / step) * numChannels;
-        return Math.sqrt(sumSquares / totalSamplesProcessed);
+
+        if (totalSamples === 0) return -100;
+        const meanSquare = totalSum / totalSamples;
+        return -0.691 + 10 * Math.log10(meanSquare + 1e-9);
     };
 
-    const handleAutoMatch = () => {
+    const handleAutoMatch = async () => {
         if (!fileA.buffer || !fileB.buffer) return;
         
         setIsLoading(true);
-        setLoadingMessage('Calculando RMS...');
+        setLoadingMessage('Analizando LUFS (K-Weighted)...');
+        setError(null);
         
-        // Use setTimeout to allow UI to render loading state
-        setTimeout(() => {
-            try {
-                const rmsA = calculateRMS(fileA.buffer);
-                const rmsB = calculateRMS(fileB.buffer);
-                
-                if (rmsA === 0 || rmsB === 0) {
-                    setIsLoading(false);
-                    return; 
-                }
-                
-                // Match the louder track down to the quieter track to avoid clipping
-                if (rmsA > rmsB) {
-                    const ratio = rmsB / rmsA;
-                    setGainA(Number(ratio.toFixed(3)));
-                    setGainB(1.0);
-                } else {
-                    const ratio = rmsA / rmsB;
-                    setGainA(1.0);
-                    setGainB(Number(ratio.toFixed(3)));
-                }
-            } catch (e) {
-                console.error(e);
-                setError("Error al analizar el volumen.");
-            } finally {
+        try {
+            const [lufsA, lufsB] = await Promise.all([
+                calculateIntegratedLUFS(fileA.buffer),
+                calculateIntegratedLUFS(fileB.buffer)
+            ]);
+            
+            if (lufsA <= -99 || lufsB <= -99) {
+                setError("Audio demasiado silencioso para analizar.");
                 setIsLoading(false);
-                setLoadingMessage('');
+                return;
             }
-        }, 100);
+            
+            const targetLUFS = Math.min(lufsA, lufsB);
+            const deltaA = targetLUFS - lufsA;
+            const deltaB = targetLUFS - lufsB;
+            
+            const newGainA = Math.pow(10, deltaA / 20);
+            const newGainB = Math.pow(10, deltaB / 20);
+            
+            setGainA(Number(newGainA.toFixed(3)));
+            setGainB(Number(newGainB.toFixed(3)));
+            
+        } catch (e) {
+            console.error(e);
+            setError("Error al analizar la sonoridad.");
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('');
+        }
     };
 
 
     // --- Workflow Actions ---
-    
     const startBlindTest = () => {
         if (!fileA.buffer || !fileB.buffer) return;
-        
-        // Randomize mapping
         const isRandom = Math.random() > 0.5;
         setMapping(isRandom ? { X: 'A', Y: 'B' } : { X: 'B', Y: 'A' });
-        
         setStage('testing');
-        setActiveBlindChannel('X'); // Reset to X
+        setActiveBlindChannel('X');
+        // Ensure play starts if not playing
+        if (!isPlaying) playAudio();
     };
 
-    const reveal = () => {
-        setStage('revealed');
-    };
+    const reveal = () => setStage('revealed');
 
     const handleReset = () => {
         stopAudio();
@@ -380,13 +390,16 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
         setCurrentTime(0);
     }
 
-
     if (!isOpen) return null;
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    // Helper to get currently active buffer for visualizer
+    const getActiveBuffer = () => {
+        if (stage === 'setup') {
+            return activeBlindChannel === 'X' ? fileA.buffer : fileB.buffer;
+        }
+        // In blind mode
+        const realChannel = mapping[activeBlindChannel];
+        return realChannel === 'A' ? fileA.buffer : fileB.buffer;
     };
 
     return (
@@ -395,280 +408,303 @@ const BlindTestModal: React.FC<BlindTestModalProps> = ({ isOpen, onClose, calibr
             onClick={onClose}
         >
              <div
-                className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border-secondary rounded-lg shadow-accent-lg w-full max-w-3xl flex flex-col animate-scale-up max-h-[95vh] overflow-hidden pt-safe pb-safe"
+                className="relative bg-[#0a0a0a] backdrop-blur-xl border border-theme-border-secondary rounded-lg shadow-2xl w-full max-w-6xl flex flex-col animate-scale-up overflow-hidden max-h-[95vh] pt-safe pb-safe"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
-                <div className="flex justify-between items-center p-4 border-b border-theme-border-secondary bg-black/20">
-                    <h2 className="text-xl font-bold text-theme-accent flex items-center gap-2">
-                        <ScaleIcon className="w-6 h-6" />
-                        Comparador A/B Ciego
-                    </h2>
-                    <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
-                        <XIcon className="w-6 h-6" />
-                    </button>
-                </div>
+                {/* --- Header & Toolbar --- */}
+                <div className="flex flex-col border-b border-theme-border-secondary/50 z-20 relative">
+                    <div className="flex justify-between items-center p-3 bg-[#111]">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-lg font-bold text-theme-accent flex items-center gap-2">
+                                <ScaleIcon className="w-5 h-5" />
+                                <span className="hidden sm:inline">BLIND A/B COMPARATOR</span>
+                            </h2>
+                        </div>
+                        
+                        {/* Toolbar Controls */}
+                        <div className="flex items-center gap-3">
+                             <div className="hidden md:flex items-center gap-3 bg-black/40 px-3 py-1 rounded-full border border-white/5 text-xs font-mono text-gray-400">
+                                {formatTime(currentTime)} / {formatTime(duration)}
+                            </div>
 
-                <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
+                            <div className="w-px h-4 bg-gray-700 mx-1 hidden sm:block"></div>
+
+                            <button 
+                                onClick={() => setIsCalibrationOpen(!isCalibrationOpen)}
+                                className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${calibrationState.profile ? 'text-green-400 bg-green-400/10' : 'text-gray-500 hover:text-gray-300'}`}
+                                title="Calibración de Auriculares"
+                            >
+                                <SlidersIcon className="w-4 h-4" />
+                            </button>
+
+                            <button 
+                                onClick={handleReset} 
+                                className="p-2 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                                title="Reset All"
+                            >
+                                <ArrowPathIcon className="w-4 h-4" />
+                            </button>
+                            <button onClick={onClose} className="p-2 rounded text-gray-400 hover:bg-white/10 hover:text-white transition">
+                                <XIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
                     
-                    {/* Correction Module */}
-                    <HeadphoneCorrectionControls 
-                        calibrationState={calibrationState}
-                        onCalibrationChange={onCalibrationChange}
-                    />
-
-                    {/* Loading Indicator */}
-                    {isLoading && (
-                        <div className="text-center text-theme-accent p-6 bg-black/40 rounded-lg mb-4 border border-theme-accent/20 flex flex-col items-center">
-                            <LoaderIcon className="w-8 h-8 mb-2 text-theme-accent" />
-                            <p className="font-semibold">{loadingMessage}</p>
+                    {/* Collapsible Calibration Panel */}
+                    {isCalibrationOpen && (
+                        <div className="p-4 bg-[#151515] border-t border-gray-800 animate-fade-in-step relative z-30">
+                            <HeadphoneCorrectionControls 
+                                calibrationState={calibrationState}
+                                onCalibrationChange={onCalibrationChange}
+                            />
                         </div>
                     )}
+                </div>
+
+                {/* --- Main Content Area --- */}
+                <div className="flex-grow p-4 lg:p-6 flex flex-col gap-6 bg-[#050505] overflow-y-auto custom-scrollbar z-0 relative">
                     
-                    {error && <div className="text-center text-red-500 bg-red-500/10 p-2 rounded mb-4 text-sm border border-red-500/20">{error}</div>}
+                    {isLoading && (
+                        <div className="absolute inset-0 z-50 bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm">
+                            <LoaderIcon className="w-10 h-10 text-theme-accent animate-spin mb-2" />
+                            <p className="text-theme-text font-bold animate-pulse">{loadingMessage}</p>
+                        </div>
+                    )}
 
-                    {/* --- STAGE: SETUP --- */}
+                    {error && <div className="w-full text-center text-red-500 bg-red-500/10 p-2 rounded border border-red-500/20">{error}</div>}
+
+                    {/* --- STAGE: SETUP (The Patchbay) --- */}
                     {stage === 'setup' && (
-                        <div className="space-y-8 animate-fade-in-step">
-                             <p className="text-theme-text-secondary text-sm text-center">
-                                Carga dos archivos para comparar. Usa el botón mágico para igualar volúmenes automáticamente (LUFS/RMS).
-                            </p>
+                        <div className="flex flex-col gap-6 h-full animate-fade-in-step">
+                            
+                            {/* Dual Channel Strip */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
+                                {/* Channel A */}
+                                <div className={`relative rounded-xl border-2 p-6 flex flex-col gap-4 transition-all ${activeBlindChannel === 'X' ? 'border-cyan-500/50 bg-cyan-900/10' : 'border-gray-800 bg-[#111]'}`}>
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="text-xl font-bold text-cyan-400">TRACK A</h3>
+                                        {fileA.buffer && <button onClick={() => setFileA({name:'', buffer:null})} className="text-gray-500 hover:text-red-500"><TrashIcon className="w-4 h-4"/></button>}
+                                    </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* File A Input */}
-                                <div className={`p-4 rounded-lg border ${activeBlindChannel === 'X' && isPlaying ? 'border-theme-accent bg-theme-accent/5' : 'border-theme-border bg-black/20'}`}>
-                                    <h3 className="font-bold text-theme-accent mb-2 flex justify-between">
-                                        Archivo A
-                                        {fileA.buffer && <button onClick={() => setFileA({name:'', buffer:null})}><TrashIcon className="w-4 h-4 text-gray-500 hover:text-red-500"/></button>}
-                                    </h3>
                                     {!fileA.buffer ? (
-                                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                                            <span className="text-xs text-theme-text-secondary text-center">Click para cargar <br/>(Max 50MB)</span>
+                                        <label className="flex-grow flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:bg-white/5 hover:border-cyan-500/50 transition-all group">
+                                            <DownloadIcon className="w-8 h-8 text-gray-600 group-hover:text-cyan-400 mb-2" />
+                                            <span className="text-xs text-gray-500 font-bold">CARGAR ARCHIVO A</span>
                                             <input type="file" className="hidden" accept="audio/*" onChange={(e) => loadFile(e, 'A')} />
                                         </label>
                                     ) : (
-                                        <div className="space-y-3">
-                                            <p className="text-sm truncate font-mono">{fileA.name}</p>
-                                            <div className="flex items-center gap-2">
-                                                <SlidersIcon className="w-4 h-4 text-theme-text-secondary" />
+                                        <div className="flex-grow flex flex-col justify-between">
+                                            <div className="bg-black/40 p-3 rounded border border-white/5 mb-4">
+                                                <p className="text-sm text-gray-300 truncate font-mono">{fileA.name}</p>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between text-xs font-bold text-gray-500 uppercase">
+                                                    <span>Gain</span>
+                                                    <span className="text-cyan-400">{(gainA * 100).toFixed(0)}%</span>
+                                                </div>
                                                 <input 
                                                     type="range" min="0" max="1.5" step="0.01" 
                                                     value={gainA} 
                                                     onChange={(e) => setGainA(Number(e.target.value))}
-                                                    className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-theme-accent"
+                                                    className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
                                                 />
                                             </div>
-                                            <p className="text-xs text-right text-theme-text-secondary">{Math.round(gainA * 100)}%</p>
                                             <button 
                                                 onClick={() => { setActiveBlindChannel('X'); if(!isPlaying) togglePlay(); }}
-                                                className={`w-full py-1 text-xs rounded border ${activeBlindChannel === 'X' ? 'bg-theme-accent text-white border-theme-accent' : 'border-theme-border text-theme-text-secondary'}`}
+                                                className={`mt-6 w-full py-3 rounded font-bold flex items-center justify-center gap-2 transition-all ${activeBlindChannel === 'X' && isPlaying ? 'bg-cyan-500 text-black animate-pulse' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
                                             >
-                                                {isPlaying && activeBlindChannel === 'X' ? 'Escuchando...' : 'Escuchar A'}
+                                                <PlayIcon className="w-4 h-4" />
+                                                {activeBlindChannel === 'X' && isPlaying ? 'REPRODUCIENDO' : 'ESCUCHAR PREVIO'}
                                             </button>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* File B Input */}
-                                <div className={`p-4 rounded-lg border ${activeBlindChannel === 'Y' && isPlaying ? 'border-theme-accent-secondary bg-theme-accent-secondary/5' : 'border-theme-border bg-black/20'}`}>
-                                    <h3 className="font-bold text-theme-accent-secondary mb-2 flex justify-between">
-                                        Archivo B
-                                        {fileB.buffer && <button onClick={() => setFileB({name:'', buffer:null})}><TrashIcon className="w-4 h-4 text-gray-500 hover:text-red-500"/></button>}
-                                    </h3>
+                                {/* Channel B */}
+                                <div className={`relative rounded-xl border-2 p-6 flex flex-col gap-4 transition-all ${activeBlindChannel === 'Y' ? 'border-orange-500/50 bg-orange-900/10' : 'border-gray-800 bg-[#111]'}`}>
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="text-xl font-bold text-orange-400">TRACK B</h3>
+                                        {fileB.buffer && <button onClick={() => setFileB({name:'', buffer:null})} className="text-gray-500 hover:text-red-500"><TrashIcon className="w-4 h-4"/></button>}
+                                    </div>
+
                                     {!fileB.buffer ? (
-                                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                                            <span className="text-xs text-theme-text-secondary text-center">Click para cargar <br/>(Max 50MB)</span>
+                                        <label className="flex-grow flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:bg-white/5 hover:border-orange-500/50 transition-all group">
+                                            <DownloadIcon className="w-8 h-8 text-gray-600 group-hover:text-orange-400 mb-2" />
+                                            <span className="text-xs text-gray-500 font-bold">CARGAR ARCHIVO B</span>
                                             <input type="file" className="hidden" accept="audio/*" onChange={(e) => loadFile(e, 'B')} />
                                         </label>
                                     ) : (
-                                        <div className="space-y-3">
-                                            <p className="text-sm truncate font-mono">{fileB.name}</p>
-                                            <div className="flex items-center gap-2">
-                                                <SlidersIcon className="w-4 h-4 text-theme-text-secondary" />
+                                        <div className="flex-grow flex flex-col justify-between">
+                                            <div className="bg-black/40 p-3 rounded border border-white/5 mb-4">
+                                                <p className="text-sm text-gray-300 truncate font-mono">{fileB.name}</p>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between text-xs font-bold text-gray-500 uppercase">
+                                                    <span>Gain</span>
+                                                    <span className="text-orange-400">{(gainB * 100).toFixed(0)}%</span>
+                                                </div>
                                                 <input 
                                                     type="range" min="0" max="1.5" step="0.01" 
                                                     value={gainB} 
                                                     onChange={(e) => setGainB(Number(e.target.value))}
-                                                    className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-theme-accent-secondary"
+                                                    className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
                                                 />
                                             </div>
-                                            <p className="text-xs text-right text-theme-text-secondary">{Math.round(gainB * 100)}%</p>
                                             <button 
                                                 onClick={() => { setActiveBlindChannel('Y'); if(!isPlaying) togglePlay(); }}
-                                                className={`w-full py-1 text-xs rounded border ${activeBlindChannel === 'Y' ? 'bg-theme-accent-secondary text-white border-theme-accent-secondary' : 'border-theme-border text-theme-text-secondary'}`}
+                                                className={`mt-6 w-full py-3 rounded font-bold flex items-center justify-center gap-2 transition-all ${activeBlindChannel === 'Y' && isPlaying ? 'bg-orange-500 text-black animate-pulse' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
                                             >
-                                                 {isPlaying && activeBlindChannel === 'Y' ? 'Escuchando...' : 'Escuchar B'}
+                                                <PlayIcon className="w-4 h-4" />
+                                                {activeBlindChannel === 'Y' && isPlaying ? 'REPRODUCIENDO' : 'ESCUCHAR PREVIO'}
                                             </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex justify-center">
+                            {/* Center Controls */}
+                            <div className="flex flex-col items-center gap-4 p-4 bg-[#111] border border-gray-800 rounded-xl">
                                 <button
                                     onClick={handleAutoMatch}
                                     disabled={!fileA.buffer || !fileB.buffer || isLoading}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-lg hover:shadow-purple-500/30 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
                                 >
-                                    <MagicWandIcon className="w-4 h-4" />
-                                    Auto-Match Nivel
+                                    <MagicWandIcon className="w-5 h-5" />
+                                    AUTO LUFS MATCH
+                                </button>
+                                <p className="text-xs text-gray-500">Iguala la sonoridad percibida (K-Weighted) automáticamente</p>
+                                
+                                <div className="w-full h-px bg-gray-800 my-2"></div>
+                                
+                                <button 
+                                    onClick={startBlindTest}
+                                    disabled={!fileA.buffer || !fileB.buffer}
+                                    className="w-full max-w-md py-4 bg-theme-accent text-white font-bold text-lg tracking-widest rounded-lg shadow-[0_0_20px_rgba(var(--theme-accent-rgb),0.4)] hover:bg-white hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    INICIAR TEST CIEGO
                                 </button>
                             </div>
-
-                             {/* Player Controls (Visible for setup too) */}
-                            {(fileA.buffer || fileB.buffer) && (
-                                <div className="bg-black/40 p-3 rounded-lg flex items-center gap-3">
-                                    <button 
-                                        onClick={togglePlay}
-                                        className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white text-black rounded-full hover:scale-105 transition-transform"
-                                    >
-                                        {isPlaying ? <div className="flex gap-1"><div className="w-1 h-3 bg-black"></div><div className="w-1 h-3 bg-black"></div></div> : <PlayIcon className="w-5 h-5 ml-0.5" />}
-                                    </button>
-                                    <span className="text-xs font-mono text-theme-text-secondary w-10">{formatTime(currentTime)}</span>
-                                    <input 
-                                        type="range" 
-                                        min="0" max={duration || 1} 
-                                        value={currentTime} 
-                                        onChange={handleSeekChange}
-                                        onMouseDown={handleSeekStart}
-                                        onMouseUp={handleSeekEnd}
-                                        onTouchStart={handleSeekStart}
-                                        onTouchEnd={handleSeekEnd}
-                                        className="flex-grow h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-white"
-                                    />
-                                    <span className="text-xs font-mono text-theme-text-secondary w-10">{formatTime(duration)}</span>
-                                </div>
-                            )}
-
-                            <button 
-                                onClick={startBlindTest}
-                                disabled={!fileA.buffer || !fileB.buffer}
-                                className="w-full py-4 bg-gradient-to-r from-theme-accent to-theme-accent-secondary text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-accent/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                            >
-                                Iniciar Test Ciego
-                            </button>
                         </div>
                     )}
 
-                    {/* --- STAGE: TESTING / REVEALED --- */}
+                    {/* --- STAGE: TESTING / REVEALED (The Console) --- */}
                     {(stage === 'testing' || stage === 'revealed') && (
-                        <div className="space-y-6 animate-fade-in-step flex flex-col h-full">
-                             {/* Info Bar */}
-                             <div className="flex justify-between items-center text-sm text-theme-text-secondary bg-black/20 px-4 py-2 rounded-full">
-                                <span>{stage === 'testing' ? '🎧 Modo Ciego Activado' : '🔓 Resultados Revelados'}</span>
-                                <button onClick={handleReset} className="hover:text-red-400 underline">Salir / Reiniciar</button>
-                             </div>
+                        <div className="flex flex-col gap-6 h-full animate-fade-in-step">
+                            
+                            {/* 1. The Monitor Screen */}
+                            <div className="relative w-full bg-[#080808] rounded-xl border border-gray-800 overflow-hidden shadow-inner min-h-[200px] flex flex-col justify-center items-center group">
+                                <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+                                    <div className={`w-3 h-3 rounded-full ${isPlaying ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></div>
+                                    <span className="text-xs font-mono text-gray-400">{isPlaying ? 'LIVE' : 'PAUSED'}</span>
+                                </div>
+                                
+                                {stage === 'revealed' && (
+                                    <div className="absolute top-4 right-4 z-10 bg-theme-success/20 border border-theme-success text-theme-success px-3 py-1 rounded font-bold text-xs animate-pop-in">
+                                        RESULTADOS REVELADOS
+                                    </div>
+                                )}
 
-                             {/* Switching Controls */}
-                             <div className="grid grid-cols-2 gap-4 flex-grow">
+                                <div className="w-full h-full opacity-80">
+                                    <AudioWaveform 
+                                        buffer={getActiveBuffer()}
+                                        progress={currentTime}
+                                        onSeek={handleSeek}
+                                        height={200}
+                                        color="#1e293b"
+                                        progressColor="#38bdf8" // Neutral Blue for blind test
+                                    />
+                                </div>
+                            </div>
+
+                            {/* 2. The Control Deck (Pads) */}
+                            <div className="grid grid-cols-2 gap-4 md:gap-8 flex-grow">
+                                {/* Pad X */}
                                 <button
                                     onClick={() => { setActiveBlindChannel('X'); if(!isPlaying) togglePlay(); }}
-                                    className={`relative group h-48 md:h-64 rounded-2xl border-4 transition-all duration-200 flex flex-col items-center justify-center gap-4
+                                    className={`
+                                        relative rounded-2xl border-4 transition-all duration-100 active:scale-95 flex flex-col items-center justify-center gap-4 group
                                         ${activeBlindChannel === 'X' 
-                                            ? 'border-cyan-400 bg-cyan-400/10 shadow-[0_0_30px_rgba(34,211,238,0.2)]' 
-                                            : 'border-gray-700 bg-black/30 hover:border-gray-500'
-                                        }`}
+                                            ? 'border-cyan-500 bg-cyan-500/20 shadow-[0_0_40px_rgba(6,182,212,0.3)]' 
+                                            : 'border-gray-800 bg-[#111] hover:border-gray-600'
+                                        }
+                                    `}
                                 >
-                                    <div className="text-6xl font-bold text-cyan-400">X</div>
-                                    {activeBlindChannel === 'X' && isPlaying && <div className="absolute bottom-4 text-cyan-400 text-sm font-bold animate-pulse">REPRODUCIENDO</div>}
+                                    <span className={`text-6xl font-black ${activeBlindChannel === 'X' ? 'text-cyan-400' : 'text-gray-700 group-hover:text-gray-500'}`}>X</span>
+                                    {activeBlindChannel === 'X' && <span className="text-xs font-bold text-cyan-400 tracking-widest bg-black/50 px-3 py-1 rounded">ACTIVE</span>}
                                     
-                                    {/* Reveal Info */}
                                     {stage === 'revealed' && (
-                                        <div className="absolute inset-0 bg-black/80 rounded-xl flex flex-col items-center justify-center p-4 text-center animate-pop-in">
-                                            <p className="text-gray-400 text-sm uppercase tracking-widest mb-2">Era el archivo</p>
-                                            <p className="text-xl font-bold text-white break-all">{mapping.X === 'A' ? fileA.name : fileB.name}</p>
-                                            <div className="mt-2 px-3 py-1 rounded-full bg-white/10 text-xs text-gray-300">
-                                                {mapping.X === 'A' ? `Gain: ${Math.round(gainA*100)}%` : `Gain: ${Math.round(gainB*100)}%`}
+                                        <div className="absolute inset-0 bg-black/90 rounded-xl flex flex-col items-center justify-center p-4 text-center animate-pop-in z-20 border-2 border-cyan-500/50">
+                                            <p className="text-gray-500 text-xs uppercase font-bold mb-2">ARCHIVO REAL</p>
+                                            <p className="text-xl font-bold text-white break-all px-2">{mapping.X === 'A' ? fileA.name : fileB.name}</p>
+                                            <div className="mt-3 inline-block px-3 py-1 rounded bg-gray-800 text-xs text-gray-300 border border-gray-700">
+                                                {mapping.X === 'A' ? 'TRACK A' : 'TRACK B'}
                                             </div>
                                         </div>
                                     )}
                                 </button>
 
+                                {/* Pad Y */}
                                 <button
                                     onClick={() => { setActiveBlindChannel('Y'); if(!isPlaying) togglePlay(); }}
-                                    className={`relative group h-48 md:h-64 rounded-2xl border-4 transition-all duration-200 flex flex-col items-center justify-center gap-4
+                                    className={`
+                                        relative rounded-2xl border-4 transition-all duration-100 active:scale-95 flex flex-col items-center justify-center gap-4 group
                                         ${activeBlindChannel === 'Y' 
-                                            ? 'border-pink-400 bg-pink-400/10 shadow-[0_0_30px_rgba(244,114,182,0.2)]' 
-                                            : 'border-gray-700 bg-black/30 hover:border-gray-500'
-                                        }`}
+                                            ? 'border-orange-500 bg-orange-500/20 shadow-[0_0_40px_rgba(249,115,22,0.3)]' 
+                                            : 'border-gray-800 bg-[#111] hover:border-gray-600'
+                                        }
+                                    `}
                                 >
-                                    <div className="text-6xl font-bold text-pink-400">Y</div>
-                                    {activeBlindChannel === 'Y' && isPlaying && <div className="absolute bottom-4 text-pink-400 text-sm font-bold animate-pulse">REPRODUCIENDO</div>}
-                                     
-                                     {/* Reveal Info */}
+                                    <span className={`text-6xl font-black ${activeBlindChannel === 'Y' ? 'text-orange-400' : 'text-gray-700 group-hover:text-gray-500'}`}>Y</span>
+                                    {activeBlindChannel === 'Y' && <span className="text-xs font-bold text-orange-400 tracking-widest bg-black/50 px-3 py-1 rounded">ACTIVE</span>}
+
                                     {stage === 'revealed' && (
-                                        <div className="absolute inset-0 bg-black/80 rounded-xl flex flex-col items-center justify-center p-4 text-center animate-pop-in">
-                                            <p className="text-gray-400 text-sm uppercase tracking-widest mb-2">Era el archivo</p>
-                                            <p className="text-xl font-bold text-white break-all">{mapping.Y === 'A' ? fileA.name : fileB.name}</p>
-                                             <div className="mt-2 px-3 py-1 rounded-full bg-white/10 text-xs text-gray-300">
-                                                {mapping.Y === 'A' ? `Gain: ${Math.round(gainA*100)}%` : `Gain: ${Math.round(gainB*100)}%`}
+                                        <div className="absolute inset-0 bg-black/90 rounded-xl flex flex-col items-center justify-center p-4 text-center animate-pop-in z-20 border-2 border-orange-500/50">
+                                            <p className="text-gray-500 text-xs uppercase font-bold mb-2">ARCHIVO REAL</p>
+                                            <p className="text-xl font-bold text-white break-all px-2">{mapping.Y === 'A' ? fileA.name : fileB.name}</p>
+                                            <div className="mt-3 inline-block px-3 py-1 rounded bg-gray-800 text-xs text-gray-300 border border-gray-700">
+                                                {mapping.Y === 'A' ? 'TRACK A' : 'TRACK B'}
                                             </div>
                                         </div>
                                     )}
                                 </button>
-                             </div>
+                            </div>
 
-                             {/* Player Bar */}
-                             <div className="bg-black/40 p-4 rounded-xl border border-theme-border flex items-center gap-4">
-                                    <button 
-                                        onClick={togglePlay}
-                                        className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-white text-black rounded-full hover:scale-105 transition-transform"
-                                    >
-                                        {isPlaying ? <div className="flex gap-1"><div className="w-1.5 h-4 bg-black"></div><div className="w-1.5 h-4 bg-black"></div></div> : <PlayIcon className="w-6 h-6 ml-1" />}
-                                    </button>
-                                    <div className="flex-grow flex flex-col justify-center">
-                                        <input 
-                                            type="range" 
-                                            min="0" max={duration || 1} 
-                                            value={currentTime} 
-                                            onChange={handleSeekChange}
-                                            onMouseDown={handleSeekStart}
-                                            onMouseUp={handleSeekEnd}
-                                            onTouchStart={handleSeekStart}
-                                            onTouchEnd={handleSeekEnd}
-                                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-white"
-                                        />
-                                        <div className="flex justify-between text-xs font-mono text-theme-text-secondary mt-1">
-                                            <span>{formatTime(currentTime)}</span>
-                                            <span>{formatTime(duration)}</span>
-                                        </div>
+                            {/* 3. Action Bar */}
+                            {stage === 'testing' ? (
+                                <div className="bg-[#111] border-t border-gray-800 p-4 -mx-4 -mb-4 lg:rounded-xl lg:mx-0 lg:mb-0 flex flex-col sm:flex-row items-center gap-4">
+                                    <div className="flex-grow flex gap-3 w-full sm:w-auto">
+                                        <button 
+                                            onClick={() => setVote('X')}
+                                            className={`flex-1 py-4 rounded-lg font-bold border-2 transition-all ${vote === 'X' ? 'bg-cyan-500 text-black border-cyan-500' : 'border-gray-700 text-gray-400 hover:border-cyan-500 hover:text-cyan-500'}`}
+                                        >
+                                            VOTO X
+                                        </button>
+                                        <button 
+                                            onClick={() => setVote('Y')}
+                                            className={`flex-1 py-4 rounded-lg font-bold border-2 transition-all ${vote === 'Y' ? 'bg-orange-500 text-black border-orange-500' : 'border-gray-700 text-gray-400 hover:border-orange-500 hover:text-orange-500'}`}
+                                        >
+                                            VOTO Y
+                                        </button>
                                     </div>
-                             </div>
-
-                             {/* Voting / Reveal Section */}
-                             {stage === 'testing' ? (
-                                 <div className="grid grid-cols-3 gap-4">
-                                     <button 
-                                        onClick={() => setVote('X')}
-                                        className={`py-3 rounded-lg font-bold border-2 transition-all ${vote === 'X' ? 'bg-cyan-400 text-black border-cyan-400' : 'border-gray-700 text-gray-400 hover:border-cyan-400 hover:text-cyan-400'}`}
-                                     >
-                                         Prefiero X
-                                     </button>
-                                     <button 
+                                    <button 
                                         onClick={reveal}
                                         disabled={!vote}
-                                        className="py-3 rounded-lg font-bold bg-white text-black shadow-lg hover:scale-105 disabled:opacity-50 disabled:scale-100 transition-all"
-                                     >
-                                         Revelar Verdad
-                                     </button>
-                                     <button 
-                                        onClick={() => setVote('Y')}
-                                        className={`py-3 rounded-lg font-bold border-2 transition-all ${vote === 'Y' ? 'bg-pink-400 text-black border-pink-400' : 'border-gray-700 text-gray-400 hover:border-pink-400 hover:text-pink-400'}`}
-                                     >
-                                         Prefiero Y
-                                     </button>
-                                 </div>
-                             ) : (
-                                 <div className="text-center p-4 bg-theme-success/10 border border-theme-success rounded-lg animate-pop-in">
-                                     <h3 className="text-2xl font-bold text-white mb-2">Tu Elección: {vote}</h3>
-                                     <div className="flex items-center justify-center gap-2 text-theme-success">
-                                         <CheckBadgeIcon className="w-6 h-6" />
-                                         <span className="font-semibold text-lg">
-                                             Preferiste: {vote === 'X' ? (mapping.X === 'A' ? fileA.name : fileB.name) : (mapping.Y === 'A' ? fileA.name : fileB.name)}
-                                         </span>
-                                     </div>
-                                 </div>
-                             )}
+                                        className="w-full sm:w-auto px-8 py-4 rounded-lg font-bold bg-white text-black shadow-lg hover:scale-105 disabled:opacity-30 disabled:scale-100 transition-all uppercase tracking-widest"
+                                    >
+                                        REVELAR
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="bg-[#111] border border-theme-success/30 p-6 rounded-xl flex flex-col items-center justify-center gap-3 animate-pop-in">
+                                    <CheckBadgeIcon className="w-12 h-12 text-theme-success" />
+                                    <h3 className="text-2xl font-bold text-white">Elección: {vote}</h3>
+                                    <p className="text-theme-text-secondary">
+                                        Preferiste: <span className="text-white font-bold">{vote === 'X' ? (mapping.X === 'A' ? 'TRACK A' : 'TRACK B') : (mapping.Y === 'A' ? 'TRACK A' : 'TRACK B')}</span>
+                                    </p>
+                                    <button onClick={handleReset} className="mt-2 text-sm text-gray-500 underline hover:text-white">Reiniciar Test</button>
+                                </div>
+                            )}
+
                         </div>
                     )}
                 </div>

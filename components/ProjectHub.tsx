@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import type { Project, Resource, SubStepFeedback, CalibrationState } from '../types';
 import { resourceData, resourceCategories } from '../data/resourceData';
@@ -6,7 +5,7 @@ import { themes, ThemeName } from '../themes';
 import { 
     LogoIcon, StarIcon, StarFilledIcon, TrashIcon, PlusIcon, DotsVerticalIcon, XIcon, BookOpenIcon, SlidersIcon, ReverbIcon, SaturationIcon, CheckBadgeIcon, PencilIcon,
     WaveformIcon, UserVoiceIcon, GuitarPickIcon, PianoIcon, DrumIcon, HeadphonesIcon, WaveSineIcon,
-    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon, ClockIcon, MetronomeIcon, SpeakerWaveIcon, ScaleIcon, ChartBarIcon, HomeIcon, HamburgerIcon
+    PlayIcon, DownloadIcon, CollectionIcon, ChatBubbleIcon, QuestionMarkCircleIcon, SearchIcon, ArrowUpTrayIcon, ClockIcon, MetronomeIcon, SpeakerWaveIcon, ScaleIcon, ChartBarIcon, HomeIcon, HamburgerIcon, SpeedometerIcon
 } from './icons';
 import ProgressBar from './ProgressBar';
 import { MIXING_STEPS } from '../constants';
@@ -16,6 +15,7 @@ import BPMCalculatorModal from './BPMCalculatorModal';
 import AcousticsCheckModal from './AcousticsCheckModal';
 import BlindTestModal from './BlindTestModal';
 import ReferenceTracksModal from './ReferenceTracksModal';
+import LufsMeterModal from './LufsMeterModal';
 
 type ResourceCategoryKey = keyof typeof resourceCategories;
 
@@ -327,8 +327,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
     const importInputRef = useRef<HTMLInputElement>(null);
 
-    // Scroll Lock handled in SettingsModal.tsx
-
     const handleExport = () => {
         const backupData = {
             mixingProjects: projects.map(p => ({
@@ -523,6 +521,7 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
   const [isAcousticsCheckOpen, setIsAcousticsCheckOpen] = useState(false);
   const [isBlindTestOpen, setIsBlindTestOpen] = useState(false);
   const [isReferenceTracksOpen, setIsReferenceTracksOpen] = useState(false); 
+  const [isLufsMeterOpen, setIsLufsMeterOpen] = useState(false); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -568,230 +567,245 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
     return totalSubSteps > 0 ? (completedCount / totalSubSteps) * 100 : 0;
   };
 
+  // --- Sub Components for Bento Layout ---
+
+  const QuickToolBtn = ({ icon: Icon, label, onClick, color }: { icon: any, label: string, onClick: () => void, color: string }) => (
+      <button 
+        onClick={onClick}
+        className={`flex flex-col items-center justify-center gap-2 p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-${color}-500/30 transition-all group`}
+      >
+          <Icon className={`w-5 h-5 text-gray-400 group-hover:text-${color}-400 transition-colors`} />
+          <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">{label}</span>
+      </button>
+  );
+
+  const StatCard = ({ label, value, icon: Icon }: { label: string, value: string | number, icon: any }) => (
+      <div className="flex items-center gap-3 p-4 bg-theme-bg-secondary border border-theme-border rounded-xl">
+          <div className="p-2 rounded-lg bg-theme-accent/10 text-theme-accent">
+              <Icon className="w-5 h-5" />
+          </div>
+          <div>
+              <p className="text-xs text-theme-text-secondary font-bold uppercase tracking-wider">{label}</p>
+              <p className="text-xl font-bold text-theme-text">{value}</p>
+          </div>
+      </div>
+  );
+
+  const activeProjectsCount = projects.length;
+  const completedProjectsCount = projects.filter(p => calculateProgress(p) >= 100).length;
+  const priorityProjectsCount = projects.filter(p => p.isPriority).length;
+
   return (
     <>
     <div 
         className="min-h-screen bg-theme-bg background-grid flex flex-col"
     >
-      <div className="container mx-auto px-4 py-8 md:py-12 flex-grow">
-        <header className="flex justify-between items-center mb-8 md:mb-12">
-          <div className="flex items-center gap-4">
-            <LogoIcon className="w-12 h-12 md:w-16 md:h-16 object-contain" />
-            <div>
-                <h1 className="text-xl md:text-3xl font-bold text-theme-accent-secondary tracking-widest uppercase">
-                    Hub de Proyectos
-                </h1>
-                <p className="text-sm md:text-lg text-theme-accent">Tus Mezclas</p>
-            </div>
+      <div className="container mx-auto px-4 py-6 md:py-10 flex-grow max-w-7xl">
+        
+        {/* TOP NAVIGATION BAR */}
+        <header className="flex justify-between items-center mb-8 py-2">
+          <div className="flex items-center gap-3">
+            <LogoIcon className="w-10 h-10 md:w-12 md:h-12 object-contain" />
+            <h1 className="text-lg md:text-xl font-bold text-white tracking-widest uppercase">
+                FLOW <span className="text-theme-accent">ACADEMY</span>
+            </h1>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-2">
-                <a 
-                    href="https://tienda.bukoflow.com/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                    aria-label="Ir a la Tienda"
-                >
-                    <HomeIcon className="w-7 h-7" />
+          
+          <div className="flex items-center gap-3">
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center gap-3 bg-theme-bg-secondary/50 backdrop-blur-md p-1.5 rounded-full border border-white/10">
+                <a href="https://tienda.bukoflow.com/" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-all" title="Tienda">
+                    <HomeIcon className="w-5 h-5" />
                 </a>
-                <button 
-                    onClick={onOpenSearch}
-                    className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                    aria-label="Búsqueda Global"
-                >
-                    <SearchIcon className="w-7 h-7" />
+                <div className="w-px h-4 bg-white/10"></div>
+                <button onClick={onOpenSearch} className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-all" title="Buscar">
+                    <SearchIcon className="w-5 h-5" />
                 </button>
-                <button 
-                    onClick={() => setIsResourceCenterOpen(true)}
-                    className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                    aria-label="Centro de Recursos"
-                >
-                    <CollectionIcon className="w-7 h-7" />
+                <button onClick={() => setIsResourceCenterOpen(true)} className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-all" title="Recursos">
+                    <CollectionIcon className="w-5 h-5" />
                 </button>
-                <button 
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                    aria-label="Configuración"
-                >
-                    <DotsVerticalIcon className="w-7 h-7" />
+                <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-all" title="Configuración">
+                    <DotsVerticalIcon className="w-5 h-5" />
                 </button>
             </div>
 
             {/* Mobile Menu Toggle */}
-            <button 
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="md:hidden p-2 rounded-full text-theme-text hover:bg-white/10 transition-all duration-300"
-                aria-label="Menú Principal"
-            >
-                <HamburgerIcon className="w-7 h-7" />
+            <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 rounded-full text-white bg-white/10 hover:bg-white/20 border border-white/10">
+                <HamburgerIcon className="w-6 h-6" />
             </button>
           </div>
         </header>
 
-        {/* DASHBOARD GRID LAYOUT */}
-        <div className="grid lg:grid-cols-12 gap-8 items-start">
+        {/* MAIN DASHBOARD LAYOUT */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            {/* COLUMNA PRINCIPAL: PROYECTOS (Izquierda en Desktop / Arriba en Móvil) */}
-            <div className="lg:col-span-8 w-full order-1">
-                <div className="mb-8">
-                    <form onSubmit={handleAddProject} className="flex gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-accent-secondary">
+            {/* LEFT COLUMN: PROJECTS (8 Columns) */}
+            <div className="lg:col-span-8 flex flex-col gap-6">
+                
+                {/* Welcome / Stats Area */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <StatCard label="Proyectos Activos" value={activeProjectsCount} icon={WaveformIcon} />
+                    <StatCard label="Completados" value={completedProjectsCount} icon={CheckBadgeIcon} />
+                    <StatCard label="Prioritarios" value={priorityProjectsCount} icon={StarFilledIcon} />
+                </div>
+
+                {/* Command Bar (Create Project) */}
+                <div className="relative group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-theme-accent to-theme-accent-secondary rounded-lg opacity-30 group-hover:opacity-70 transition duration-500 blur"></div>
+                    <form onSubmit={handleAddProject} className="relative flex items-center bg-theme-bg-secondary rounded-lg p-1.5">
+                        <div className="pl-4 pr-2 text-theme-accent">
+                            <PlusIcon className="w-5 h-5" />
+                        </div>
                         <input
                             type="text"
                             value={newProjectName}
                             onChange={(e) => setNewProjectName(e.target.value)}
-                            placeholder="Nombre de la nueva mezcla..."
-                            className="flex-grow bg-theme-bg border-2 border-theme-border-secondary text-theme-text text-base rounded-lg focus:ring-theme-accent-secondary focus:border-theme-accent-secondary p-2.5"
+                            placeholder="Crear nueva mezcla (Escribe el nombre y presiona Enter)..."
+                            className="w-full bg-transparent text-white placeholder-gray-500 text-sm md:text-base px-2 py-3 focus:outline-none"
                         />
-                        <button type="submit" className="flex items-center gap-2 text-white bg-gradient-to-r from-theme-accent to-theme-accent-secondary hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-theme-accent-secondary font-medium rounded-lg px-5 py-2.5">
-                            <PlusIcon className="w-5 h-5" />
-                            <span className="hidden sm:inline">Crear</span>
+                        <button type="submit" className="hidden md:block px-4 py-1.5 bg-white/10 hover:bg-theme-accent text-white text-xs font-bold rounded-md transition-colors uppercase tracking-wide">
+                            Crear
                         </button>
                     </form>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
+                {/* Projects Grid */}
+                <div className="grid grid-cols-1 gap-3">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-2 mb-1 pl-1">Recientes</h3>
                     {sortedProjects.length > 0 ? (
                         sortedProjects.map(project => {
                             const progress = calculateProgress(project);
                             const isCompleted = progress >= 100;
                             return (
                                 <div 
-                                key={project.id} 
-                                className={`group flex items-center gap-4 p-4 bg-theme-bg-secondary backdrop-blur-md border rounded-lg hover:bg-theme-accent-secondary/10 transition-all duration-300 transform hover:-translate-y-1 ${isCompleted ? 'border-theme-success/40' : 'border-theme-border/20'}`}
+                                    key={project.id} 
+                                    onClick={() => onSelectProject(project.id)}
+                                    className={`group relative flex items-center gap-4 p-4 bg-theme-bg-secondary/50 hover:bg-theme-bg-secondary border border-white/5 hover:border-theme-accent/30 rounded-xl transition-all cursor-pointer overflow-hidden ${isCompleted ? 'opacity-70 hover:opacity-100' : ''}`}
                                 >
-                                <div className="flex-grow cursor-pointer flex items-center gap-4" onClick={() => onSelectProject(project.id)}>
-                                    <ProjectIcon icon={project.icon} className="w-8 h-8 text-theme-accent-secondary flex-shrink-0" />
-                                    <div className="flex-grow">
-                                        <h3 className={`font-bold text-lg ${project.isPriority ? 'text-theme-priority' : 'text-theme-text'}`}>{project.name}</h3>
-                                        {isCompleted ? (
-                                                <div className="flex items-center gap-2 mt-1 h-4">
-                                                    <CheckBadgeIcon className="w-6 h-6 text-theme-success" />
-                                                    <span className="text-theme-success font-semibold text-sm">Completado</span>
-                                                </div>
-                                            ) : (
-                                                <ProgressBar progress={progress} />
-                                            )}
+                                    {/* Hover Glow */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-theme-accent/0 via-theme-accent/0 to-theme-accent/5 group-hover:via-theme-accent/5 transition-all duration-500"></div>
+
+                                    {/* Icon Box */}
+                                    <div className={`relative z-10 w-12 h-12 rounded-lg flex items-center justify-center border border-white/10 shadow-inner ${isCompleted ? 'bg-theme-success/10 text-theme-success' : 'bg-black/40 text-gray-400 group-hover:text-white'}`}>
+                                        <ProjectIcon icon={project.icon} className="w-6 h-6" />
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-5 md:gap-1">
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); setEditingProject(project); }}
-                                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                                        aria-label="Editar"
+
+                                    {/* Info */}
+                                    <div className="flex-grow relative z-10 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="font-bold text-white truncate text-base md:text-lg group-hover:text-theme-accent transition-colors">{project.name}</h3>
+                                            {project.isPriority && <StarFilledIcon className="w-3 h-3 text-theme-priority" />}
+                                        </div>
+                                        <div className="w-full max-w-xs h-1.5 bg-black/50 rounded-full overflow-hidden">
+                                            <div 
+                                                className={`h-full rounded-full ${isCompleted ? 'bg-theme-success' : 'bg-theme-accent'}`} 
+                                                style={{ width: `${progress}%` }}
+                                            ></div>
+                                        </div>
+                                        <div className="flex justify-between items-center mt-1 max-w-xs">
+                                            <span className="text-[10px] text-gray-500 font-mono uppercase">
+                                                {isCompleted ? 'Completado' : `${Math.round(progress)}% Progreso`}
+                                            </span>
+                                            <span className="text-[10px] text-gray-600">
+                                                {new Date(project.createdAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Actions (Reveal on Hover) */}
+                                    <div className="relative z-10 flex items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setEditingProject(project); }}
+                                            className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-full"
                                         >
-                                        <PencilIcon className="w-5 h-5 text-theme-text-secondary group-hover:text-theme-accent" />
+                                            <PencilIcon className="w-4 h-4" />
                                         </button>
                                         <button 
-                                        onClick={(e) => { e.stopPropagation(); onTogglePriority(project.id); }}
-                                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                                        aria-label="Priorizar"
+                                            onClick={(e) => { e.stopPropagation(); onTogglePriority(project.id); }}
+                                            className={`p-2 rounded-full hover:bg-white/10 ${project.isPriority ? 'text-theme-priority' : 'text-gray-500 hover:text-theme-priority'}`}
                                         >
-                                        {project.isPriority ? <StarFilledIcon className="w-6 h-6 text-theme-priority" /> : <StarIcon className="w-6 h-6 text-theme-text-secondary group-hover:text-theme-priority" />}
+                                            {project.isPriority ? <StarFilledIcon className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
                                         </button>
                                         <button 
-                                        onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
-                                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                                        aria-label="Eliminar"
+                                            onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
+                                            className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-full"
                                         >
-                                        <TrashIcon className="w-6 h-6 text-theme-text-secondary group-hover:text-theme-danger" />
+                                            <TrashIcon className="w-4 h-4" />
                                         </button>
-                                </div>
+                                    </div>
                                 </div>
                             )
                         })
                     ) : (
-                        <div className="text-center py-12 px-4 bg-theme-bg-secondary rounded-lg border border-dashed border-theme-border">
-                            <h3 className="text-xl text-theme-accent-secondary">No hay proyectos todavía.</h3>
-                            <p className="text-theme-text-secondary mt-2">Crea tu primer proyecto de mezcla para empezar la ruta.</p>
+                        <div className="p-12 border-2 border-dashed border-white/10 rounded-xl text-center">
+                            <p className="text-gray-500">Tu estudio está vacío. Crea tu primer proyecto arriba.</p>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* COLUMNA LATERAL: HERRAMIENTAS (Derecha en Desktop / Abajo en Móvil) */}
-            <div className="lg:col-span-4 w-full order-2">
-                <div className="lg:sticky lg:top-8">
-                    <h2 className="text-lg font-bold text-theme-accent-secondary mb-4 uppercase tracking-wider text-center lg:text-left">Quick Tools</h2>
+            {/* RIGHT COLUMN: TOOLS (4 Columns - Bento Grid) */}
+            <div className="lg:col-span-4 flex flex-col gap-6">
+                
+                {/* Widget: Analysis Tools */}
+                <div className="bg-theme-bg-secondary/30 border border-theme-border rounded-xl p-4 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-2">
+                        <ChartBarIcon className="w-4 h-4 text-theme-accent" />
+                        <h3 className="text-xs font-bold text-gray-300 uppercase tracking-widest">Análisis</h3>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
-                        <button
-                            onClick={onOpenEQGuide}
-                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border-secondary text-theme-accent hover:bg-theme-accent/20 hover:shadow-lg hover:shadow-accent transform hover:-translate-y-1"
-                        >
-                            <BookOpenIcon className="w-6 h-6" />
-                            <span className="text-xs text-center">EQ Guide</span>
-                        </button>
-                        <button
-                            onClick={onOpenCompressionGuide}
-                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-border text-theme-accent-secondary hover:bg-theme-accent-secondary/20 hover:shadow-lg hover:shadow-accent-secondary transform hover:-translate-y-1"
-                        >
-                            <SlidersIcon className="w-6 h-6" />
-                            <span className="text-xs text-center">Comp. Guide</span>
-                        </button>
-                        <button
-                            onClick={onOpenReverbGuide}
-                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-purple-500/30 text-purple-300 hover:bg-purple-500/20 hover:shadow-lg hover:shadow-purple-500/20 transform hover:-translate-y-1"
-                        >
-                            <ReverbIcon className="w-6 h-6" />
-                            <span className="text-xs text-center">Reverb Guide</span>
-                        </button>
-                        <button
-                            onClick={onOpenSaturationGuide}
-                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:shadow-lg hover:shadow-amber-500/20 transform hover:-translate-y-1"
-                        >
-                            <SaturationIcon className="w-6 h-6" />
-                            <span className="text-xs text-center">Sat. Guide</span>
-                        </button>
-                        
-                        <button
-                            onClick={() => setIsEstimatorOpen(true)}
-                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-theme-success/30 text-theme-success hover:bg-theme-success/20 hover:shadow-lg hover:shadow-theme-success/20 transform hover:-translate-y-1"
-                        >
-                            <ClockIcon className="w-6 h-6" />
-                            <span className="text-xs text-center">Estimator</span>
-                        </button>
+                        <QuickToolBtn label="LUFS Meter" icon={SpeedometerIcon} onClick={() => setIsLufsMeterOpen(true)} color="yellow" />
+                        <QuickToolBtn label="Spectrum" icon={ChartBarIcon} onClick={() => setIsReferenceTracksOpen(true)} color="emerald" />
+                        <QuickToolBtn label="A/B Test" icon={ScaleIcon} onClick={() => setIsBlindTestOpen(true)} color="orange" />
+                        <QuickToolBtn label="Simulador" icon={SpeakerWaveIcon} onClick={() => setIsAcousticsCheckOpen(true)} color="cyan" />
+                    </div>
+                </div>
 
-                        <button
-                            onClick={() => setIsBPMCalculatorOpen(true)}
-                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-pink-500/30 text-pink-300 hover:bg-pink-500/20 hover:shadow-lg hover:shadow-pink-500/20 transform hover:-translate-y-1"
-                        >
-                            <MetronomeIcon className="w-6 h-6" />
-                            <span className="text-xs text-center">BPM Calc</span>
-                        </button>
+                {/* Widget: Utilities */}
+                <div className="bg-theme-bg-secondary/30 border border-theme-border rounded-xl p-4 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-2">
+                        <ClockIcon className="w-4 h-4 text-theme-accent-secondary" />
+                        <h3 className="text-xs font-bold text-gray-300 uppercase tracking-widest">Utilidades</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <QuickToolBtn label="BPM Calc" icon={MetronomeIcon} onClick={() => setIsBPMCalculatorOpen(true)} color="pink" />
+                        <QuickToolBtn label="Estimador" icon={ClockIcon} onClick={() => setIsEstimatorOpen(true)} color="green" />
+                    </div>
+                </div>
 
-                        <button
-                            onClick={() => setIsAcousticsCheckOpen(true)}
-                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/20 transform hover:-translate-y-1"
-                        >
-                            <SpeakerWaveIcon className="w-6 h-6" />
-                            <span className="text-xs text-center">Simulador</span>
+                {/* Widget: Knowledge Base */}
+                <div className="bg-theme-bg-secondary/30 border border-theme-border rounded-xl p-4 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-2">
+                        <BookOpenIcon className="w-4 h-4 text-purple-400" />
+                        <h3 className="text-xs font-bold text-gray-300 uppercase tracking-widest">Guías Pro</h3>
+                    </div>
+                    <div className="space-y-2">
+                        <button onClick={onOpenEQGuide} className="w-full flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group">
+                            <span className="text-xs font-bold text-gray-400 group-hover:text-white">Ecualización</span>
+                            <BookOpenIcon className="w-4 h-4 text-gray-600 group-hover:text-fuchsia-400" />
                         </button>
-
-                        <button
-                            onClick={() => setIsBlindTestOpen(true)}
-                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-orange-500/30 text-orange-300 hover:bg-orange-500/20 hover:shadow-lg hover:shadow-orange-500/20 transform hover:-translate-y-1"
-                        >
-                            <ScaleIcon className="w-6 h-6" />
-                            <span className="text-xs text-center">A/B Test</span>
+                        <button onClick={onOpenCompressionGuide} className="w-full flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group">
+                            <span className="text-xs font-bold text-gray-400 group-hover:text-white">Compresión</span>
+                            <SlidersIcon className="w-4 h-4 text-gray-600 group-hover:text-cyan-400" />
                         </button>
-                        
-                        <button
-                            onClick={() => setIsReferenceTracksOpen(true)}
-                            className="col-span-2 flex flex-col items-center justify-center gap-2 p-4 rounded-lg font-bold transition-all duration-300 bg-theme-bg-secondary border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/20 transform hover:-translate-y-1"
-                        >
-                            <ChartBarIcon className="w-6 h-6" />
-                            <span className="text-xs text-center">Spectrum Target (Raw)</span>
+                        <button onClick={onOpenReverbGuide} className="w-full flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group">
+                            <span className="text-xs font-bold text-gray-400 group-hover:text-white">Reverb</span>
+                            <ReverbIcon className="w-4 h-4 text-gray-600 group-hover:text-indigo-400" />
+                        </button>
+                        <button onClick={onOpenSaturationGuide} className="w-full flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group">
+                            <span className="text-xs font-bold text-gray-400 group-hover:text-white">Saturación</span>
+                            <SaturationIcon className="w-4 h-4 text-gray-600 group-hover:text-amber-400" />
                         </button>
                     </div>
                 </div>
+
             </div>
 
         </div>
       </div>
 
-      <footer className="mt-auto py-6 text-center text-theme-text-secondary text-sm w-full">
-         <p>© 2025 | BUKOFLOW LLC</p>
+      <footer className="py-6 text-center border-t border-white/5 bg-black/20">
+         <p className="text-xs text-gray-500">Flow Academy by. © 2025 BUKOFLOW LLC | Pro Suite v1.0</p>
       </footer>
     </div>
 
@@ -911,6 +925,12 @@ const ProjectHub: React.FC<ProjectHubProps> = ({
      <ReferenceTracksModal
         isOpen={isReferenceTracksOpen}
         onClose={() => setIsReferenceTracksOpen(false)}
+        calibrationState={calibrationState}
+        onCalibrationChange={setCalibrationState}
+    />
+    <LufsMeterModal
+        isOpen={isLufsMeterOpen}
+        onClose={() => setIsLufsMeterOpen(false)}
         calibrationState={calibrationState}
         onCalibrationChange={setCalibrationState}
     />

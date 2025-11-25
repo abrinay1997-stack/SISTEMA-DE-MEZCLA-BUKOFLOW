@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { XIcon, SpeakerWaveIcon, PlayIcon, LoaderIcon, DownloadIcon } from './icons';
+import { XIcon, SpeakerWaveIcon, PlayIcon, LoaderIcon, DownloadIcon, SlidersIcon, ArrowPathIcon } from './icons';
 import { HeadphoneCalibrationEngine } from '../utils/audioEngine';
 import HeadphoneCorrectionControls from './HeadphoneCorrectionControls';
 import { CalibrationState, HeadphoneProfile } from '../types';
@@ -50,13 +49,14 @@ interface EnvironmentDef {
     description: string;
     gainCorrection: number; // Multiplier to prevent clipping
     reverb?: ReverbSettings; // Optional spatial simulation
+    icon?: string; // Future use
 }
 
 // Ordered list for UI rendering: Quality -> Real World -> Low Fi -> FX
 const environments: Record<EnvironmentType, EnvironmentDef> = {
     bypass: { 
         name: 'Estudio (Bypass)', 
-        description: 'Señal original sin procesar.',
+        description: 'Señal original sin procesar. Respuesta plana.',
         gainCorrection: 1.0 
     },
     hifi: { 
@@ -193,6 +193,7 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
     const [fileName, setFileName] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isCalibrationOpen, setIsCalibrationOpen] = useState(false);
     
     // Player State
     const [currentTime, setCurrentTime] = useState(0);
@@ -285,7 +286,7 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
             setCurrentTime(0);
             isPlayingRef.current = false;
         };
-    }, [isOpen]); // removed calibrationState from dependency to prevent tear down on slider change
+    }, [isOpen]);
 
     // Separate effect for calibration updates
     useEffect(() => {
@@ -447,7 +448,7 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
         // --- BUILD EQ CHAIN ---
         let nodes: BiquadFilterNode[] = [];
         
-        // ... (EQ Definitions) ...
+        // ... (EQ Definitions - Simplified for length, refer to previous mapping) ...
          if (env === 'cubes') {
             const hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = 90; 
             const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 10000;
@@ -595,127 +596,175 @@ const AcousticsCheckModal: React.FC<AcousticsCheckModalProps> = ({ isOpen, onClo
             onClick={onClose}
         >
             <div
-                className="relative bg-theme-bg-secondary backdrop-blur-md border border-theme-border rounded-lg shadow-accent-lg w-full max-w-5xl flex flex-col animate-scale-up overflow-hidden max-h-[95vh] pt-safe pb-safe"
+                className="relative bg-[#0a0a0a] backdrop-blur-xl border border-theme-border-secondary rounded-lg shadow-2xl w-full max-w-5xl flex flex-col animate-scale-up overflow-hidden max-h-[95vh] pt-safe pb-safe"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
-                <div className="flex justify-between items-center p-4 border-b border-theme-border bg-black/20">
-                    <h2 className="text-xl font-bold text-theme-accent flex items-center gap-2">
-                        <SpeakerWaveIcon className="w-6 h-6" />
-                        Simulador de Entornos
-                    </h2>
-                    <button onClick={onClose} className="p-4 rounded-full text-theme-text-secondary hover:bg-white/10 hover:text-theme-text transition">
-                        <XIcon className="w-6 h-6" />
-                    </button>
-                </div>
-
-                <div className="p-4 sm:p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
-                    
-                    {/* Headphone Correction Module (Controlled) */}
-                    <HeadphoneCorrectionControls 
-                        calibrationState={calibrationState}
-                        onCalibrationChange={onCalibrationChange}
-                    />
-
-                    {/* File Upload / Player Section */}
-                    <div className="flex flex-col gap-4">
-                         {!audioBuffer ? (
-                            isLoading ? (
-                                <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg bg-black/20">
-                                    <LoaderIcon className="w-10 h-10 text-theme-accent mb-2" />
-                                    <p className="text-sm text-theme-text animate-pulse">Decodificando Audio...</p>
-                                </div>
-                            ) : (
-                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-theme-border rounded-lg cursor-pointer bg-black/20 hover:bg-white/5 transition-all group relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-theme-accent/5 group-hover:bg-theme-accent/10 transition-colors"></div>
-                                    <div className="flex flex-col items-center justify-center relative z-10">
-                                        <DownloadIcon className="w-10 h-10 text-theme-accent mb-2 animate-bounce" />
-                                        <p className="text-base text-theme-text font-bold">Arrastra o Click para cargar Audio</p>
-                                        <p className="text-xs text-theme-text-secondary mt-1">Soporta MP3/WAV (Max 50MB)</p>
-                                    </div>
+                {/* --- Header & Toolbar --- */}
+                <div className="flex flex-col border-b border-theme-border-secondary/50 z-20 relative">
+                    {/* Top Bar */}
+                    <div className="flex justify-between items-center p-3 bg-[#111]">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-lg font-bold text-theme-accent flex items-center gap-2">
+                                <SpeakerWaveIcon className="w-5 h-5" />
+                                <span className="hidden sm:inline">ACOUSTIC SIMULATOR</span>
+                            </h2>
+                            
+                            {/* Compact File Controls */}
+                            {!fileName ? (
+                                <label className="cursor-pointer flex items-center gap-2 px-3 py-1 rounded bg-theme-accent/10 hover:bg-theme-accent/20 text-xs text-theme-accent transition-colors border border-theme-accent/30">
+                                    <DownloadIcon className="w-3 h-3" />
+                                    <span>Cargar Audio</span>
                                     <input type="file" className="hidden" accept="audio/*" onChange={handleFileUpload} />
                                 </label>
-                            )
-                         ) : (
-                             <div className="w-full flex flex-col gap-2 bg-black/30 p-3 rounded-lg border border-theme-border/50">
-                                 <div className="flex items-center justify-between gap-4 mb-2">
-                                     <div className="flex items-center gap-3 overflow-hidden">
-                                         <button 
-                                            onClick={togglePlay}
-                                            className="flex-shrink-0 w-10 h-10 rounded-full bg-theme-accent text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-                                         >
-                                            {isPlaying ? (
-                                                <div className="flex gap-0.5">
-                                                    <div className="w-1 h-3 bg-white rounded-sm"></div>
-                                                    <div className="w-1 h-3 bg-white rounded-sm"></div>
-                                                </div>
-                                            ) : (
-                                                <PlayIcon className="w-4 h-4 ml-0.5" />
-                                            )}
-                                         </button>
-                                         <div className="flex flex-col truncate">
-                                             <span className="font-bold text-sm text-theme-text truncate">{fileName}</span>
-                                             <button onClick={() => { setAudioBuffer(null); setIsPlaying(false); isPlayingRef.current = false; stopAudio(); }} className="text-xs text-theme-text-secondary underline hover:text-theme-text text-left">Cambiar archivo</button>
-                                         </div>
-                                     </div>
-                                     <div className="text-xs font-mono text-theme-text-secondary">
-                                         {formatTime(currentTime)} / {formatTime(duration)}
-                                     </div>
-                                 </div>
-                                 
-                                 {/* Waveform Player */}
-                                 <div className="w-full bg-black/50 rounded h-16 border border-theme-border overflow-hidden relative">
-                                     <AudioWaveform 
+                            ) : (
+                                <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                                    <span className="text-xs text-gray-300 truncate max-w-[150px]">{fileName}</span>
+                                    <button onClick={() => { setAudioBuffer(null); setFileName(null); setIsPlaying(false); isPlayingRef.current = false; stopAudio(); }} className="text-gray-500 hover:text-red-400">
+                                        <XIcon className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            <button onClick={onClose} className="p-2 rounded text-gray-400 hover:bg-white/10 hover:text-white transition">
+                                <XIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Sub-Toolbar (Transport & Calibration) */}
+                    <div className="flex flex-wrap items-center gap-4 p-3 bg-[#0f0f0f] text-xs border-t border-black/50">
+                        {/* Play/Pause Button */}
+                        <button 
+                            onClick={togglePlay}
+                            disabled={!audioBuffer}
+                            className={`px-4 py-1 rounded font-bold flex items-center gap-2 transition-all ${isPlaying ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50' : 'bg-theme-accent/20 text-theme-accent border border-theme-accent/50 hover:bg-theme-accent/30'} ${!audioBuffer ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            <PlayIcon className="w-3 h-3" />
+                            {isPlaying ? 'PAUSE' : 'PLAY'}
+                        </button>
+
+                        <div className="w-px h-4 bg-gray-700 mx-2 hidden sm:block"></div>
+
+                        <div className="flex items-center gap-2 flex-grow">
+                            <button 
+                                onClick={() => setIsCalibrationOpen(!isCalibrationOpen)}
+                                className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${calibrationState.profile ? 'text-green-400 bg-green-400/10' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <SlidersIcon className="w-3 h-3" />
+                                {calibrationState.profile ? `Cal: ${calibrationState.profile.name}` : 'Calibrar Auriculares'}
+                            </button>
+                        </div>
+                        
+                        <div className="text-gray-500 font-mono">
+                            {formatTime(currentTime)} / {formatTime(duration)}
+                        </div>
+                    </div>
+                    
+                    {/* Collapsible Calibration Panel */}
+                    {isCalibrationOpen && (
+                        <div className="p-4 bg-[#151515] border-t border-gray-800 animate-fade-in-step relative z-30">
+                            <HeadphoneCorrectionControls 
+                                calibrationState={calibrationState}
+                                onCalibrationChange={onCalibrationChange}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* --- Main Dashboard Area --- */}
+                <div className="flex-grow p-4 lg:p-6 flex flex-col gap-4 bg-[#050505] overflow-y-auto custom-scrollbar z-0 relative">
+                    
+                    {/* 1. The "Monitor" Screen */}
+                    <div className="relative w-full bg-[#080808] rounded-xl border border-gray-800 overflow-hidden shadow-inner min-h-[180px] flex flex-col justify-center items-center group">
+                        {audioBuffer ? (
+                            <>
+                                <div className="absolute inset-0 opacity-80">
+                                    <AudioWaveform 
                                         buffer={audioBuffer}
                                         progress={currentTime}
                                         onSeek={handleSeek}
-                                        height={64}
-                                        color="#334155"
+                                        height={180}
+                                        color="#1e293b"
                                         progressColor="#0ea5e9"
-                                     />
-                                     <div className="absolute top-2 right-2 pointer-events-none flex flex-col items-end gap-1">
-                                        <div className="text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
-                                            {environments[activeEnv].name}
+                                    />
+                                </div>
+                                {/* Screen Overlay Info */}
+                                <div className="absolute top-4 left-4 pointer-events-none z-10">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Environment</span>
+                                        <span className="text-xl font-bold text-white drop-shadow-md">{environments[activeEnv].name}</span>
+                                    </div>
+                                </div>
+                                {environments[activeEnv].reverb && (
+                                    <div className="absolute top-4 right-4 pointer-events-none z-10">
+                                        <div className="text-[10px] font-bold text-theme-accent-secondary bg-theme-accent-secondary/10 px-2 py-1 rounded border border-theme-accent-secondary/20 animate-pulse">
+                                            SPATIAL SIM ON
                                         </div>
-                                        {environments[activeEnv].reverb && (
-                                            <div className="text-[9px] text-theme-accent-secondary bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10">
-                                                Spatial Sim ON
-                                            </div>
-                                        )}
-                                     </div>
-                                 </div>
-                             </div>
-                         )}
-                         {error && <p className="text-red-500 text-sm text-center bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
+                                    </div>
+                                )}
+                                <div className="absolute bottom-4 left-4 right-4 pointer-events-none z-10 text-center">
+                                    <p className="text-xs text-gray-400 bg-black/60 px-3 py-1 rounded inline-block backdrop-blur-sm border border-white/5">
+                                        {environments[activeEnv].description}
+                                    </p>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center gap-3 opacity-50">
+                                {isLoading ? (
+                                    <>
+                                        <LoaderIcon className="w-10 h-10 text-theme-accent animate-spin" />
+                                        <p className="text-sm font-mono text-theme-accent">DECODING AUDIO...</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-16 h-16 border-2 border-dashed border-gray-700 rounded flex items-center justify-center">
+                                            <span className="text-gray-700 font-bold text-xs">NO SIGNAL</span>
+                                        </div>
+                                        <p className="text-xs text-gray-600 font-mono uppercase tracking-widest">Please Load Audio File</p>
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Environment Selectors */}
-                    <div className="flex-grow overflow-y-auto">
-                        <h3 className="text-sm font-bold text-theme-text-secondary uppercase tracking-wider mb-3 sticky top-0 bg-theme-bg-secondary py-2 z-10">Selecciona un Entorno:</h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 pb-2">
+                    {/* 2. Environment Grid (Control Pads) */}
+                    <div className="bg-[#111] border border-gray-800 rounded-xl p-4">
+                        <div className="flex justify-between items-center mb-3 px-1">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Environment Selector</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                             {(Object.keys(environments) as EnvironmentType[]).map(env => (
                                 <button
                                     key={env}
                                     onClick={() => applyEnvironment(env)}
                                     disabled={!audioBuffer}
-                                    className={`p-2 rounded-md text-xs leading-tight font-semibold border transition-all duration-200 flex flex-col items-center justify-center gap-1 min-h-[4.5rem] text-center relative overflow-hidden group
+                                    className={`
+                                        relative h-16 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all duration-200
                                         ${activeEnv === env 
-                                            ? 'bg-theme-accent/20 border-theme-accent text-theme-accent shadow-[0_0_10px_rgba(var(--theme-accent-rgb),0.3)]' 
-                                            : 'bg-black/20 border-theme-border text-theme-text-secondary hover:bg-white/5 hover:text-theme-text hover:border-theme-accent-secondary'
-                                        } ${!audioBuffer ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            ? 'bg-theme-accent/10 border-theme-accent text-white shadow-[0_0_15px_rgba(var(--theme-accent-rgb),0.2)]' 
+                                            : 'bg-[#1a1a1a] border-gray-800 text-gray-500 hover:bg-[#222] hover:text-gray-300 hover:border-gray-600'
+                                        }
+                                        ${!audioBuffer ? 'opacity-40 cursor-not-allowed' : ''}
+                                    `}
                                 >
-                                    <span className="relative z-10 group-hover:scale-105 transition-transform">{environments[env].name}</span>
-                                    {activeEnv === env && <div className="absolute inset-0 bg-theme-accent/5 animate-pulse z-0"></div>}
+                                    <span className="text-[10px] font-bold uppercase tracking-wide z-10 text-center px-1 leading-tight">{environments[env].name}</span>
+                                    {activeEnv === env && (
+                                        <div className="w-1.5 h-1.5 rounded-full bg-theme-accent shadow-[0_0_5px_var(--theme-accent)] absolute top-2 right-2"></div>
+                                    )}
                                 </button>
                             ))}
                         </div>
-                        <div className="mt-4 text-center bg-black/30 p-3 rounded-lg border border-theme-border/50">
-                            <p className="text-theme-text font-medium text-sm">{environments[activeEnv].name}</p>
-                            <p className="text-theme-text-secondary text-xs mt-1 italic">
-                                {environments[activeEnv].description}
-                            </p>
-                        </div>
                     </div>
+                    
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded text-xs text-center">
+                            {error}
+                        </div>
+                    )}
+
                 </div>
             </div>
         </div>
